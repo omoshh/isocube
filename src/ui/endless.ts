@@ -2,6 +2,7 @@ import { LEVELS } from '../core/generator'
 import { HeightMap } from '../core/shape'
 import { h } from './dom'
 import type { Screen } from './router'
+import { mountReverse } from './screens/reversePuzzle'
 import { mountPuzzle } from './screens/viewsPuzzle'
 import { loadProgress, updateProgress } from './storage'
 import { S } from './strings'
@@ -102,22 +103,27 @@ const queues = new Map<number, EndlessQueue>()
 // hm of puzzles this session made, so opening one needs no second generation
 const made = new Map<string, HeightMap>()
 
-/** #/endless/<level>/new (wait for the queue, record the seed, open it) and #/endless/<level>/<seed>. */
-export async function mountEndless(root: HTMLElement, level: number, seed: string, makeWorker = realWorker): Promise<Screen> {
+/**
+ * #/endless/<level>/new (wait for the queue, record the seed, open it) and #/endless/<level>/<seed>;
+ * mode 'reverse': #/reverse/E<level>-new and #/reverse/E<level>-<seed>. Both modes share progress.endlessSeeds,
+ * so a seed is never served twice in either mode.
+ */
+export async function mountEndless(root: HTMLElement, level: number, seed: string, makeWorker = realWorker, mode: 'views' | 'reverse' = 'views'): Promise<Screen> {
+  const rev = mode === 'reverse', prefix = rev ? `#/reverse/E${level}-` : `#/endless/${level}/`
   const used = (await loadProgress()).endlessSeeds[level] ?? []
   let q = queues.get(level)
   if (!q) queues.set(level, q = new EndlessQueue(level, makeWorker, used))
   let dead = false, inner: Screen | undefined
   const wait = h('main', { class: 'placeholder' }, h('p', { text: S.generating }),
-    h('button', { class: 'btn btn-outline', text: S.cancel, onclick: () => { location.hash = '#/levels/views' } }))
+    h('button', { class: 'btn btn-outline', text: S.cancel, onclick: () => { location.hash = `#/levels/${mode}` } }))
   root.append(wait)
 
   const open = async (hm: HeightMap) => {
     wait.remove()
-    const s = await mountPuzzle(root, {
-      id: `E${level}-${seed}`, key: `endless/${level}/${seed}`, cols: hm.cols, rows: hm.rows, maxH: LEVELS[level - 1].maxH, h: hm.h,
-      title: S.level(level), subtitle: S.endlessSub(hm.cols, hm.rows), nextRoute: `#/endless/${level}/new`,
-    })
+    const p = { cols: hm.cols, rows: hm.rows, maxH: LEVELS[level - 1].maxH, h: hm.h, subtitle: S.endlessSub(hm.cols, hm.rows), nextRoute: prefix + 'new' }
+    const s = rev
+      ? await mountReverse(root, { ...p, id: `R-E${level}-${seed}`, key: `reverse/E${level}-${seed}`, title: `${S.reverse.toUpperCase()} · ${S.level(level)}` })
+      : await mountPuzzle(root, { ...p, id: `E${level}-${seed}`, key: `endless/${level}/${seed}`, title: S.level(level) })
     if (dead) s.destroy(); else inner = s
   }
 
@@ -126,7 +132,7 @@ export async function mountEndless(root: HTMLElement, level: number, seed: strin
       if (dead) return
       made.set(`${level}/${r.seed}`, r.hm)
       await updateProgress(p => ({ ...p, endlessSeeds: { ...p.endlessSeeds, [level]: [...(p.endlessSeeds[level] ?? []), r.seed] } }))
-      if (!dead) location.replace(`#/endless/${level}/${r.seed}`) // Back skips the "Generating…" step
+      if (!dead) location.replace(prefix + r.seed) // Back skips the "Generating…" step
     }, () => {}) // rejected only by cancel/dispose, after this screen is gone
   } else {
     const hm = made.get(`${level}/${seed}`)
@@ -139,7 +145,7 @@ export async function mountEndless(root: HTMLElement, level: number, seed: strin
       dead = true
       wait.remove(); inner?.destroy()
       // the router has already moved location.hash: leaving this level's endless mode stops its worker
-      if (!location.hash.startsWith(`#/endless/${level}/`)) { q.dispose(); queues.delete(level) }
+      if (!location.hash.startsWith(prefix)) { q.dispose(); queues.delete(level) }
     },
   }
 }

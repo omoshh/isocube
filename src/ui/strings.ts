@@ -5,6 +5,7 @@ export const S = {
   back: 'Back',
   more: 'More',
   views: 'Views',
+  reverse: 'Reverse',
   levels: 'LEVELS',
   level: (n: number) => `LEVEL ${n}`,
   classic: 'CLASSIC',

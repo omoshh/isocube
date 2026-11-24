@@ -2,6 +2,7 @@ import type { PuzzleFile } from '../core/generator'
 import { h } from './dom'
 import { mountEndless } from './endless'
 import { mountLevels } from './screens/levels'
+import { mountReversePuzzle } from './screens/reversePuzzle'
 import { mountViewsPuzzle } from './screens/viewsPuzzle'
 import { S } from './strings'
 
@@ -26,11 +27,12 @@ function home(root: HTMLElement): Screen {
 
 const routes: [RegExp, Mount][] = [
   [/^\/$/, home],
-  [/^\/levels\/views$/, mountLevels],
+  [/^\/levels\/views$/, (root, f) => mountLevels(root, f)],
   [/^\/views\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountViewsPuzzle(root, f, id) : placeholder(root, S.notFound)],
   [/^\/endless\/([1-6])\/(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed)],
-  [/^\/levels\/reverse$/, root => placeholder(root)],
-  [/^\/reverse\/([\w-]+)$/, root => placeholder(root)],
+  [/^\/levels\/reverse$/, (root, f) => mountLevels(root, f, 'reverse')],
+  [/^\/reverse\/E([1-6])-(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed, undefined, 'reverse')],
+  [/^\/reverse\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountReversePuzzle(root, f, id) : placeholder(root, S.notFound)],
   [/^\/nets\/(\d+)$/, root => placeholder(root)],
   [/^\/draw(?:\/([\w-]+))?$/, root => placeholder(root)],
   [/^\/settings(?:\/accent)?$/, root => placeholder(root)],
