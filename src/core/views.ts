@@ -20,14 +20,17 @@ export function viewLabels(h: HeightMap, Z = Math.max(0, ...h.h)): { top: Labels
   return { top, front, side }
 }
 
-// Cells are (x = column, y = row index of L); a line separates cells with different labels, outside counts as -1.
+// L is indexed [i][j] like the page's labels. Keys use viewSVG's screen coordinates: cell (i, j) is the unit square
+// with top-left (i, H-1-j) (x right, y down, H = L[0].length); a line separates cells with different labels, outside counts as -1.
 export function viewLines(L: Labels): Set<string> {
-  const rows = L.length, cols = L[0].length, out = new Set<string>()
-  const lab = (x: number, y: number) => (x < 0 || y < 0 || x >= cols || y >= rows ? -1 : L[y][x])
-  for (let y = 0; y < rows; y++) for (let x = 0; x <= cols; x++)
-    if (lab(x - 1, y) !== lab(x, y)) out.add(gridSegKey({ x, y }, { x, y: y + 1 }))
-  for (let y = 0; y <= rows; y++) for (let x = 0; x < cols; x++)
-    if (lab(x, y - 1) !== lab(x, y)) out.add(gridSegKey({ x, y }, { x: x + 1, y }))
+  const W = L.length, out = new Set<string>()
+  if (!W || !L[0].length) return out
+  const H = L[0].length
+  const lab = (i: number, j: number) => (i < 0 || j < 0 || i >= W || j >= H ? -1 : L[i][j])
+  for (let i = 0; i <= W; i++) for (let j = 0; j < H; j++)
+    if (lab(i - 1, j) !== lab(i, j)) out.add(gridSegKey({ x: i, y: H - j }, { x: i, y: H - j - 1 }))
+  for (let i = 0; i < W; i++) for (let j = 0; j <= H; j++)
+    if (lab(i, j - 1) !== lab(i, j)) out.add(gridSegKey({ x: i, y: H - j }, { x: i + 1, y: H - j }))
   return out
 }
 

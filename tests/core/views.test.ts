@@ -16,4 +16,9 @@ describe('views', () => {
     for (const s of [v.top, v.front, v.side]) expect(s.size).toBe(4)
     expect(viewLines([[0]]).size).toBe(4)
   })
+  it('viewLinesUseScreenCoordinates', () => {
+    // 1 wide, 2 high: j=0 is the bottom cell (label 1), j=1 the top cell (label 2)
+    expect([...viewLines([[1, 2]])].sort()).toEqual(
+      ['0:0|0:1', '0:0|1:0', '0:1|0:2', '0:1|1:1', '0:2|1:2', '1:0|1:1', '1:1|1:2'])
+  })
 })
