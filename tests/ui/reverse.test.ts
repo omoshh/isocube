@@ -115,11 +115,11 @@ describe('reverse puzzle screen', () => {
 
   it('levelListLinksToReverse', async () => {
     const { levels, storage } = await load()
-    await storage.updateProgress(p => ({ ...p, solved: ['R-L1-001', 'L1-002'] }))
+    await storage.updateProgress(p => ({ ...p, solved: ['R-RL1-001', 'RL1-002', 'R-L1-003'] }))
     const root = sized()
     const s = await levels.mountLevels(root, file, 'reverse')
     const t = root.querySelector('[data-level="1"]')!
-    expect(t.querySelector('.num')!.getAttribute('href')).toBe('#/reverse/L1-001')
+    expect(t.querySelector('.num')!.getAttribute('href')).toBe('#/reverse/RL1-001')
     expect(t.querySelector('.tile-count')!.textContent).toBe('1 / 50')
     expect(t.querySelector('a.btn')!.getAttribute('href')).toBe('#/reverse/E1-new')
     s.destroy()

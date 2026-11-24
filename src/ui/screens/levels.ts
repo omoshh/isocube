@@ -23,7 +23,7 @@ export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'vi
     createTopBar({ title: (mode === 'reverse' ? S.reverse : S.views).toUpperCase(), back: '/' }),
     h('main', { class: 'tiles' },
       ...LEVELS.map(L => tile({ 'data-level': String(L.level) }, S.level(L.level), `${L.a}×${L.b}`,
-        file.puzzles.filter(p => p.set === 'level' && p.level === L.level), mode === 'reverse' ? `#/reverse/E${L.level}-new` : `#/endless/${L.level}/new`)),
+        file.puzzles.filter(p => p.set === (mode === 'reverse' ? 'reverse' : 'level') && p.level === L.level), mode === 'reverse' ? `#/reverse/E${L.level}-new` : `#/endless/${L.level}/new`)),
       tile({ 'data-set': 'classic' }, S.classic, '', file.puzzles.filter(p => p.set === 'classic'))))
   root.append(el)
   return { destroy: () => el.remove() }

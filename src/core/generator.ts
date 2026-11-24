@@ -19,7 +19,7 @@ export const LEVELS = [
   { level: 4, a: 4, b: 5, maxH: 4 }, { level: 5, a: 5, b: 5, maxH: 4 }, { level: 6, a: 5, b: 6, maxH: 5 },
 ] as const
 
-export type PuzzleEntry = { id: string; set: 'level' | 'classic'; level: number; cols: number; rows: number; maxH: number; h: number[] }
+export type PuzzleEntry = { id: string; set: 'level' | 'classic' | 'reverse'; level: number; cols: number; rows: number; maxH: number; h: number[] }
 export type PuzzleFile = { version: 1; puzzles: PuzzleEntry[] }
 
 const pick = (r: Rng, n: number) => Math.floor(r() * n)

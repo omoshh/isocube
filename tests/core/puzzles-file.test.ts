@@ -25,12 +25,23 @@ describe('puzzles.json', () => {
         expect(p.maxH).toBe(maxH)
       })
     }
+    for (const { level, a, b, maxH } of LEVELS) {
+      const rev = ps.filter(p => p.set === 'reverse' && p.level === level)
+      expect(rev.length).toBe(50)
+      const viewsShapes = new Set(ps.filter(p => p.set === 'level' && p.level === level).map(p => p.cols + ':' + p.h))
+      rev.forEach((p, i) => {
+        expect(p.id).toBe(`RL${level}-${String(i + 1).padStart(3, '0')}`)
+        expect([[a, b], [b, a]]).toContainEqual([p.cols, p.rows])
+        expect(p.maxH).toBe(maxH)
+        expect(viewsShapes.has(p.cols + ':' + p.h), p.id).toBe(false)
+      })
+    }
     const classic = ps.filter(p => p.set === 'classic')
     expect(classic.length).toBe(49)
-    expect(ps.length).toBe(6 * 50 + 49)
+    expect(ps.length).toBe(6 * 50 * 2 + 49)
     expect(classic).toEqual(classicPuzzles(ref))
     const ambiguous: string[] = []
-    for (const p of ps) {
+    for (const p of ps.filter(p => p.set !== 'reverse')) {
       expect(p.h.length).toBe(p.cols * p.rows)
       expect(p.h.every(v => v >= 0 && v <= p.maxH)).toBe(true)
       const n = countSolutions(views(new HeightMap(p.cols, p.rows, p.h)), p.cols, p.rows, p.maxH)
