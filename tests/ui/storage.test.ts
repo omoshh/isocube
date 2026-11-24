@@ -110,4 +110,15 @@ describe('storage', () => {
     expect(store.get('draw/stale')).toEqual(d(1))
     expect(store.get('progress')).toMatchObject({ solved: ['old'] })
   })
+
+  it('updateProgress serialises overlapping updates', async () => {
+    const s = await load()
+    await Promise.all([
+      s.updateProgress(p => ({ ...p, solved: [...p.solved, 'a'] })),
+      s.updateProgress(p => ({ ...p, endlessSeeds: { ...p.endlessSeeds, 2: [7] } })),
+    ])
+    const p = await s.loadProgress() // idb-keyval keeps its store across tests, so check only these two changes
+    expect(p.solved).toContain('a')
+    expect(p.endlessSeeds[2]).toEqual([7])
+  })
 })

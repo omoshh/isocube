@@ -62,6 +62,13 @@ const DEFAULT_SETTINGS = (): Settings => ({ theme: 'system', accent: 'yellow', u
 
 export const loadProgress = async () => (await rawGet<Progress>('progress')) ?? DEFAULT_PROGRESS()
 export const saveProgress = (p: Progress) => rawSet('progress', p)
+// R13: every progress write goes through this chain, so overlapping read-modify-writes keep each other's changes.
+let progressChain: Promise<unknown> = Promise.resolve()
+export function updateProgress(fn: (p: Progress) => Progress): Promise<Progress> {
+  const r = progressChain.then(async () => { const p = fn(await loadProgress()); await saveProgress(p); return p })
+  progressChain = r.catch(() => {})
+  return r
+}
 export const loadSettings = async () => (await rawGet<Settings>('settings')) ?? DEFAULT_SETTINGS()
 export const saveSettings = (s: Settings) => rawSet('settings', s)
 
@@ -89,7 +96,7 @@ export async function importBackup(text: string): Promise<{ ok: boolean; error?:
   const stale = (await drawingKeys()).filter(k => !(k in backup.drawings))
   // New data first, stale deletes last: a failure midway never leaves old data deleted.
   for (const [k, d] of Object.entries(backup.drawings)) await rawSet(k, d)
-  await saveProgress(backup.progress)
+  await updateProgress(() => backup.progress)
   await saveSettings(backup.settings)
   if (wasOk && !idbOk) return { ok: false, error: 'Storage failed while importing. The backup was not saved permanently.' }
   for (const k of stale) await rawDel(k)

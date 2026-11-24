@@ -9,6 +9,8 @@ export const S = {
   level: (n: number) => `LEVEL ${n}`,
   classic: 'CLASSIC',
   endless: 'ENDLESS',
+  endlessSub: (cols: number, rows: number) => `ENDLESS · ${cols}×${rows}`,
+  generating: 'Generating…', cancel: 'Cancel',
   puzzle: (n: number, total: number, cols: number, rows: number) =>
     `PUZZLE ${String(n).padStart(2, '0')} / ${total} · ${cols}×${rows}`,
   solvedOf: (n: number, total: number) => `${n} / ${total}`,

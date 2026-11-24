@@ -8,7 +8,7 @@ import { createViewsPanel } from '../components/viewsPanel'
 import { h, icon } from '../dom'
 import { createIsoGrid, type Tool } from '../grid/IsoGrid'
 import type { View } from '../grid/transform'
-import { loadDrawing, loadProgress, saveDrawing, saveProgress } from '../storage'
+import { loadDrawing, saveDrawing, updateProgress } from '../storage'
 import { S } from '../strings'
 
 // kept across puzzles for the session
@@ -25,26 +25,40 @@ function iconBtn(label: string, paths: string, onclick: () => void) {
   return b
 }
 
+/** What the puzzle screen needs. `id` is the solved id, `key` the drawing key (also keys the saved zoom/pan). */
+export type Puzzle = { id: string; key: string; cols: number; rows: number; maxH: number; h: number[]; title: string; subtitle: string; nextRoute: string }
+
 /** #/views/<id>. `id` must exist in the file (the router checks). */
-export async function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string) {
+export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string) {
   const e = file.puzzles.find(p => p.id === id)!
   const list = file.puzzles.filter(p => p.set === e.set && (e.set === 'classic' || p.level === e.level))
   const idx = list.indexOf(e), next = list[idx + 1]
+  return mountPuzzle(root, {
+    id, key: 'views/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
+    title: e.set === 'classic' ? S.classic : S.level(e.level),
+    subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows),
+    nextRoute: next ? '#/views/' + next.id : '#/levels/views',
+  })
+}
+
+/** The views puzzle screen for any puzzle: level sets, Classic, endless. */
+export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
+  const { id, key } = e
   const hm = new HeightMap(e.cols, e.rows, e.h), answer = computeEdges(hm)
   // the guide box (cube origin at 0,0,0) plus margin, as on the reference page
   const bounds: Bounds = { t0: -e.rows - 3, t1: e.cols + 3, v0: -2.6, v1: (e.cols + e.rows) / 2 + e.maxH + 1.5 }
-  const saved = await loadDrawing('views/' + id)
+  const saved = await loadDrawing(key)
   let checked = false, answerOn = false
 
   const editor = new DrawingEditor(saved ?? { lines: [], fills: {} }, bounds, d => {
-    saveDrawing('views/' + id, d)
+    saveDrawing(key, d)
     bar.setHistory(editor.canUndo, editor.canRedo)
     if (checked) { checked = false; grid.setOverlay(null); counts.textContent = ''; setNext(false) }
   })
 
   const top = createTopBar({
-    title: e.set === 'classic' ? S.classic : S.level(e.level),
-    subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows),
+    title: e.title,
+    subtitle: e.subtitle,
     back: '/levels/views',
     menu: [
       { label: S.clear, onClick: () => { editor.clear(); grid.render() } },
@@ -77,7 +91,7 @@ export async function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: 
     checkBtn.textContent = on ? S.next : S.check
     if (on) checkBtn.dataset.next = '1'; else delete checkBtn.dataset.next
   }
-  const goNext = () => { location.hash = next ? '#/views/' + next.id : '#/levels/views' }
+  const goNext = () => { location.hash = e.nextRoute }
 
   async function check() {
     const result = checkDrawing(new Set(editor.drawing.lines), answer)
@@ -86,8 +100,7 @@ export async function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: 
     counts.textContent = result.correct ? S.solved : S.counts(result.missing.size, result.mistakes.size)
     if (!result.correct) return
     setNext(true)
-    const p = await loadProgress()
-    if (!p.solved.includes(id)) { p.solved.push(id); await saveProgress(p) }
+    await updateProgress(p => p.solved.includes(id) ? p : { ...p, solved: [...p.solved, id] })
   }
 
   const el = h('div', { class: 'screen vp' }, top,
@@ -104,7 +117,7 @@ export async function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: 
   const grid = createIsoGrid(gridEl, {
     bounds, guide: { cols: e.cols, rows: e.rows, maxH: e.maxH }, arrows: true, editor,
     tool: () => tool, colour: () => colour, penOnly: () => penOnly,
-    initialView: readView(id), onViewChange: v => writeView(id, v),
+    initialView: readView(key), onViewChange: v => writeView(key, v),
   })
   window.addEventListener('resize', layout)
 

@@ -1,5 +1,6 @@
 import type { PuzzleFile } from '../core/generator'
 import { h } from './dom'
+import { mountEndless } from './endless'
 import { mountLevels } from './screens/levels'
 import { mountViewsPuzzle } from './screens/viewsPuzzle'
 import { S } from './strings'
@@ -27,7 +28,7 @@ const routes: [RegExp, Mount][] = [
   [/^\/$/, home],
   [/^\/levels\/views$/, mountLevels],
   [/^\/views\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountViewsPuzzle(root, f, id) : placeholder(root, S.notFound)],
-  [/^\/endless\/(\d+)\/(\w+)$/, root => placeholder(root)],
+  [/^\/endless\/([1-6])\/(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed)],
   [/^\/levels\/reverse$/, root => placeholder(root)],
   [/^\/reverse\/([\w-]+)$/, root => placeholder(root)],
   [/^\/nets\/(\d+)$/, root => placeholder(root)],
