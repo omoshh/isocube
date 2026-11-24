@@ -1,0 +1,91 @@
+// @vitest-environment jsdom
+import 'fake-indexeddb/auto'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const d = (n: number) => ({ lines: ['s' + n], fills: { t: n } })
+const load = () => import('../../src/ui/storage')
+
+beforeEach(() => { vi.resetModules(); vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }); indexedDB = new IDBFactory() })
+afterEach(() => { vi.useRealTimers(); vi.doUnmock('idb-keyval') })
+
+describe('storage', () => {
+  it('defaults', async () => {
+    const s = await load()
+    expect(await s.loadProgress()).toEqual({ solved: [], netsRight: 0, endlessSeeds: {} })
+    expect(await s.loadSettings()).toEqual({ theme: 'system', accent: 'yellow', unlockAll: false })
+    expect(await s.storageAvailable()).toBe(true)
+  })
+
+  it('debounces, returns pending, lists, deletes', async () => {
+    const s = await load()
+    s.saveDrawing('views/a', d(1))
+    expect(await s.loadDrawing('views/a')).toEqual(d(1)) // pending
+    s.saveDrawing('draw/x', d(2))
+    expect((await s.listDrawings('views/'))).toEqual(['views/a'])
+    await s.deleteDrawing('views/a')
+    expect(await s.loadDrawing('views/a')).toBeUndefined()
+    await vi.advanceTimersByTimeAsync(400)
+    expect(await s.loadDrawing('views/a')).toBeUndefined()
+    expect(await s.loadDrawing('draw/x')).toEqual(d(2))
+  })
+
+  it('flushOnHide', async () => {
+    const idb = await import('idb-keyval')
+    const s = await load()
+    s.saveDrawing('views/a', d(1))
+    expect(await idb.get('views/a')).toBeUndefined()
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await idb.get('views/a')).toEqual(d(1))
+    s.saveDrawing('views/b', d(2))
+    window.dispatchEvent(new Event('pagehide'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await idb.get('views/b')).toEqual(d(2))
+  })
+
+  it('backupRoundTrip', async () => {
+    const s = await load()
+    await s.saveProgress({ solved: ['V1-1'], netsRight: 1, endlessSeeds: { 3: [9] } })
+    await s.saveSettings({ theme: 'light', accent: 'pink', unlockAll: true })
+    s.saveDrawing('views/a', d(1)); s.saveDrawing('endless/3/9', d(2))
+    const text = await s.exportBackup()
+    expect(JSON.parse(text)).toMatchObject({ app: 'isocube', version: 1 })
+    await s.deleteDrawing('views/a'); await s.saveProgress({ solved: [], netsRight: 0, endlessSeeds: {} })
+    s.saveDrawing('draw/extra', d(5))
+    expect(await s.importBackup(text)).toEqual({ ok: true })
+    expect((await s.loadProgress()).solved).toEqual(['V1-1'])
+    expect((await s.loadSettings()).accent).toBe('pink')
+    expect(await s.loadDrawing('views/a')).toEqual(d(1))
+    expect(await s.loadDrawing('draw/extra')).toBeUndefined()
+  })
+
+  it('badBackupRejected leaves data untouched', async () => {
+    const s = await load()
+    await s.saveProgress({ solved: ['keep'], netsRight: 0, endlessSeeds: {} })
+    s.saveDrawing('draw/k', d(1))
+    const good = JSON.parse(await s.exportBackup())
+    for (const bad of ['{nope', JSON.stringify({ ...good, app: 'x' }), JSON.stringify({ ...good, version: 2 }), JSON.stringify({ ...good, settings: undefined })]) {
+      const r = await s.importBackup(bad)
+      expect(r.ok).toBe(false)
+      expect(r.error).toBeTruthy()
+    }
+    expect((await s.loadProgress()).solved).toEqual(['keep'])
+    expect(await s.loadDrawing('draw/k')).toEqual(d(1))
+  })
+
+  it('storageFallback: failing IndexedDB keeps working in memory', async () => {
+    vi.doMock('idb-keyval', () => {
+      const fail = () => Promise.reject(new Error('QuotaExceededError'))
+      return { get: fail, set: fail, del: fail, keys: fail }
+    })
+    const s = await load()
+    await s.saveProgress({ solved: ['a'], netsRight: 0, endlessSeeds: {} })
+    s.saveDrawing('draw/q', d(1))
+    await s.flush()
+    expect(await s.storageAvailable()).toBe(false)
+    expect((await s.loadProgress()).solved).toEqual(['a'])
+    expect(await s.loadDrawing('draw/q')).toEqual(d(1))
+    expect(await s.listDrawings('draw/')).toEqual(['draw/q'])
+  })
+})
