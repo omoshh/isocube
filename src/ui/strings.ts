@@ -25,6 +25,16 @@ export const S = {
   tone: (n: number) => `Tone ${n}`,
   answer: 'ANSWER', check: 'CHECK', next: 'NEXT',
   solved: 'Solved',
+  nets: 'NETS',
+  netLevels: ['Easy · 1–3 cubes in a row', 'Medium · 3–4 cubes', 'Hard · 4 cubes, 3D'],
+  netScore: (n: number) => `${n} right`,
+  newShape: 'New shape ▶',
+  netQ: 'Which net folds into this shape?',
+  netRight: 'Correct!',
+  netWrong: 'Not this one. The outlined net is correct.',
+  fold: '▶ Fold', foldAmount: 'Fold amount',
+  foldNote: 'How the correct net folds',
+  netHint: 'Solid line = cut. Dashed line = fold. All folds are 90°, and you may fold the paper either way. Tip: pick one square as the bottom, then fold the squares around it in your head, one at a time. Wrong nets have one square in the wrong place, so look for two squares that would land on the same face.',
   counts: (missing: number, mistakes: number) =>
     [missing && `${missing} missing`, mistakes && `${mistakes} mistake${mistakes > 1 ? 's' : ''}`].filter(Boolean).join(' · '),
 }

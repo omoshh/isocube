@@ -1,6 +1,7 @@
 import type { PuzzleFile } from '../core/generator'
 import { h } from './dom'
 import { mountEndless } from './endless'
+import { mountNets } from './screens/nets'
 import { mountLevels } from './screens/levels'
 import { mountReversePuzzle } from './screens/reversePuzzle'
 import { mountViewsPuzzle } from './screens/viewsPuzzle'
@@ -33,7 +34,7 @@ const routes: [RegExp, Mount][] = [
   [/^\/levels\/reverse$/, (root, f) => mountLevels(root, f, 'reverse')],
   [/^\/reverse\/E([1-6])-(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed, undefined, 'reverse')],
   [/^\/reverse\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountReversePuzzle(root, f, id) : placeholder(root, S.notFound)],
-  [/^\/nets\/(\d+)$/, root => placeholder(root)],
+  [/^\/nets\/([1-3])$/, (root, _f, level) => mountNets(root, +level as 1 | 2 | 3)],
   [/^\/draw(?:\/([\w-]+))?$/, root => placeholder(root)],
   [/^\/settings(?:\/accent)?$/, root => placeholder(root)],
 ]
