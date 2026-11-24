@@ -88,16 +88,16 @@ const normalize = (ps: P2[]): Net => {
 }
 const toP = (n: Net): P2[] => n.map(x => [x.c, x.r])
 
-export type UnfoldStep = { pos: P2; c: V3; n: V3; a: V3; b: V3; parent: number; k: number; type: number; idx: number }
+type UnfoldStep = { pos: P2; c: V3; n: V3; a: V3; b: V3; idx: number }
 
-/** Random unfolding with the root face on the bottom (z=-1). `tree` (placement order, parents, fold types) is for the fold animation. */
-export function unfoldTree(shape: Polycube, r: Rng): { net: Net; tree: UnfoldStep[] } | null {
+/** Random unfolding of the shape's surface into a net, or null. */
+function unfoldNet(shape: Polycube, r: Rng): Net | null {
   const solid = makeSolid(shape)
   const roots = solid.faces.filter(f => f.n[2] === -1)
   for (let tries = 0; tries < 400; tries++) {
     const f0 = pick(roots, r)
     const a0 = pick(AXES.filter(x => dot(x, f0.n) === 0), r)
-    const st: UnfoldStep = { pos: [0, 0], c: f0.c, n: f0.n, a: a0, b: cross(f0.n, a0), parent: -1, k: -1, type: 0, idx: 0 }
+    const st: UnfoldStep = { pos: [0, 0], c: f0.c, n: f0.n, a: a0, b: cross(f0.n, a0), idx: 0 }
     const placed = new Set(['0,0']), used = new Set([fkey(f0)]), stack = [st], order = [st]
     while (stack.length) {
       const i = Math.floor(r() * stack.length), cur = stack[i]
@@ -108,7 +108,7 @@ export function unfoldTree(shape: Polycube, r: Rng): { net: Net; tree: UnfoldSte
         const nx = crossEdge(solid, cur.c, cur.n, dir3(cur.a, cur.b, k))
         const fk = key(nx.c) + '|' + key(nx.n)
         if (used.has(fk)) continue
-        const ns: UnfoldStep = { pos: p, c: nx.c, n: nx.n, a: nx.R(cur.a), b: nx.R(cur.b), parent: cur.idx, k, type: nx.type, idx: order.length }
+        const ns: UnfoldStep = { pos: p, c: nx.c, n: nx.n, a: nx.R(cur.a), b: nx.R(cur.b), idx: order.length }
         placed.add(key(p)); used.add(fk); stack.push(ns); order.push(ns); grown = true
         break
       }
@@ -116,25 +116,27 @@ export function unfoldTree(shape: Polycube, r: Rng): { net: Net; tree: UnfoldSte
     }
     if (used.size !== solid.faces.length) continue
     const cells = order.map(s => s.pos)
-    if (isTree(cells)) return { net: normalize(cells), tree: order } // tree[i].pos is un-normalized; use as laid out
+    if (isTree(cells)) return normalize(cells)
   }
   return null
 }
 
 export function unfold(shape: Polycube, r: Rng): Net {
-  const u = unfoldTree(shape, r)
+  const u = unfoldNet(shape, r)
   if (!u) throw new Error('unfold failed')
-  return u.net
+  return u
 }
 
-/** Does the net (every shared edge folds) fold onto exactly the surface of shape? Tries every start face and both paper sides. */
-export function folds(net: Net, shape: Polycube): boolean {
+export type FoldState = { c: V3; n: V3; a: V3; b: V3 } // cube, outward normal, world dirs of net +c / +r on that face
+
+/** Fold the net onto the shape's surface: the face each square lands on (a, b = world directions of net +c, +r), or null. Tries every start face, axis and paper side. */
+export function foldMap(net: Net, shape: Polycube): FoldState[] | null {
   const solid = makeSolid(shape)
   const cells = toP(net)
-  if (cells.length !== solid.faces.length) return false
+  if (cells.length !== solid.faces.length) return null
   const set = new Map(cells.map((p, i) => [key(p), i]))
   for (const f0 of solid.faces) for (const a0 of AXES.filter(x => dot(x, f0.n) === 0)) for (const flip of [1, -1]) {
-    const st: ({ c: V3; n: V3; a: V3; b: V3 } | null)[] = new Array(cells.length).fill(null)
+    const st: (FoldState | null)[] = new Array(cells.length).fill(null)
     const used = new Map<string, number>()
     st[0] = { c: f0.c, n: f0.n, a: a0, b: scale(cross(f0.n, a0), flip) }
     used.set(fkey(f0), 0)
@@ -154,10 +156,13 @@ export function folds(net: Net, shape: Polycube): boolean {
         used.set(fk, j); q.push(j)
       }
     }
-    if (ok && used.size === solid.faces.length) return true
+    if (ok && used.size === solid.faces.length) return st as FoldState[]
   }
-  return false
+  return null
 }
+
+/** Does the net (every shared edge folds) fold onto exactly the surface of shape? */
+export const folds = (net: Net, shape: Polycube) => foldMap(net, shape) !== null
 
 // net up to rotation and mirror (the page treats those as the same option)
 const TRANS: ((p: P2) => P2)[] = [p => [p[0], p[1]], p => [-p[1], p[0]], p => [-p[0], -p[1]], p => [p[1], -p[0]],
@@ -202,7 +207,7 @@ export function makeNetsPuzzle(level: 1 | 2 | 3, seed: number): NetsPuzzle {
   const r = rng(seed)
   for (let attempt = 0; attempt < 50; attempt++) {
     const shape = pick(NET_SHAPES[level], r)
-    const good = unfoldTree(shape, r)?.net
+    const good = unfoldNet(shape, r)
     if (!good) continue
     const opts: P2[][] = [toP(good)]
     const seen = new Set([canon(opts[0])])
