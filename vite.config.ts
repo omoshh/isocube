@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // Config files may hold literals: the manifest needs real hexes (design-system --bg light, #F5F2EA).
@@ -6,6 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 const NAME = 'Isocube', BG = '#F5F2EA'
 
 export default defineConfig({
+  test: { include: ['tests/**/*.test.ts'] },
   base: '/isocube/',
   plugins: [VitePWA({
     registerType: 'autoUpdate',
