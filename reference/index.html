@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="color-scheme" content="only light">
+<title>Isometric Drawing Puzzles</title>
+<style>
+  :root { color-scheme: only light; --paper:#fff; --ink:#1d1d1f; --muted:#6e6e73; --line:#d2d2d7; --bg:#f5f5f7; --card:#fff; --accent:#2f6fed; }
+  * { box-sizing: border-box; }
+  html, body { background:var(--bg); }
+  :root { --draw:#111; --bgrid:#cfcfcf; --vgrid:#b5b5b5; --vcell:#c9c9c9; }
+  :root[data-theme="dark"] { color-scheme: dark; --ink:#f2f2f7; --muted:#a1a1a8; --line:#3a3a3e; --bg:#141416; --card:#232326;
+    --paper:#1f1f22; --draw:#f5f5f5; --bgrid:#46464b; --vgrid:#58585d; --vcell:#6b6b70; }
+  :root[data-theme="dark"] select, :root[data-theme="dark"] button { background:#2c2c2e; color:var(--ink); border-color:#48484a; }
+  :root[data-theme="dark"] button.on { background:#f2f2f7; color:#141416; border-color:#f2f2f7; }
+  :root[data-theme="dark"] .toolbar { background:rgba(20,20,22,.95); }
+  :root[data-theme="dark"] .view { color:var(--ink); }
+  :root[data-theme="dark"] .sw.none { background: linear-gradient(135deg,#fff 45%, #e33 45%, #e33 55%, #fff 55%); }
+  .tabs { display:flex; gap:0; }
+  .tabs button { border-radius:0; }
+  .tabs button:first-child { border-radius:8px 0 0 8px; }
+  .tabs button:last-child { border-radius:0 8px 8px 0; border-left:none; }
+  .netbar { display:flex; gap:8px; justify-content:center; align-items:center; padding:12px 10px 4px; flex-wrap:wrap; }
+  .score { color:var(--muted); font-size:14px; min-width:70px; text-align:center; }
+  .netq { text-align:center; font-weight:600; padding:8px 10px 6px; color:var(--ink); }
+  .netshape { width:fit-content; margin:0 auto; padding:8px 18px; }
+  .netshape svg { width:220px; height:auto; display:block; }
+  .netopts { display:grid; grid-template-columns:repeat(2, minmax(0, 260px)); gap:10px; justify-content:center; padding:10px; }
+  .netopt { background:var(--paper); border:2px solid var(--line); border-radius:12px; padding:8px; cursor:pointer; position:relative; touch-action:manipulation; }
+  .netopt svg { width:100%; height:190px; display:block; }
+  .netopt .lbl { position:absolute; top:6px; left:10px; font-weight:700; color:var(--muted); }
+  .netopt.right { border-color:#2e9e4f; box-shadow:0 0 0 2px #2e9e4f inset; }
+  .netopt.wrong { border-color:#d33; box-shadow:0 0 0 2px #d33 inset; opacity:.75; }
+  .foldbox { max-width:560px; margin:8px auto 0; padding:10px; }
+  .foldbox svg { width:100%; height:300px; display:block; }
+  .foldctl { display:flex; gap:10px; align-items:center; padding:6px 4px 2px; }
+  .foldctl input { flex:1; accent-color:var(--accent); }
+  .netmsg { text-align:center; min-height:22px; font-size:15px; color:var(--ink); padding:2px 10px; }
+  .ncell { fill:#e9eef8; }
+  :root[data-theme="dark"] .ncell { fill:#3a3f4a; }
+  .ink { stroke:var(--draw); }
+  .bgrid { stroke:var(--bgrid); }
+  .vgrid { stroke:var(--vgrid); }
+  .vcell { fill:var(--vcell); }
+  body { margin:0; font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { display:flex; color:var(--ink); gap:8px; align-items:center; padding:10px 12px; background:var(--card); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0 8px 0 0; font-weight:600; }
+  select, button { font: inherit; font-size:14px; }
+  select { padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:#fff; }
+  button { padding:7px 11px; border-radius:8px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; touch-action:manipulation; }
+  button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  button:disabled { opacity:.4; }
+  .views { display:grid; grid-template-columns:repeat(2, auto); gap:10px; padding:10px 12px; justify-content:center; }
+  .view { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 8px 4px; text-align:center; }
+  .view svg { display:block; width:140px; height:auto; margin:0 auto; }
+  .view:first-child svg { width:150px; }
+  .view .t { font-size:12px; letter-spacing:.04em; color:var(--muted); margin-top:2px; }
+  .toolbar { position:sticky; top:0; z-index:5; display:flex; gap:6px; flex-wrap:wrap; align-items:center; justify-content:center; padding:8px 10px; background:rgba(245,245,247,.95); border-bottom:1px solid var(--line); }
+  .sep { width:1px; height:26px; background:var(--line); margin:0 4px; }
+  .sw { width:30px; height:30px; padding:0; border-radius:50%; border:2px solid var(--line); }
+  .sw.on { border-color:var(--accent); box-shadow:0 0 0 2px #fff inset; }
+  .sw.none { background: linear-gradient(135deg,#fff 45%, #e33 45%, #e33 55%, #fff 55%); }
+  .wrap { padding:10px; }
+  #board { display:block; width:100%; max-width:980px; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:12px; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .hint { text-align:center; color:var(--muted); font-size:12.5px; padding:6px 12px 18px; max-width:980px; margin:0 auto; line-height:1.45; }
+  .ans { text-align:center; font-size:13px; color:var(--muted); min-height:18px; }
+  .checkinfo { font-size:15px; font-weight:600; color:var(--ink); padding-top:6px; }
+  .checkinfo.ok { color:#2e9e4f; }
+  /* the drawing area and the views are always white "paper" */
+  .view, #board { background:var(--paper); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Isometric puzzles</h1>
+  <span class="tabs"><button id="tabViews" class="on">Views</button><button id="tabNets">Nets</button></span>
+  <span id="viewsNav" style="display:flex;gap:8px;align-items:center">
+    <button id="prev" aria-label="Previous">◀</button>
+    <select id="pick"></select>
+    <button id="next" aria-label="Next">▶</button>
+  </span>
+  <button id="theme" style="margin-left:auto" title="Switch light / dark">🌙 Dark</button>
+</header>
+
+<div id="modeViews">
+<div class="views" id="views"></div>
+<div class="ans" id="ansInfo"></div>
+
+<div class="toolbar">
+  <button id="tLine" class="on">✏️ Line</button>
+  <button id="tFill">🪣 Fill</button>
+  <button id="tErase">⌫ Erase</button>
+  <span id="swatches" style="display:flex;gap:6px"></span>
+  <span class="sep"></span>
+  <button id="undo">↶ Undo</button>
+  <button id="clear">Clear</button>
+  <span class="sep"></span>
+  <button id="snap" class="on" title="Lines only along the 3 isometric directions">Iso snap</button>
+  <button id="pen" title="Only a stylus draws; fingers are ignored">Pen only</button>
+  <button id="answer">Answer</button>
+  <button id="check" title="Check your lines">✓ Check</button>
+</div>
+<div class="ans checkinfo" id="checkInfo" aria-live="polite"></div>
+
+<div class="wrap"><svg id="board" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<div class="hint">
+  <b>Line:</b> drag from one grid point to another. <b>Fill:</b> pick a tone, then tap inside a face closed by your lines.
+  Tones: top faces light, front faces (lower right) medium, side faces (lower left) dark. The blue hexagon is the box that holds the shape.
+  <b>Answer</b> shows the solution over your drawing.
+  <b>Check</b> marks your lines: green = correct, red = extra, orange dashes = missing. Only lines count, not fills. You can draw the shape anywhere on the grid. Your drawing is kept in this browser.
+</div>
+</div>
+
+<div id="modeNets" hidden>
+  <div class="netbar">
+    <select id="netLevel">
+      <option value="1">Easy · 1–3 cubes in a row</option>
+      <option value="2">Medium · 3–4 cubes</option>
+      <option value="3">Hard · 4 cubes, 3D</option>
+    </select>
+    <span id="netScore" class="score"></span>
+    <button id="netNext">New shape ▶</button>
+  </div>
+  <div class="netq">Which net folds into this shape?</div>
+  <div class="netshape view"><svg id="netShape"></svg></div>
+  <div class="netopts" id="netOpts"></div>
+  <div class="netmsg" id="netMsg"></div>
+  <div id="foldBox" class="view foldbox" hidden>
+    <svg id="foldSvg" style="width:100%;height:340px;display:block"></svg>
+    <div class="foldctl">
+      <button id="foldPlay">▶ Fold</button>
+      <input type="range" id="foldT" min="0" max="1000" value="0" aria-label="Fold amount">
+    </div>
+    <div class="t">How the correct net folds · blue square = bottom, it stays on the table</div>
+  </div>
+  <div class="hint">
+    Solid line = cut. Dashed line = fold. All folds are 90°, and you may fold the paper either way.
+    Tip: pick one square as the bottom, then fold the squares around it in your head, one at a time.
+    Wrong nets have one square in the wrong place, so look for two squares that would land on the same face.
+  </div>
+</div>
+
+<script>
+const PUZZLES = [{"level":1,"Z":2,"plan":[[1,1,2],[1,1,2],[0,0,2]],"top":[[-1,1,1],[-1,1,1],[2,2,2]],"front":[[1,-1],[1,-1],[0,0]],"side":[[0,2],[0,2],[2,2]]},{"level":1,"Z":2,"plan":[[2,2,1],[2,1,1],[1,1,1]],"top":[[1,2,2],[1,1,2],[1,1,1]],"front":[[0,1],[0,2],[0,-1]],"side":[[0,0],[0,0],[0,-1]]},{"level":1,"Z":2,"plan":[[1,1,2],[1,1,1],[0,0,1]],"top":[[-1,1,1],[-1,1,1],[1,1,2]],"front":[[1,-1],[1,-1],[0,2]],"side":[[0,2],[0,-1],[2,-1]]},{"level":1,"Z":2,"plan":[[1,2,1],[1,0,1],[1,0,1]],"top":[[1,1,1],[-1,-1,2],[1,1,1]],"front":[[0,-1],[2,2],[0,-1]],"side":[[0,1],[0,-1],[0,-1]]},{"level":1,"Z":2,"plan":[[2,1,0],[1,1,0],[1,1,0]],"top":[[1,1,2],[1,1,1],[-1,-1,-1]],"front":[[0,2],[0,-1],[-1,-1]],"side":[[0,0],[0,-1],[0,-1]]},{"level":1,"Z":2,"plan":[[0,2,1],[0,1,1],[0,0,0]],"top":[[-1,-1,-1],[-1,1,2],[-1,1,1]],"front":[[-1,-1],[1,2],[1,-1]],"side":[[1,1],[1,-1],[-1,-1]]},{"level":1,"Z":2,"plan":[[2,2,2],[1,1,0],[1,1,0]],"top":[[1,1,2],[1,1,2],[-1,-1,2]],"front":[[0,2],[0,2],[2,2]],"side":[[0,0],[0,-1],[0,-1]]},{"level":1,"Z":2,"plan":[[1,2,1],[1,1,1],[1,0,1]],"top":[[1,1,1],[-1,1,2],[1,1,1]],"front":[[0,-1],[1,2],[0,-1]],"side":[[0,1],[0,-1],[0,-1]]},{"level":1,"Z":2,"plan":[[2,1,1],[0,1,1],[0,0,0]],"top":[[-1,-1,2],[-1,1,1],[-1,1,1]],"front":[[2,2],[1,-1],[1,-1]],"side":[[0,0],[1,-1],[-1,-1]]},{"level":1,"Z":2,"plan":[[2,2,2],[1,0,1],[0,0,0]],"top":[[-1,1,2],[-1,-1,2],[-1,1,2]],"front":[[1,2],[2,2],[1,2]],"side":[[0,0],[0,-1],[-1,-1]]},{"level":1,"Z":2,"plan":[[2,2,1],[1,1,1],[1,0,0]],"top":[[1,1,2],[-1,1,2],[-1,1,1]],"front":[[0,2],[1,2],[1,-1]],"side":[[0,0],[0,-1],[0,-1]]},{"level":1,"Z":2,"plan":[[0,2,1],[0,0,1],[0,0,1]],"top":[[-1,-1,-1],[-1,-1,2],[1,1,1]],"front":[[-1,-1],[2,2],[0,-1]],"side":[[1,1],[2,-1],[2,-1]]},{"level":2,"Z":3,"plan":[[0,2,2],[0,1,2],[0,1,0]],"top":[[-1,-1,-1],[1,1,2],[-1,2,2]],"front":[[-1,-1,-1],[0,2,-1],[1,1,-1]],"side":[[1,1,-1],[1,2,-1],[1,-1,-1]]},{"level":2,"Z":3,"plan":[[2,3,0],[0,2,0],[0,2,0]],"top":[[-1,-1,2],[2,2,3],[-1,-1,-1]],"front":[[2,2,-1],[0,0,2],[-1,-1,-1]],"side":[[0,0,1],[1,1,-1],[1,1,-1]]},{"level":2,"Z":3,"plan":[[2,3,0],[2,2,0],[0,2,0]],"top":[[-1,2,2],[2,2,3],[-1,-1,-1]],"front":[[1,1,-1],[0,0,2],[-1,-1,-1]],"side":[[0,0,1],[0,0,-1],[1,1,-1]]},{"level":2,"Z":3,"plan":[[3,2,3],[0,2,1],[0,0,1]],"top":[[-1,-1,3],[-1,2,2],[1,1,3]],"front":[[2,2,2],[1,1,-1],[0,2,2]],"side":[[0,0,0],[1,1,-1],[2,-1,-1]]},{"level":2,"Z":3,"plan":[[3,3,2],[3,1,2],[3,0,2]],"top":[[3,3,3],[-1,1,3],[2,2,2]],"front":[[0,0,0],[1,2,2],[0,0,-1]],"side":[[0,0,0],[0,0,0],[0,0,0]]},{"level":2,"Z":3,"plan":[[3,3,0],[3,3,0],[1,3,0]],"top":[[1,3,3],[3,3,3],[-1,-1,-1]],"front":[[0,1,1],[0,0,0],[-1,-1,-1]],"side":[[0,0,0],[0,0,0],[0,1,1]]},{"level":2,"Z":3,"plan":[[1,3,3],[1,1,3],[0,1,0]],"top":[[-1,1,1],[1,1,3],[-1,3,3]],"front":[[1,-1,-1],[0,2,2],[1,1,1]],"side":[[0,1,1],[0,2,2],[1,-1,-1]]},{"level":2,"Z":3,"plan":[[2,3,1],[1,3,1],[1,1,1]],"top":[[1,1,2],[1,3,3],[1,1,1]],"front":[[0,2,-1],[0,1,1],[0,-1,-1]],"side":[[0,0,1],[0,1,1],[0,-1,-1]]},{"level":2,"Z":3,"plan":[[3,1,2],[0,1,1],[0,1,1]],"top":[[-1,-1,3],[1,1,1],[1,1,2]],"front":[[2,2,2],[0,-1,-1],[0,2,-1]],"side":[[0,0,0],[1,-1,-1],[1,-1,-1]]},{"level":2,"Z":3,"plan":[[2,3,3],[2,3,1],[0,0,1]],"top":[[-1,2,2],[-1,3,3],[1,1,3]],"front":[[1,1,-1],[1,1,1],[0,2,2]],"side":[[0,0,1],[0,0,1],[2,-1,-1]]},{"level":2,"Z":3,"plan":[[0,2,3],[0,1,3],[0,0,0]],"top":[[-1,-1,-1],[-1,1,2],[-1,3,3]],"front":[[-1,-1,-1],[1,2,-1],[1,1,1]],"side":[[1,1,2],[1,2,2],[-1,-1,-1]]},{"level":2,"Z":3,"plan":[[1,2,3],[1,2,1],[1,0,1]],"top":[[1,1,1],[-1,2,2],[1,1,3]],"front":[[0,-1,-1],[1,1,-1],[0,2,2]],"side":[[0,1,2],[0,1,-1],[0,-1,-1]]},{"level":3,"Z":3,"plan":[[2,2,1,1],[2,0,2,1],[3,0,3,1],[3,3,1,3]],"top":[[3,3,2,2],[3,-1,-1,2],[1,3,2,1],[3,1,1,1]],"front":[[0,0,0],[0,0,0],[0,1,1],[0,0,0]],"side":[[0,0,-1],[0,0,-1],[0,0,0],[0,0,0]]},{"level":3,"Z":3,"plan":[[1,1,0,0],[2,0,2,1],[2,1,3,0],[3,0,1,0]],"top":[[3,2,2,1],[-1,1,-1,1],[1,3,2,-1],[-1,-1,1,-1]],"front":[[0,0,0],[1,-1,-1],[0,1,1],[2,-1,-1]],"side":[[0,-1,-1],[0,0,-1],[0,0,2],[0,0,0]]},{"level":3,"Z":3,"plan":[[2,1,1,3],[3,0,0,3],[0,3,0,1],[1,3,1,1]],"top":[[1,-1,3,2],[3,3,-1,1],[1,-1,-1,1],[1,1,3,3]],"front":[[0,2,2],[0,0,0],[0,-1,-1],[0,2,2]],"side":[[0,0,3],[0,0,0],[1,1,1],[0,1,1]]},{"level":3,"Z":3,"plan":[[3,3,2,3],[2,1,1,1],[3,0,2,0],[1,2,1,3]],"top":[[1,3,2,3],[2,-1,1,3],[1,2,1,2],[3,-1,1,3]],"front":[[0,1,1],[0,0,3],[0,1,-1],[0,0,0]],"side":[[0,0,0],[0,0,-1],[0,0,0],[0,1,3]]},{"level":3,"Z":3,"plan":[[1,2,1,0],[3,2,0,2],[1,2,2,1],[1,3,2,1]],"top":[[1,1,3,1],[3,2,2,2],[2,2,-1,1],[1,1,2,-1]],"front":[[0,2,2],[0,0,0],[0,0,-1],[0,2,-1]],"side":[[0,1,-1],[0,0,0],[0,1,-1],[0,1,1]]},{"level":3,"Z":3,"plan":[[2,2,3,0],[0,1,1,1],[1,0,1,0],[2,1,3,1]],"top":[[2,1,-1,2],[1,-1,1,2],[3,1,1,3],[1,-1,1,-1]],"front":[[0,0,-1],[0,3,-1],[0,0,0],[0,-1,-1]],"side":[[0,0,2],[1,-1,-1],[0,-1,-1],[0,0,2]]},{"level":3,"Z":3,"plan":[[1,2,3,0],[3,3,3,3],[3,1,0,1],[1,1,0,0]],"top":[[1,3,3,1],[1,1,3,2],[-1,-1,3,3],[-1,1,3,-1]],"front":[[0,1,1],[0,2,2],[2,2,2],[1,2,2]],"side":[[0,1,2],[0,0,0],[0,0,0],[0,-1,-1]]},{"level":3,"Z":3,"plan":[[2,0,2,2],[1,1,1,0],[3,0,0,0],[2,2,3,0]],"top":[[2,3,1,2],[2,-1,1,-1],[3,-1,1,2],[-1,-1,-1,2]],"front":[[0,0,1],[0,0,-1],[0,0,0],[3,3,-1]],"side":[[0,0,-1],[0,-1,-1],[0,0,0],[0,0,2]]},{"level":3,"Z":3,"plan":[[2,3,0,0],[2,3,3,1],[3,2,2,1],[3,0,3,0]],"top":[[3,3,2,2],[-1,2,3,3],[3,2,3,-1],[-1,1,1,-1]],"front":[[0,0,0],[1,1,2],[0,0,0],[1,-1,-1]],"side":[[0,0,1],[0,0,1],[0,0,0],[0,0,0]]},{"level":3,"Z":3,"plan":[[1,1,1,0],[2,1,2,2],[1,3,3,1],[2,2,2,0]],"top":[[2,1,2,1],[2,3,1,1],[2,3,2,1],[-1,1,2,-1]],"front":[[0,0,-1],[0,0,1],[0,0,1],[1,2,-1]],"side":[[0,-1,-1],[0,0,-1],[0,1,1],[0,0,-1]]},{"level":3,"Z":3,"plan":[[0,1,1,2],[1,3,3,3],[2,3,3,0],[1,0,1,1]],"top":[[1,2,1,-1],[-1,3,3,1],[1,3,3,1],[1,-1,3,2]],"front":[[0,1,-1],[1,1,1],[0,1,1],[0,2,2]],"side":[[1,3,-1],[0,1,1],[0,0,1],[0,-1,-1]]},{"level":3,"Z":3,"plan":[[0,0,0,2],[1,3,2,1],[3,0,3,2],[3,0,3,0]],"top":[[3,3,1,-1],[-1,-1,3,-1],[3,3,2,-1],[-1,2,1,2]],"front":[[0,0,0],[2,2,2],[0,0,0],[1,1,-1]],"side":[[3,3,-1],[0,1,1],[0,0,0],[0,0,0]]},{"level":4,"Z":4,"plan":[[1,4,4,0],[1,3,0,1],[0,3,1,1],[1,3,1,2]],"top":[[1,-1,1,1],[3,3,3,4],[1,1,-1,4],[2,1,1,-1]],"front":[[0,-1,-1,-1],[0,0,0,3],[0,3,3,3],[0,0,-1,-1]],"side":[[0,1,1,1],[0,1,1,-1],[1,1,1,-1],[0,1,1,-1]]},{"level":4,"Z":4,"plan":[[0,0,1,0],[1,2,4,0],[3,0,1,1],[4,3,2,2]],"top":[[4,3,1,-1],[3,-1,2,-1],[2,1,4,1],[2,1,-1,-1]],"front":[[0,0,0,0],[0,0,0,-1],[0,0,2,2],[0,0,-1,-1]],"side":[[2,-1,-1,-1],[0,1,2,2],[0,0,0,-1],[0,0,0,0]]},{"level":4,"Z":4,"plan":[[0,0,2,0],[1,2,2,4],[0,4,3,1],[0,2,2,1]],"top":[[-1,-1,1,-1],[2,4,2,-1],[2,3,2,2],[1,1,4,-1]],"front":[[2,-1,-1,-1],[0,0,1,1],[0,0,1,-1],[0,2,2,2]],"side":[[2,2,-1,-1],[0,1,3,3],[1,1,1,1],[1,1,-1,-1]]},{"level":4,"Z":4,"plan":[[2,3,2,0],[1,2,2,1],[0,4,3,0],[0,3,1,2]],"top":[[-1,-1,1,2],[3,4,2,3],[1,3,2,2],[2,-1,1,-1]],"front":[[2,3,-1,-1],[0,0,0,1],[0,1,1,-1],[0,0,-1,-1]],"side":[[0,0,1,-1],[0,1,-1,-1],[1,1,1,1],[1,1,1,-1]]},{"level":4,"Z":4,"plan":[[1,3,2,0],[1,0,1,0],[2,0,2,3],[1,1,1,2]],"top":[[1,2,1,1],[1,-1,-1,3],[1,2,1,2],[2,3,-1,-1]],"front":[[0,1,-1,-1],[0,3,3,-1],[0,1,-1,-1],[0,0,1,-1]],"side":[[0,1,1,-1],[0,-1,-1,-1],[0,0,3,-1],[0,3,-1,-1]]},{"level":4,"Z":4,"plan":[[0,1,1,0],[0,2,4,4],[2,1,1,1],[4,4,4,3]],"top":[[4,2,-1,-1],[4,1,2,1],[4,1,4,1],[3,1,4,-1]],"front":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,2]],"side":[[1,-1,-1,-1],[1,1,2,2],[0,0,-1,-1],[0,0,0,0]]},{"level":4,"Z":4,"plan":[[4,0,0,0],[4,4,3,3],[1,1,2,0],[4,1,1,0]],"top":[[4,1,4,4],[1,1,4,-1],[1,2,3,-1],[-1,-1,3,-1]],"front":[[0,0,0,0],[0,2,2,2],[0,1,2,-1],[2,2,2,-1]],"side":[[0,0,0,0],[0,0,0,0],[0,2,-1,-1],[0,0,0,0]]},{"level":4,"Z":4,"plan":[[0,2,4,4],[0,0,3,0],[0,1,2,2],[0,2,3,3]],"top":[[-1,-1,-1,-1],[2,1,-1,2],[3,2,3,4],[3,2,-1,4]],"front":[[-1,-1,-1,-1],[0,0,-1,-1],[0,0,0,3],[0,0,0,3]],"side":[[1,1,2,2],[2,2,2,-1],[1,2,-1,-1],[1,1,2,-1]]},{"level":4,"Z":4,"plan":[[3,4,0,1],[3,2,3,1],[4,0,3,1],[0,1,2,0]],"top":[[-1,4,3,3],[1,-1,2,4],[2,3,3,-1],[-1,1,1,1]],"front":[[1,1,1,1],[0,2,3,3],[0,0,1,-1],[1,-1,-1,-1]],"side":[[0,0,0,1],[0,0,0,-1],[0,0,0,0],[1,2,-1,-1]]},{"level":4,"Z":4,"plan":[[1,3,2,2],[0,1,2,3],[4,3,0,4],[0,1,2,1]],"top":[[-1,4,-1,1],[1,3,1,3],[2,-1,2,2],[1,4,3,2]],"front":[[1,1,1,1],[0,1,1,-1],[0,0,-1,-1],[0,1,1,1]],"side":[[0,1,1,-1],[1,2,3,-1],[0,0,0,0],[1,2,-1,-1]]},{"level":4,"Z":4,"plan":[[2,0,3,3],[4,2,0,3],[3,2,2,1],[1,1,1,0]],"top":[[1,3,4,2],[1,2,2,-1],[1,2,-1,3],[-1,1,3,3]],"front":[[0,1,1,2],[0,1,-1,-1],[0,1,3,-1],[1,2,2,-1]],"side":[[0,0,2,-1],[0,0,0,0],[0,0,0,-1],[0,-1,-1,-1]]},{"level":4,"Z":4,"plan":[[2,3,1,3],[1,0,1,0],[4,0,1,1],[1,3,2,0]],"top":[[1,4,1,2],[3,-1,-1,3],[2,1,1,1],[-1,1,-1,3]],"front":[[0,1,1,1],[0,0,0,-1],[0,0,-1,-1],[1,3,3,-1]],"side":[[0,0,1,-1],[0,-1,-1,-1],[0,0,0,0],[0,1,1,-1]]},{"level":4,"Z":4,"plan":[[4,4,4,4],[0,3,3,3],[0,0,2,2],[0,0,0,1]],"top":[[-1,-1,-1,4],[-1,-1,3,4],[-1,2,3,4],[1,2,3,4]],"front":[[3,3,3,3],[2,2,2,3],[1,1,2,3],[0,1,2,3]],"side":[[0,0,0,0],[1,1,1,-1],[2,2,-1,-1],[3,-1,-1,-1]],"name":"Book puzzle 15"}];
+const S = Math.sqrt(3) / 2;
+const TONES = [null, "#ececec", "#bdbdbd", "#858585"];
+const NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+
+// ---------- state ----------
+let idx = 0, tool = "line", tone = 1, isoSnap = true, penOnly = false, showAns = false;
+let draw = { lines: [], fills: {} };    // lines: [t1,m1,t2,m2] lattice coords
+let undoStack = [];
+let bounds;                              // {t0,t1,v0,v1}
+
+function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+// ---------- geometry ----------
+// lattice point (t, m): screen u = t*S, v = m + t/2  (v up)
+const lp = (t, m) => [t * S, m + t / 2];
+function nearestPoint(u, v) { const t = Math.round(u / S); return [t, Math.round(v - t / 2)]; }
+function triAt(u, v) {
+  const t = u / S, w1 = v - t / 2, w2 = v + t / 2;
+  return [Math.floor(t), Math.floor(w1), Math.floor(w2)];
+}
+function triVerts(k, a, b) {        // vertices as lattice points (t, m)
+  const out = [];
+  for (const [w1, w2] of [[a, b], [a + 1, b + 1], [a, b + 1], [a + 1, b]]) {
+    const t = w2 - w1;
+    if (t >= k && t <= k + 1) out.push([t, w1]);
+  }
+  return out;
+}
+const triKey = (k, a, b) => k + "," + a + "," + b;
+const ptKey = (t, m) => t + ":" + m;
+const edgeKey = (p, q) => { const A = ptKey(...p), B = ptKey(...q); return A < B ? A + "|" + B : B + "|" + A; };
+const DIRS = [[0, 1], [1, 0], [1, -1]];   // vertical, up-right, down-right
+
+function unitEdges(l) {   // split an isometric line into unit edges
+  const [t1, m1, t2, m2] = l, dt = t2 - t1, dm = m2 - m1;
+  const n = Math.max(Math.abs(dt), Math.abs(dm));
+  if (!n) return [];
+  const st = dt / n, sm = dm / n;
+  const iso = (st === 0 && Math.abs(sm) === 1) || (sm === 0 && Math.abs(st) === 1) || (Math.abs(st) === 1 && sm === -st);
+  if (!iso) return [];
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(edgeKey([t1 + st * i, m1 + sm * i], [t1 + st * (i + 1), m1 + sm * (i + 1)]));
+  return out;
+}
+
+function snapEnd(start, u, v) {
+  if (!isoSnap) return nearestPoint(u, v);
+  const [su, sv] = lp(...start);
+  let best = start, bd = Infinity;
+  for (const [dt, dm] of DIRS) {
+    const du = dt * S, dv = dm + dt / 2, L2 = du * du + dv * dv;
+    const n = Math.round(((u - su) * du + (v - sv) * dv) / L2);
+    const p = [start[0] + n * dt, start[1] + n * dm];
+    const [pu, pv] = lp(...p), d = (pu - u) ** 2 + (pv - v) ** 2;
+    if (d < bd) { bd = d; best = p; }
+  }
+  return best;
+}
+
+// ---------- svg helpers ----------
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const X = u => u, Y = v => -v;                       // board coords (SVG y down)
+const pts = arr => arr.map(([u, v]) => X(u).toFixed(3) + "," + Y(v).toFixed(3)).join(" ");
+
+// ---------- views ----------
+function viewSVG(L, title, lo, hi, vertLabels) {
+  const W = L.length, H = L[0].length, pad = 0.15;
+  const svg = el("svg", { viewBox: `${-pad} ${-pad - (vertLabels ? 0.45 : 0)} ${W + 2 * pad} ${H + 2 * pad + 0.9 + (vertLabels ? 0.45 : 0)}` });
+  const lab = (i, j) => (i < 0 || j < 0 || i >= W || j >= H) ? -1 : L[i][j];
+  for (let i = 0; i < W; i++) for (let j = 0; j < H; j++) {
+    if (L[i][j] >= 0) el("rect", { x: i, y: H - 1 - j, width: 1, height: 1, class: "vcell" }, svg);
+  }
+  for (let i = 0; i <= W; i++) el("line", { x1: i, y1: 0, x2: i, y2: H, class: "vgrid", "stroke-width": .03, "stroke-dasharray": ".06 .06" }, svg);
+  for (let j = 0; j <= H; j++) el("line", { x1: 0, y1: j, x2: W, y2: j, class: "vgrid", "stroke-width": .03, "stroke-dasharray": ".06 .06" }, svg);
+  const thick = { class: "ink", "stroke-width": .09, "stroke-linecap": "round" };
+  for (let i = 0; i <= W; i++) for (let j = 0; j < H; j++)
+    if (lab(i - 1, j) !== lab(i, j)) el("line", { x1: i, y1: H - j, x2: i, y2: H - j - 1, ...thick }, svg);
+  for (let i = 0; i < W; i++) for (let j = 0; j <= H; j++)
+    if (lab(i, j - 1) !== lab(i, j)) el("line", { x1: i, y1: H - j, x2: i + 1, y2: H - j, ...thick }, svg);
+  const small = { "font-size": .32, fill: "#888", "font-family": "system-ui" };
+  if (lo === undefined) { /* no labels, like the book */ }
+  else if (vertLabels) {
+    el("text", { x: W / 2, y: -0.12, "text-anchor": "middle", ...small }, svg).textContent = vertLabels[0];
+    el("text", { x: W / 2, y: H + 0.42, "text-anchor": "middle", ...small }, svg).textContent = vertLabels[1];
+  } else {
+    el("text", { x: 0, y: H + 0.42, ...small }, svg).textContent = lo;
+    el("text", { x: W, y: H + 0.42, "text-anchor": "end", ...small }, svg).textContent = hi;
+  }
+  const box = document.createElement("div"); box.className = "view";
+  box.appendChild(svg);
+  const t = document.createElement("div"); t.className = "t"; t.textContent = title; box.appendChild(t);
+  return box;
+}
+
+function keySVG() {
+  const box = document.createElement("div"); box.className = "view";
+  const svg = el("svg", { viewBox: "-2.95 -3.15 5.9 4.15" });
+  const defs = el("defs", {}, svg);
+  const mk = el("marker", { id: "kh", viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, defs);
+  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "#2f6fed" }, mk);
+  const P = (x, y, z) => { const [u, v] = proj(x, y, z); return [u * 1.5, -v * 1.5]; };
+  const poly = (q, fill) => el("polygon", { points: q.map(a => P(...a).join(",")).join(" "), fill, stroke: "#111", "stroke-width": .045 }, svg);
+  poly([[0,0,1],[1,0,1],[1,1,1],[0,1,1]], TONES[1]);
+  poly([[0,0,0],[1,0,0],[1,0,1],[0,0,1]], TONES[2]);
+  poly([[0,0,0],[0,1,0],[0,1,1],[0,0,1]], TONES[3]);
+  const txt = (s, x, y, z, size, col, anchor) => { const [a, b] = P(x, y, z);
+    const e = el("text", { x: a, y: b, "font-size": size, fill: col || "#111", "text-anchor": anchor || "middle", "dominant-baseline": "middle", "font-family": "system-ui", "font-weight": 600 }, svg); e.textContent = s; };
+  txt("TOP", .5, .5, 1, .22);
+  txt("FRONT", .5, 0, .5, .2);
+  txt("LEFT", 0, .5, .5, .2, "#fff");
+  const arrow = (a, b) => { const [x1, y1] = P(...a), [x2, y2] = P(...b);
+    el("line", { x1, y1, x2, y2, stroke: "#2f6fed", "stroke-width": .07, "marker-end": "url(#kh)" }, svg); };
+  arrow([.5, -1.05, .15], [.5, -.12, .15]);
+  arrow([-1.05, .5, .15], [-.12, .5, .15]);
+  txt("front view", .5, -1.25, -.05, .2, "#2f6fed");
+  txt("side view", -1.3, .5, -.05, .2, "#2f6fed");
+  box.appendChild(svg);
+  const tt = document.createElement("div"); tt.className = "t"; tt.textContent = "FRONT & SIDE"; box.appendChild(tt);
+  return box;
+}
+
+function renderViews() {
+  const p = PUZZLES[idx], v = $("views");
+  v.innerHTML = "";
+  v.appendChild(keySVG());
+  v.appendChild(viewSVG(p.top, "TOP VIEW"));
+  v.appendChild(viewSVG(p.side, "SIDE VIEW"));
+  v.appendChild(viewSVG(p.front, "FRONT VIEW"));
+}
+
+// ---------- board ----------
+let gFill, gGrid, gGuide, gAns, gLines, gCheck, gPrev;
+
+function hull(P) {
+  P = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const p of P) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 1e-9) lo.pop(); lo.push(p); }
+  for (const p of P.slice().reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 1e-9) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+const proj = (x, y, z) => [(x - y) * S, (x + y) / 2 + z];
+
+function setupBoard() {
+  const p = PUZZLES[idx], R = p.plan.length, C = p.plan[0].length, Z = p.Z;
+  const t0 = -R - 3, t1 = C + 3, v0 = -2.6, v1 = (C + R) / 2 + Z + 1.5;
+  bounds = { t0, t1, v0, v1 };
+  const svg = $("board");
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `${t0 * S} ${-v1} ${(t1 - t0) * S} ${v1 - v0}`);
+  const defs = el("defs", {}, svg);
+  const cp = el("clipPath", { id: "clip" }, defs);
+  el("rect", { x: t0 * S, y: -v1, width: (t1 - t0) * S, height: v1 - v0 }, cp);
+  gGrid = el("g", { "clip-path": "url(#clip)" }, svg);
+  gFill = el("g", {}, svg);
+  gGuide = el("g", {}, svg);
+  gAns = el("g", { opacity: .55 }, svg);
+  gLines = el("g", {}, svg);
+  gCheck = el("g", {}, svg);
+  gPrev = el("g", {}, svg);
+  // grid: 3 line families
+  const gs = { class: "bgrid", "stroke-width": .025, "stroke-dasharray": ".05 .07" };
+  for (let k = Math.floor(t0); k <= t1; k++) el("line", { x1: k * S, y1: -v1, x2: k * S, y2: -v0, ...gs }, gGrid);
+  for (let c = Math.floor(v0 - t1); c <= Math.ceil(v1 - t0); c++) {           // v = c + t/2
+    el("line", { x1: t0 * S, y1: -(c + t0 / 2), x2: t1 * S, y2: -(c + t1 / 2), ...gs }, gGrid);
+  }
+  for (let c = Math.floor(v0 + t0 / 2) - 1; c <= Math.ceil(v1 + t1 / 2) + 1; c++) { // v = c - t/2
+    el("line", { x1: t0 * S, y1: -(c - t0 / 2), x2: t1 * S, y2: -(c - t1 / 2), ...gs }, gGrid);
+  }
+  // guide hexagon (bounding box of the shape)
+  const corners = [];
+  for (const x of [0, C]) for (const y of [0, R]) for (const z of [0, Z]) corners.push(proj(x, y, z));
+  el("polygon", { points: pts(hull(corners)), fill: "none", stroke: "#9aa7c7", "stroke-width": .04 }, gGuide);
+  const mk = el("marker", { id: "bh", viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 4, markerHeight: 4, orient: "auto" }, defs);
+  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "#2f6fed" }, mk);
+  const arrow = (a, b, label) => {
+    const [u1, v1] = proj(...a), [u2, v2] = proj(...b);
+    el("line", { x1: u1, y1: -v1, x2: u2, y2: -v2, stroke: "#2f6fed", "stroke-width": .06, "marker-end": "url(#bh)", opacity: .8 }, gGuide);
+    const e = el("text", { x: u1, y: -v1 + .45, "font-size": .3, fill: "#2f6fed", "text-anchor": "middle", "font-family": "system-ui", "font-weight": 600 }, gGuide);
+    e.textContent = label;
+  };
+  arrow([C / 2, -2.2, .2], [C / 2, -.55, .2], "FRONT");
+  arrow([-2.2, R / 2, .2], [-.55, R / 2, .2], "SIDE");
+}
+
+function renderAnswer() {
+  gAns.innerHTML = "";
+  const p = PUZZLES[idx], plan = p.plan, R = plan.length, C = plan[0].length;
+  $("ansInfo").textContent = "";
+  if (!showAns) return;
+  const cubes = [];
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (let z = 0; z < plan[r][c]; z++) cubes.push([c, R - 1 - r, z]);
+  cubes.sort((a, b) => (-a[0] - a[1] + a[2]) - (-b[0] - b[1] + b[2]) || a[2] - b[2]);
+  for (const [x, y, z] of cubes) {
+    const faces = [
+      [[[x, y, z + 1], [x + 1, y, z + 1], [x + 1, y + 1, z + 1], [x, y + 1, z + 1]], TONES[1]],   // top
+      [[[x, y, z], [x + 1, y, z], [x + 1, y, z + 1], [x, y, z + 1]], TONES[2]],                   // front
+      [[[x, y, z], [x, y + 1, z], [x, y + 1, z + 1], [x, y, z + 1]], TONES[3]],                   // left side
+    ];
+    for (const [f, col] of faces) el("polygon", { points: pts(f.map(q => proj(...q))), fill: col, stroke: "#c0392b", "stroke-width": .035 }, gAns);
+  }
+  const total = plan.flat().reduce((a, b) => a + b, 0);
+  const rows = plan.map(r => r.map(h => h || "·").join(" ")).join("   /   ");
+  $("ansInfo").textContent = `Answer: ${total} cubes. Coded plan (back → front): ${rows}`;
+}
+
+// ---------- check ----------
+// 3D point (x, y, z) -> lattice point (t, m): t = x - y, m = y + z
+const latOf = (x, y, z) => [x - y, y + z];
+const isUnitDir = (a, b) => { const dt = b[0] - a[0], dm = b[1] - a[1];
+  return (dt === 0 && Math.abs(dm) === 1) || (dm === 0 && Math.abs(dt) === 1) || (Math.abs(dt) === 1 && dm === -dt); };
+const parseEdge = k => { const [p, q] = k.split("|").map(s => s.split(":").map(Number));
+  return (p[0] - q[0] || p[1] - q[1]) < 0 ? [...p, ...q] : [...q, ...p]; };
+const ansCache = {};
+
+// The answer's line drawing as unit edges: required, optional, hidden (Map key -> [t1,m1,t2,m2]).
+function answerEdges(i) {
+  if (ansCache[i]) return ansCache[i];
+  const plan = PUZZLES[i].plan, R = plan.length, C = plan[0].length;
+  const H = (x, y) => (x >= 0 && y >= 0 && x < C && y < R) ? plan[R - 1 - y][x] : 0;
+  const filled = (x, y, z) => z >= 0 && z < H(x, y);
+  // outer faces that can face the camera: top (+z), front (-y), left (-x)
+  const faces = [];
+  for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) for (let z = 0; z < H(x, y); z++) {
+    if (!filled(x, y, z + 1)) faces.push({ plane: "z" + (z + 1), q: [[x, y, z + 1], [x + 1, y, z + 1], [x + 1, y + 1, z + 1], [x, y + 1, z + 1]] });
+    if (!filled(x, y - 1, z)) faces.push({ plane: "y" + y, q: [[x, y, z], [x + 1, y, z], [x + 1, y, z + 1], [x, y, z + 1]] });
+    if (!filled(x - 1, y, z)) faces.push({ plane: "x" + x, q: [[x, y, z], [x, y + 1, z], [x, y + 1, z + 1], [x, y, z + 1]] });
+  }
+  // each face covers 2 grid triangles; per triangle keep the face nearest to the camera (smallest x + y - z)
+  const vis = new Map();
+  faces.forEach((f, fi) => {
+    const L = f.q.map(p => latOf(...p));
+    const tris = isUnitDir(L[0], L[2]) ? [[0, 1, 2], [0, 2, 3]] : [[0, 1, 3], [1, 2, 3]];
+    for (const tr of tris) {
+      const c3 = [0, 1, 2].map(k => tr.reduce((s, j) => s + f.q[j][k], 0) / 3);
+      const [cu, cv] = proj(...c3), key = triKey(...triAt(cu, cv)), d = c3[0] + c3[1] - c3[2];
+      const cur = vis.get(key);
+      if (!cur || d < cur.d) vis.set(key, { fi, d });
+    }
+  });
+  const faceAt = (u, v) => { const r = vis.get(triKey(...triAt(u, v))); return r ? r.fi : -1; };
+  const required = new Map(), optional = new Map(), hidden = new Map();
+  for (const f of faces) {
+    const L = f.q.map(p => latOf(...p));
+    for (let k = 0; k < 4; k++) {
+      const a = L[k], b = L[(k + 1) % 4], key = edgeKey(a, b);
+      if (required.has(key) || optional.has(key) || hidden.has(key)) continue;
+      const [au, av] = lp(...a), [bu, bv] = lp(...b);
+      const mu = (au + bu) / 2, mv = (av + bv) / 2, nu = -(bv - av) * .15, nv = (bu - au) * .15;
+      const f1 = faceAt(mu + nu, mv + nv), f2 = faceAt(mu - nu, mv - nv), line = parseEdge(key);
+      if (f1 === f2) hidden.set(key, line);                                               // same face on both sides
+      else if (f1 < 0 || f2 < 0 || faces[f1].plane !== faces[f2].plane) required.set(key, line); // outline or crease
+      else optional.set(key, line);                                                        // two faces on one plane
+    }
+  }
+  return (ansCache[i] = { required, optional, hidden });
+}
+
+function clearCheck() {
+  if (gCheck) gCheck.innerHTML = "";
+  const ci = $("checkInfo"); if (ci) { ci.textContent = ""; ci.classList.remove("ok"); }
+}
+
+function checkDrawing() {
+  clearCheck();
+  const { required, optional } = answerEdges(idx);
+  const player = new Set();
+  for (const l of draw.lines) for (const e of unitEdges(l)) player.add(e);
+  const info = $("checkInfo");
+  if (!player.size) { info.textContent = "Draw some lines first."; return null; }
+  const P = [...player].map(parseEdge);
+  // candidate shifts (dt, dm): every shift that puts one player edge on one answer edge, plus no shift
+  const dirOf = e => (e[2] - e[0]) + "," + (e[3] - e[1]);
+  const shifts = new Set(["0,0"]), A = [...required.values(), ...optional.values()];
+  for (const e of P) for (const f of A) if (dirOf(e) === dirOf(f)) shifts.add((e[0] - f[0]) + "," + (e[1] - f[1]));
+  let best = null;
+  for (const sk of shifts) {
+    const [dt, dm] = sk.split(",").map(Number);
+    let hitR = 0, extra = 0;
+    for (const e of P) {
+      const k = edgeKey([e[0] - dt, e[1] - dm], [e[2] - dt, e[3] - dm]);
+      if (required.has(k)) hitR++; else if (!optional.has(k)) extra++;
+    }
+    const missing = required.size - hitR, cost = missing + extra, dist = Math.abs(dt) + Math.abs(dm);
+    if (!best || cost < best.cost || (cost === best.cost && dist < best.dist)) best = { dt, dm, missing, extra, cost, dist };
+  }
+  if (!best) best = { dt: 0, dm: 0, missing: required.size, extra: P.length };
+  const { dt, dm } = best, matched = new Set();
+  const seg = (e, attrs) => { const a = lp(e[0], e[1]), b = lp(e[2], e[3]);
+    el("line", { x1: X(a[0]), y1: Y(a[1]), x2: X(b[0]), y2: Y(b[1]), "stroke-linecap": "round", ...attrs }, gCheck); };
+  for (const e of P) {
+    const k = edgeKey([e[0] - dt, e[1] - dm], [e[2] - dt, e[3] - dm]);
+    const ok = required.has(k) || optional.has(k);
+    if (required.has(k)) matched.add(k);
+    seg(e, { stroke: ok ? "#2e9e4f" : "#e03131", "stroke-width": .1 });
+  }
+  for (const [k, e] of required) if (!matched.has(k))
+    seg([e[0] + dt, e[1] + dm, e[2] + dt, e[3] + dm], { stroke: "#f08c00", "stroke-width": .09, "stroke-dasharray": ".16 .12", "stroke-linecap": "butt" });
+  const parts = [];
+  if (best.missing) parts.push(best.missing + " missing");
+  if (best.extra) parts.push(best.extra + " extra");
+  info.textContent = parts.length ? parts.join(", ") : "Solved!";
+  info.classList.toggle("ok", !parts.length);
+  return { missing: best.missing, extra: best.extra, dt, dm };
+}
+
+function renderDrawing() {
+  clearCheck();
+  gFill.innerHTML = ""; gLines.innerHTML = "";
+  for (const key in draw.fills) {
+    const [k, a, b] = key.split(",").map(Number);
+    el("polygon", { points: pts(triVerts(k, a, b).map(q => lp(...q))), fill: TONES[draw.fills[key]], stroke: TONES[draw.fills[key]], "stroke-width": .02 }, gFill);
+  }
+  for (const l of draw.lines) {
+    const [a, b] = [lp(l[0], l[1]), lp(l[2], l[3])];
+    el("line", { x1: X(a[0]), y1: Y(a[1]), x2: X(b[0]), y2: Y(b[1]), class: "ink", "stroke-width": .07, "stroke-linecap": "round" }, gLines);
+  }
+}
+
+// ---------- actions ----------
+function snapshot() { undoStack.push(JSON.stringify(draw)); if (undoStack.length > 200) undoStack.shift(); $("undo").disabled = false; }
+function save() { store("isoDrawB:" + idx, JSON.stringify(draw)); }
+
+function floodFill(u, v) {
+  const blocked = new Set();
+  for (const l of draw.lines) for (const e of unitEdges(l)) blocked.add(e);
+  const start = triAt(u, v), seen = new Set([triKey(...start)]), queue = [start], region = [];
+  const inside = (k, a, b) => {
+    const vs = triVerts(k, a, b).map(q => lp(...q));
+    const cu = (vs[0][0] + vs[1][0] + vs[2][0]) / 3, cv = (vs[0][1] + vs[1][1] + vs[2][1]) / 3;
+    return cu > bounds.t0 * S && cu < bounds.t1 * S && cv > bounds.v0 && cv < bounds.v1;
+  };
+  while (queue.length && region.length < 4000) {
+    const T = queue.shift(); region.push(triKey(...T));
+    const V = triVerts(...T);
+    for (let i = 0; i < 3; i++) {
+      const p = V[i], q = V[(i + 1) % 3], o = V[(i + 2) % 3];
+      if (blocked.has(edgeKey(p, q))) continue;
+      const [pu, pv] = lp(...p), [qu, qv] = lp(...q), [ou, ov] = lp(...o);
+      const mu = (pu + qu) / 2, mv = (pv + qv) / 2;
+      const N = triAt(mu + (mu - ou) * 0.2, mv + (mv - ov) * 0.2), key = triKey(...N);
+      if (!seen.has(key) && inside(...N)) { seen.add(key); queue.push(N); }
+    }
+  }
+  snapshot();
+  for (const key of region) { if (tone) draw.fills[key] = tone; else delete draw.fills[key]; }
+  renderDrawing(); save();
+}
+
+function eraseNear(u, v, alreadySnap) {
+  const r = 0.22;
+  const keep = draw.lines.filter(l => {
+    const [a, b] = [lp(l[0], l[1]), lp(l[2], l[3])];
+    const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1;
+    let t = ((u - a[0]) * dx + (v - a[1]) * dy) / L2; t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(a[0] + t * dx - u, a[1] + t * dy - v);
+    return d > r;
+  });
+  if (keep.length !== draw.lines.length) {
+    if (!alreadySnap) snapshot();
+    draw.lines = keep; renderDrawing(); save(); return true;
+  }
+  return false;
+}
+
+// ---------- pointer ----------
+let drag = null;
+function toBoard(e) {
+  const svg = $("board"), pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return [q.x, -q.y];
+}
+const board = $("board");
+board.addEventListener("pointerdown", e => {
+  if (penOnly && e.pointerType !== "pen") return;
+  e.preventDefault();
+  board.setPointerCapture(e.pointerId);
+  const [u, v] = toBoard(e);
+  if (tool === "line") drag = { start: nearestPoint(u, v), end: null };
+  else if (tool === "fill") floodFill(u, v);
+  else if (tool === "erase") drag = { erasing: true, snapped: eraseNear(u, v, false) };
+});
+board.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const [u, v] = toBoard(e);
+  if (drag.erasing) { if (eraseNear(u, v, drag.snapped)) drag.snapped = true; return; }
+  drag.end = snapEnd(drag.start, u, v);
+  gPrev.innerHTML = "";
+  const a = lp(...drag.start), b = lp(...drag.end);
+  el("circle", { cx: X(a[0]), cy: Y(a[1]), r: .09, fill: "#2f6fed" }, gPrev);
+  el("line", { x1: X(a[0]), y1: Y(a[1]), x2: X(b[0]), y2: Y(b[1]), stroke: "#2f6fed", "stroke-width": .07, "stroke-linecap": "round" }, gPrev);
+});
+function endDrag() {
+  if (drag && !drag.erasing && drag.end && (drag.end[0] !== drag.start[0] || drag.end[1] !== drag.start[1])) {
+    snapshot();
+    draw.lines.push([...drag.start, ...drag.end]);
+    renderDrawing(); save();
+  }
+  drag = null; gPrev.innerHTML = "";
+}
+board.addEventListener("pointerup", endDrag);
+board.addEventListener("pointercancel", () => { drag = null; gPrev.innerHTML = ""; });
+
+// ---------- UI ----------
+function setTool(t) {
+  tool = t;
+  for (const [id, n] of [["tLine", "line"], ["tFill", "fill"], ["tErase", "erase"]]) $(id).classList.toggle("on", n === t);
+  
+}
+$("tLine").onclick = () => setTool("line");
+$("tFill").onclick = () => setTool("fill");
+$("tErase").onclick = () => setTool("erase");
+TONES.forEach((c, i) => {
+  const b = document.createElement("button");
+  b.className = "sw" + (i === 0 ? " none" : "") + (i === tone ? " on" : "");
+  if (c) b.style.background = c;
+  b.title = ["No fill (eraser)", "Light – top faces", "Medium – front faces", "Dark – right faces"][i];
+  b.onclick = () => { tone = i; document.querySelectorAll(".sw").forEach((s, j) => s.classList.toggle("on", j === i)); setTool("fill"); };
+  $("swatches").appendChild(b);
+});
+$("undo").onclick = () => { if (!undoStack.length) return; draw = JSON.parse(undoStack.pop()); renderDrawing(); save(); $("undo").disabled = !undoStack.length; };
+$("clear").onclick = () => { if (!draw.lines.length && !Object.keys(draw.fills).length) return; snapshot(); draw = { lines: [], fills: {} }; renderDrawing(); save(); };
+$("snap").onclick = () => { isoSnap = !isoSnap; $("snap").classList.toggle("on", isoSnap); };
+$("pen").onclick = () => { penOnly = !penOnly; $("pen").classList.toggle("on", penOnly); store("isoDraw:pen", penOnly ? "1" : ""); };
+$("check").onclick = () => checkDrawing();
+$("answer").onclick = () => { showAns = !showAns; $("answer").classList.toggle("on", showAns); renderAnswer(); };
+
+function openPuzzle(i) {
+  idx = (i + PUZZLES.length) % PUZZLES.length;
+  $("pick").value = idx;
+  store("isoDrawB:last", idx);
+  try { draw = JSON.parse(load("isoDrawB:" + idx)) || { lines: [], fills: {} }; } catch (e) { draw = { lines: [], fills: {} }; }
+  undoStack = []; $("undo").disabled = true;
+  showAns = false; $("answer").classList.remove("on");
+  renderViews(); setupBoard(); renderDrawing(); renderAnswer();
+}
+const levelName = { 1: "Level 1 · 3×3, height 2", 2: "Level 2 · 3×3, height 3", 3: "Level 3 · 4×4, height 3", 4: "Level 4 · 4×4, height 4" };
+(function buildPicker() {
+  const pick = $("pick"); let grp = null, last = 0, n = 0;
+  PUZZLES.forEach((p, i) => {
+    if (p.level !== last) { grp = document.createElement("optgroup"); grp.label = levelName[p.level]; pick.appendChild(grp); last = p.level; n = 0; }
+    const o = document.createElement("option"); o.value = i; o.textContent = p.name || `Puzzle ${p.level}.${++n}`; grp.appendChild(o);
+  });
+  pick.onchange = () => openPuzzle(+pick.value);
+})();
+$("prev").onclick = () => openPuzzle(idx - 1);
+$("next").onclick = () => openPuzzle(idx + 1);
+function applyTheme(th) {
+  document.documentElement.setAttribute("data-theme", th);
+  $("theme").textContent = th === "dark" ? "☀️ Light" : "🌙 Dark";
+  store("isoDraw:theme", th);
+}
+$("theme").onclick = () => applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+applyTheme(load("isoDraw:theme") === "dark" ? "dark" : "light");
+penOnly = load("isoDraw:pen") === "1"; $("pen").classList.toggle("on", penOnly);
+setTool("line");
+openPuzzle(+(load("isoDrawB:last") || 0) || 0);
+
+// =====================================================================
+// NETS MODE
+// =====================================================================
+const V = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+  neg: a => [-a[0], -a[1], -a[2]],
+  dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  scale: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+  key: a => a.join(","),
+};
+const AXES = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+
+// shapes: cells (x right, y back, z up). Chosen so every cube is visible.
+const NET_SHAPES = {
+  1: [ [[0,0,0]],
+       [[0,0,0],[1,0,0]],
+       [[0,0,0],[0,0,1]],
+       [[0,0,0],[1,0,0],[2,0,0]] ],
+  2: [ [[0,0,0],[1,0,0],[0,1,0]],
+       [[0,0,0],[1,0,0],[0,0,1]],
+       [[0,0,0],[1,0,0],[0,1,0],[1,1,0]],
+       [[0,0,0],[1,0,0],[0,0,1],[1,0,1]],
+       [[0,0,0],[1,0,0],[2,0,0],[3,0,0]] ],
+  3: [ [[0,0,0],[1,0,0],[2,0,0],[1,1,0]],
+       [[0,0,0],[1,0,0],[2,0,0],[0,1,0]],
+       [[0,1,0],[1,1,0],[1,0,0],[2,0,0]],
+       [[0,0,0],[1,0,0],[0,1,0],[0,0,1]],
+       [[0,0,0],[1,0,0],[2,0,0],[0,0,1]],
+       [[0,0,0],[1,0,0],[1,1,0],[1,1,1]] ],
+};
+
+function makeSolid(cells) {
+  const set = new Set(cells.map(V.key));
+  const filled = c => set.has(V.key(c));
+  const faces = [];
+  for (const c of cells) for (const n of AXES) if (!filled(V.add(c, n))) faces.push({ c, n });
+  return { cells, filled, faces, fkey: f => V.key(f.c) + "|" + V.key(f.n) };
+}
+
+// cross one face edge in direction d (in the face plane): returns the next face and the rotation
+function crossEdge(solid, c, n, d) {
+  const s = V.cross(n, d);
+  const up = V.add(V.add(c, d), n), side = V.add(c, d);
+  let nc, Rn, Rd;
+  let type;
+  if (solid.filled(up)) { nc = up; Rn = V.neg(d); Rd = n; type = -1; }        // concave: fold -90°
+  else if (solid.filled(side)) { nc = side; Rn = n; Rd = d; type = 0; }       // flat: no fold
+  else { nc = c; Rn = d; Rd = V.neg(n); type = 1; }                           // convex: fold +90°
+  const R = v => V.add(V.add(V.scale(Rn, V.dot(v, n)), V.scale(Rd, V.dot(v, d))), V.scale(s, V.dot(v, s)));
+  return { c: nc, n: Rn, R, type };
+}
+const NET_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const dir3 = (a, b, k) => [a, V.neg(a), b, V.neg(b)][k];
+
+// random unfolding (a spanning tree of faces laid flat, no overlaps, no extra touching squares)
+function unfold(solid, bottomRoot) {
+  const roots = bottomRoot ? solid.faces.filter(f => f.n[2] === -1) : solid.faces;
+  for (let tries = 0; tries < 400; tries++) {
+    const f0 = roots[Math.floor(Math.random() * roots.length)];
+    const a0 = AXES.filter(x => V.dot(x, f0.n) === 0)[Math.floor(Math.random() * 4)];
+    const st = { pos: [0, 0], c: f0.c, n: f0.n, a: a0, b: V.cross(f0.n, a0), parent: -1, k: -1, type: 0, idx: 0 };
+    const placed = new Map([["0,0", st]]), used = new Set([solid.fkey(f0)]), stack = [st], order = [st];
+    while (stack.length) {
+      const i = Math.floor(Math.random() * stack.length), cur = stack[i];
+      const ks = [0, 1, 2, 3].sort(() => Math.random() - .5);
+      let grown = false;
+      for (const k of ks) {
+        const p = [cur.pos[0] + NET_DIRS[k][0], cur.pos[1] + NET_DIRS[k][1]];
+        if (placed.has(p.join(","))) continue;
+        const nx = crossEdge(solid, cur.c, cur.n, dir3(cur.a, cur.b, k));
+        const fk = V.key(nx.c) + "|" + V.key(nx.n);
+        if (used.has(fk)) continue;
+        const ns = { pos: p, c: nx.c, n: nx.n, a: nx.R(cur.a), b: nx.R(cur.b), parent: cur.idx, k, type: nx.type, idx: order.length };
+        placed.set(p.join(","), ns); used.add(fk); stack.push(ns); order.push(ns); grown = true; break;
+      }
+      if (!grown) stack.splice(i, 1);
+    }
+    if (used.size !== solid.faces.length) continue;
+    const cells = order.map(s => s.pos);
+    if (isTree(cells)) { cells.tree = order; return cells; }
+  }
+  return null;
+}
+function adjCount(cells) {
+  const set = new Set(cells.map(p => p.join(",")));
+  let n = 0;
+  for (const [i, j] of cells) { if (set.has((i + 1) + "," + j)) n++; if (set.has(i + "," + (j + 1))) n++; }
+  return n;
+}
+function connected(cells) {
+  const set = new Set(cells.map(p => p.join(","))), seen = new Set([cells[0].join(",")]), st = [cells[0]];
+  while (st.length) { const [i, j] = st.pop();
+    for (const [di, dj] of NET_DIRS) { const k = (i + di) + "," + (j + dj); if (set.has(k) && !seen.has(k)) { seen.add(k); st.push([i + di, j + dj]); } } }
+  return seen.size === cells.length;
+}
+const isTree = cells => connected(cells) && adjCount(cells) === cells.length - 1;
+
+// does this net (all shared edges = folds) fold into the solid? tries every start face and both paper sides
+function foldsInto(cells, solid) {
+  if (cells.length !== solid.faces.length) return false;
+  const set = new Map(cells.map((p, i) => [p.join(","), i]));
+  for (const f0 of solid.faces) for (const a0 of AXES.filter(x => V.dot(x, f0.n) === 0)) for (const flip of [1, -1]) {
+    const st = new Array(cells.length).fill(null), used = new Map();
+    st[0] = { c: f0.c, n: f0.n, a: a0, b: V.scale(V.cross(f0.n, a0), flip) };
+    used.set(solid.fkey(f0), 0);
+    const q = [0]; let ok = true;
+    while (q.length && ok) {
+      const i = q.shift(), cur = st[i];
+      for (let k = 0; k < 4 && ok; k++) {
+        const j = set.get((cells[i][0] + NET_DIRS[k][0]) + "," + (cells[i][1] + NET_DIRS[k][1]));
+        if (j === undefined) continue;
+        const nx = crossEdge(solid, cur.c, cur.n, dir3(cur.a, cur.b, k));
+        const fk = V.key(nx.c) + "|" + V.key(nx.n);
+        if (st[j]) { if (V.key(st[j].c) + "|" + V.key(st[j].n) !== fk) ok = false; continue; }
+        if (used.has(fk)) { ok = false; continue; }
+        st[j] = { c: nx.c, n: nx.n, a: nx.R(cur.a), b: nx.R(cur.b) }; used.set(fk, j); q.push(j);
+      }
+    }
+    if (ok && used.size === solid.faces.length) return true;
+  }
+  return false;
+}
+
+// shape of a net up to rotation and mirror (to avoid duplicate options)
+function canon(cells) {
+  const T = [p => [p[0], p[1]], p => [-p[1], p[0]], p => [-p[0], -p[1]], p => [p[1], -p[0]],
+             p => [-p[0], p[1]], p => [p[1], p[0]], p => [p[0], -p[1]], p => [-p[1], -p[0]]];
+  let best = null;
+  for (const t of T) {
+    const q = cells.map(t), mi = Math.min(...q.map(p => p[0])), mj = Math.min(...q.map(p => p[1]));
+    const s = q.map(p => [p[0] - mi, p[1] - mj]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(p => p.join(",")).join(";");
+    if (best === null || s < best) best = s;
+  }
+  return best;
+}
+function randomTransform(cells) {
+  const k = Math.floor(Math.random() * 4), m = Math.random() < .5;
+  return cells.map(([i, j]) => { let p = m ? [-i, j] : [i, j]; for (let r = 0; r < k; r++) p = [-p[1], p[0]]; return p; });
+}
+
+// a wrong net: move one end square to another free place
+function wrongNet(cells, solid) {
+  for (let tries = 0; tries < 300; tries++) {
+    const set = new Set(cells.map(p => p.join(",")));
+    const deg = p => NET_DIRS.filter(([di, dj]) => set.has((p[0] + di) + "," + (p[1] + dj))).length;
+    const leaves = cells.filter(p => deg(p) === 1);
+    const leaf = leaves[Math.floor(Math.random() * leaves.length)];
+    const rest = cells.filter(p => p !== leaf);
+    const rs = new Set(rest.map(p => p.join(",")));
+    const spots = [];
+    for (const [i, j] of rest) for (const [di, dj] of NET_DIRS) {
+      const p = [i + di, j + dj], k = p.join(",");
+      if (rs.has(k) || k === leaf.join(",")) continue;
+      if (NET_DIRS.filter(([a, b]) => rs.has((p[0] + a) + "," + (p[1] + b))).length === 1) spots.push(p);
+    }
+    if (!spots.length) continue;
+    const cand = rest.concat([spots[Math.floor(Math.random() * spots.length)]]);
+    if (isTree(cand) && !foldsInto(cand, solid)) return cand;
+  }
+  return null;
+}
+
+function drawShapeSVG(svg, cells) {
+  svg.innerHTML = "";
+  const cubes = cells.slice().sort((a, b) => (-a[0] - a[1] + a[2]) - (-b[0] - b[1] + b[2]) || a[2] - b[2]);
+  const all = [];
+  for (const [x, y, z] of cubes) {
+    const faces = [
+      [[[x, y, z + 1], [x + 1, y, z + 1], [x + 1, y + 1, z + 1], [x, y + 1, z + 1]], TONES[1]],
+      [[[x, y, z], [x + 1, y, z], [x + 1, y, z + 1], [x, y, z + 1]], TONES[2]],
+      [[[x, y, z], [x, y + 1, z], [x, y + 1, z + 1], [x, y, z + 1]], TONES[3]],
+    ];
+    for (const [f, col] of faces) { const P = f.map(q => proj(...q)); all.push(...P);
+      el("polygon", { points: pts(P), fill: col, stroke: "#111", "stroke-width": .04, "stroke-linejoin": "round" }, svg); }
+  }
+  const us = all.map(p => p[0]), vs = all.map(p => -p[1]);
+  const x0 = Math.min(...us) - .3, y0 = Math.min(...vs) - .3, w = Math.max(...us) - x0 + .3, h = Math.max(...vs) - y0 + .3;
+  svg.setAttribute("viewBox", `${x0} ${y0} ${w} ${h}`);
+}
+
+function drawNetSVG(svg, cells) {
+  svg.innerHTML = "";
+  const set = new Set(cells.map(p => p.join(",")));
+  const mi = Math.min(...cells.map(p => p[0])), mj = Math.min(...cells.map(p => p[1]));
+  const W = Math.max(...cells.map(p => p[0])) - mi + 1, H = Math.max(...cells.map(p => p[1])) - mj + 1;
+  const side = Math.max(W, H, 4) + .6;
+  svg.setAttribute("viewBox", `${(W - side) / 2} ${(H - side) / 2} ${side} ${side}`);
+  const X = i => i - mi, Y = j => H - 1 - (j - mj);
+  for (const [i, j] of cells) el("rect", { x: X(i), y: Y(j), width: 1, height: 1, class: "ncell" }, svg);
+  const solid = { class: "ink", "stroke-width": .06, "stroke-linecap": "round" };
+  const fold = { class: "ink", "stroke-width": .04, "stroke-dasharray": ".12 .08", opacity: .9 };
+  for (const [i, j] of cells) {
+    const x = X(i), y = Y(j);
+    const edges = [[[1, 0], [x + 1, y, x + 1, y + 1]], [[-1, 0], [x, y, x, y + 1]], [[0, 1], [x, y, x + 1, y]], [[0, -1], [x, y + 1, x + 1, y + 1]]];
+    for (const [[di, dj], [x1, y1, x2, y2]] of edges) {
+      const nb = set.has((i + di) + "," + (j + dj));
+      if (nb && (di < 0 || dj < 0)) continue;          // draw each fold once
+      el("line", { x1, y1, x2, y2, ...(nb ? fold : solid) }, svg);
+    }
+  }
+}
+
+let netState = { right: 0, total: 0, answered: false };
+function newNetPuzzle() {
+  const lvl = +$("netLevel").value, list = NET_SHAPES[lvl];
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const cells = list[Math.floor(Math.random() * list.length)];
+    const solid = makeSolid(cells);
+    const good = unfold(solid, true);
+    if (!good) continue;
+    const opts = [good], seen = new Set([canon(good)]);
+    for (let k = 0; k < 40 && opts.length < 4; k++) {
+      const w = wrongNet(good, solid);
+      if (w && !seen.has(canon(w))) { seen.add(canon(w)); opts.push(w); }
+    }
+    if (opts.length < 4) continue;
+    const order = [0, 1, 2, 3].sort(() => Math.random() - .5);
+    drawShapeSVG($("netShape"), cells);
+    const box = $("netOpts"); box.innerHTML = "";
+    order.forEach((oi, pos) => {
+      const card = document.createElement("div"); card.className = "netopt";
+      const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "ABCD"[pos];
+      const svg = document.createElementNS(NS, "svg"); card.appendChild(svg); card.appendChild(lbl);
+      drawNetSVG(svg, randomTransform(opts[oi]));
+      card.onclick = () => answerNet(card, oi === 0, box);
+      card.dataset.right = oi === 0 ? "1" : "";
+      box.appendChild(card);
+    });
+    netState.answered = false;
+    netState.tree = good.tree;
+    $("netMsg").textContent = "";
+    $("foldBox").hidden = true; stopFold();
+    return;
+  }
+  $("netMsg").textContent = "Could not make a puzzle. Tap New shape.";
+}
+function answerNet(card, ok, box) {
+  if (netState.answered) return;
+  netState.answered = true; netState.total++; if (ok) netState.right++;
+  for (const c of box.children) if (c.dataset.right) c.classList.add("right");
+  if (!ok) card.classList.add("wrong");
+  $("netMsg").textContent = ok ? "Correct!" : "Not this one. The green net is correct.";
+  $("netScore").textContent = `${netState.right} / ${netState.total}`;
+  $("foldBox").hidden = false; setupFold(netState.tree); drawFold(0); $("foldT").value = 0;
+}
+
+// ---------------- fold animation ----------------
+const M3 = {
+  mul: (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j])),
+  app: (A, v) => A.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]),
+  rot: (k, th) => {            // Rodrigues, unit axis k
+    const c = Math.cos(th), s = Math.sin(th), C = 1 - c, [x, y, z] = k;
+    return [[c + x * x * C, x * y * C - z * s, x * z * C + y * s],
+            [y * x * C + z * s, c + y * y * C, y * z * C - x * s],
+            [z * x * C - y * s, z * y * C + x * s, c + z * z * C]];
+  },
+};
+const HINGE = [[1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0]];   // a point on the fold line, per NET_DIRS
+let foldTree = null, foldBox = null, foldRAF = 0;
+
+function foldPose(tree, t) {
+  const poses = [];
+  for (const s of tree) {
+    if (s.parent < 0) {
+      const M = [0, 1, 2].map(r => [s.a[r], s.b[r], s.n[r]]);
+      const ctr = V.add(V.add(s.c, [.5, .5, .5]), V.scale(s.n, .5));
+      poses.push({ M, T: V.add(ctr, V.scale(V.add(s.a, s.b), -.5)) });
+      continue;
+    }
+    const P = poses[s.parent], [ei, ej] = NET_DIRS[s.k];
+    const R = M3.rot([-ej, ei, 0], t * s.type * Math.PI / 2);
+    const h = HINGE[s.k], eo = [ei, ej, 0];
+    const local = V.add(h, M3.app(R, V.add(eo, V.neg(h))));
+    poses.push({ M: M3.mul(P.M, R), T: V.add(M3.app(P.M, local), P.T) });
+  }
+  return poses;
+}
+const SQ = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]];
+function foldQuads(t) {
+  return foldPose(foldTree, t).map((p, i) => {
+    const w = SQ.map(q => V.add(M3.app(p.M, q), p.T));
+    return { i, w, n: M3.app(p.M, [0, 0, 1]), ctr: V.add(M3.app(p.M, [.5, .5, 0]), p.T) };
+  });
+}
+function setupFold(tree) {
+  foldTree = tree;
+  const all = [];
+  for (let k = 0; k <= 10; k++) for (const q of foldQuads(k / 10)) for (const p of q.w) all.push(proj(...p));
+  const us = all.map(p => p[0]), vs = all.map(p => -p[1]);
+  const x0 = Math.min(...us) - .3, y0 = Math.min(...vs) - .3;
+  foldBox = `${x0} ${y0} ${Math.max(...us) - x0 + .3} ${Math.max(...vs) - y0 + .3}`;
+}
+function drawFold(t) {
+  const svg = $("foldSvg");
+  svg.innerHTML = ""; svg.setAttribute("viewBox", foldBox);
+  const quads = foldQuads(t).sort((A, B) => (-A.ctr[0] - A.ctr[1] + A.ctr[2]) - (-B.ctr[0] - B.ctr[1] + B.ctr[2]));
+  for (const q of quads) {
+    const a = q.n.map(Math.abs), m = a.indexOf(Math.max(...a));
+    const fill = q.i === 0 ? "#9cc0ff" : [TONES[3], TONES[2], TONES[1]][m];
+    el("polygon", { points: pts(q.w.map(p => proj(...p))), fill, stroke: "#111", "stroke-width": .035,
+                    "stroke-linejoin": "round", "fill-opacity": .93 }, svg);
+  }
+}
+function stopFold() { cancelAnimationFrame(foldRAF); foldRAF = 0; }
+function playFold() {
+  stopFold();
+  let t0 = null; const from = +$("foldT").value / 1000 >= .999 ? 0 : +$("foldT").value / 1000, dur = 3200 * (1 - from);
+  const step = ts => {
+    if (t0 === null) t0 = ts;
+    const k = Math.min(1, from + (ts - t0) / 3200), e = k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+    drawFold(e); $("foldT").value = Math.round(k * 1000);
+    if (k < 1) foldRAF = requestAnimationFrame(step); else foldRAF = 0;
+  };
+  foldRAF = requestAnimationFrame(step);
+}
+$("foldPlay").onclick = playFold;
+$("foldT").oninput = () => { stopFold(); const k = +$("foldT").value / 1000; drawFold(k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2); };
+$("netNext").onclick = newNetPuzzle;
+$("netLevel").onchange = () => { store("isoDraw:netLevel", $("netLevel").value); newNetPuzzle(); };
+
+function setMode(m) {
+  $("modeViews").hidden = m !== "views"; $("modeNets").hidden = m !== "nets";
+  $("viewsNav").style.display = m === "views" ? "flex" : "none";
+  $("tabViews").classList.toggle("on", m === "views"); $("tabNets").classList.toggle("on", m === "nets");
+  store("isoDraw:mode", m);
+  if (m === "nets" && !$("netOpts").children.length) newNetPuzzle();
+}
+$("tabViews").onclick = () => setMode("views");
+$("tabNets").onclick = () => setMode("nets");
+{ const lv = load("isoDraw:netLevel"); if (lv) $("netLevel").value = lv; }
+setMode(load("isoDraw:mode") === "nets" ? "nets" : "views");
+</script>
+</body>
+</html>
