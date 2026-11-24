@@ -36,6 +36,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   let surf: ReturnType<typeof createSurface> | undefined
   let overlay: Overlay = null
   let stroke: { tool: Tool; start: UV; pts: UV[] } | null = null
+  let pending = new Set<SegKey>() // erased during the current stroke; committed on end so a pinch can cancel it
 
   const seg = (k: SegKey, parent: Element, cls?: string) => {
     const [[x1, y1], [x2, y2]] = segEnds(k).map(uv)
@@ -60,7 +61,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       const col = fillColour(c)
       mk('polygon', { points: [...vs.values()].join(' '), style: `fill:${col};stroke:${col}` }, gFills)
     }
-    for (const k of d.lines) seg(k, gLines)
+    for (const k of d.lines) if (!pending.has(k)) seg(k, gLines)
   }
 
   function drawOverlay() {
@@ -74,8 +75,8 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
 
   function eraseAt(p: UV) {
     let best: SegKey | null = null, bd = ERASE_DIST
-    for (const k of editor.drawing.lines) { const d = segDist(k, p); if (d <= bd) { bd = d; best = k } }
-    if (best) { editor.erase(best); render() }
+    for (const k of editor.drawing.lines) { if (pending.has(k)) continue; const d = segDist(k, p); if (d <= bd) { bd = d; best = k } }
+    if (best) { pending.add(best); render() }
   }
 
   function preview(s: NonNullable<typeof stroke>, p: UV) {
@@ -86,7 +87,10 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
     } else mk('polyline', { points: s.pts.map(q => q.u + ',' + q.v).join(' ') }, gPrev)
   }
 
-  const cancel = () => { stroke = null; gPrev.replaceChildren() }
+  const cancel = () => {
+    stroke = null; gPrev.replaceChildren()
+    if (pending.size) { pending = new Set(); render() }
+  }
   const draw = {
     start(p: UV) {
       stroke = { tool: o.tool(), start: p, pts: [p] }
@@ -101,12 +105,15 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
     },
     end(p: UV) {
       const s = stroke
+      if (s?.tool === 'erase') eraseAt(p)
+      const erased = pending
+      pending = new Set()
       cancel()
       if (!s) return
       if (s.tool === 'line') { const l = snapDragIso(s.start, p); if (l) editor.addLines([l]) }
       else if (s.tool === 'freehand') editor.addLines(snapFreehandIso([...s.pts, p]))
       else if (s.tool === 'fill') editor.fill(triAt(p.u, p.v), o.colour())
-      else return
+      else for (const k of erased) editor.erase(k)
       render()
     },
     cancel,

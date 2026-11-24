@@ -204,6 +204,22 @@ describe('iso grid', () => {
     expect(el.querySelector('.g-fills polygon')?.getAttribute('style')).toContain('var(--tone-1)')
   })
 
+  it('a second finger cancels an erase stroke: nothing is erased', () => {
+    const m = mount()
+    const v = m.grid.getView()
+    drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 0, m: 1 })])
+    drag(el, [toPx(v, { t: 1, m: 0 }), toPx(v, { t: 1, m: 1 })])
+    m.state.tool = 'erase'
+    fire(el, 'pointerdown', ...toPx(v, { t: 0, m: 0.5 }), 1)
+    fire(el, 'pointermove', ...toPx(v, { t: 1, m: 0.5 }), 1) // drags across the second line too
+    expect(el.querySelectorAll('.g-lines line').length).toBe(0) // hidden while pending
+    fire(el, 'pointerdown', 300, 300, 2)
+    expect(m.editor.drawing.lines.length).toBe(2)
+    expect(el.querySelectorAll('.g-lines line').length).toBe(2)
+    fire(el, 'pointerup', 300, 300, 2); fire(el, 'pointerup', ...toPx(v, { t: 1, m: 0.5 }), 1)
+    expect(m.editor.drawing.lines.length).toBe(2)
+  })
+
   it('setOverlay draws answer and check marks; render() picks up outside edits', () => {
     const { editor, grid } = mount()
     const a = segKey({ t: 0, m: 0 }, { t: 0, m: 1 }), b = segKey({ t: 1, m: 0 }, { t: 1, m: 1 })
