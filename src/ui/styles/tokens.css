@@ -42,6 +42,14 @@
   --stroke-mistake: 4px;
   --stroke-grid: 1px;
   --dash-grid: 2 3;
+
+  --size-touch: 48px;
+  --size-top-bar: 60px;
+  --size-swatch: 16px;
+  --stroke-border: 1px;
+  --stroke-swatch: 1.5px;
+  --stroke-selected: 2px;
+  --stroke-icon: 1.8px;
 }
 
 :root[data-theme="light"] {
