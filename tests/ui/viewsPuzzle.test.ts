@@ -104,7 +104,7 @@ describe('router', () => {
   it('mounts the matching screen and destroys the previous one', async () => {
     const { startRouter, navigate } = await import('../../src/ui/router')
     const root = sized(412, 915)
-    navigate('/settings')
+    navigate('/nowhere')
     const stop = startRouter(root, file)
     await vi.waitFor(() => expect(root.textContent).toContain('not built yet'))
     navigate('/levels/views')

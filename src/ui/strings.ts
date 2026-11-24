@@ -15,6 +15,12 @@ export const S = {
   puzzle: (n: number, total: number, cols: number, rows: number) =>
     `PUZZLE ${String(n).padStart(2, '0')} / ${total} · ${cols}×${rows}`,
   solvedOf: (n: number, total: number) => `${n} / ${total}`,
+  settings: 'Settings', theme: 'THEME', themes: ['System', 'Light', 'Dark'] as const, accent: 'Accent', accents: 'ACCENT',
+  unlockAll: 'Unlock all accents', exportProgress: 'EXPORT PROGRESS', importProgress: 'IMPORT PROGRESS',
+  imported: 'Progress imported.', storageWarning: 'Storage is unavailable, so progress is lost when you close the app.',
+  about: 'ABOUT', version: (v: string) => `Version ${v}`, solvedTotal: (n: number) => `${n} solved`,
+  selected: 'SELECTED', unlocked: 'UNLOCKED', needSolved: (n: number) => `${n} solved`, locked: 'Locked',
+  moreToUnlock: (n: number, name: string) => `${n} more to unlock ${name}`,
   notBuilt: 'This screen is not built yet.',
   notFound: 'Puzzle not found.',
   top: 'TOP', front: 'FRONT', side: 'SIDE', key: 'KEY',

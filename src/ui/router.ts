@@ -1,6 +1,9 @@
 import type { PuzzleFile } from '../core/generator'
 import { h } from './dom'
 import { mountEndless } from './endless'
+import { mountAccents } from './screens/accents'
+import { mountHome } from './screens/home'
+import { mountSettings } from './screens/settings'
 import { mountDrawing, mountDrawList } from './screens/draw'
 import { mountNets } from './screens/nets'
 import { mountLevels } from './screens/levels'
@@ -20,15 +23,8 @@ function placeholder(root: HTMLElement, text = S.notBuilt): Screen {
   return { destroy: () => el.remove() }
 }
 
-// shortcut: #/ is a link list until Task 18 builds home
-function home(root: HTMLElement): Screen {
-  const el = h('main', { class: 'placeholder' }, h('h1', { text: S.views }), h('a', { href: '#/levels/views', text: S.levels }))
-  root.append(el)
-  return { destroy: () => el.remove() }
-}
-
 const routes: [RegExp, Mount][] = [
-  [/^\/$/, home],
+  [/^\/$/, root => mountHome(root)],
   [/^\/levels\/views$/, (root, f) => mountLevels(root, f)],
   [/^\/views\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountViewsPuzzle(root, f, id) : placeholder(root, S.notFound)],
   [/^\/endless\/([1-6])\/(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed)],
@@ -37,7 +33,8 @@ const routes: [RegExp, Mount][] = [
   [/^\/reverse\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountReversePuzzle(root, f, id) : placeholder(root, S.notFound)],
   [/^\/nets\/([1-3])$/, (root, _f, level) => mountNets(root, +level as 1 | 2 | 3)],
   [/^\/draw(?:\/([\w-]+))?$/, (root, _f, id) => id ? mountDrawing(root, id) : mountDrawList(root)],
-  [/^\/settings(?:\/accent)?$/, root => placeholder(root)],
+  [/^\/settings$/, root => mountSettings(root)],
+  [/^\/settings\/accent$/, root => mountAccents(root)],
 ]
 
 /** Mount the screen for location.hash now and on every hashchange; returns a stop function. */
