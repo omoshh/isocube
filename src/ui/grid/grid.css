@@ -1,0 +1,17 @@
+.grid-svg { display: block; width: 100%; height: 100%; user-select: none; }
+.grid-svg line, .grid-svg polygon, .grid-svg polyline { vector-effect: non-scaling-stroke; fill: none; stroke-linecap: round; }
+
+.g-grid line { stroke: var(--grid-line); stroke-width: var(--stroke-grid); stroke-dasharray: var(--dash-grid); stroke-linecap: butt; }
+.g-fills polygon { stroke-width: var(--stroke-grid); stroke-linejoin: round; }
+.g-guide polygon { stroke: var(--guide); stroke-width: var(--stroke-grid); }
+.g-guide line { stroke: var(--guide); stroke-width: var(--stroke-line); stroke-linecap: butt; }
+.g-guide polygon.head { fill: var(--guide); stroke: none; }
+.g-guide text { fill: var(--guide); font-family: var(--font-mono); font-weight: 600; letter-spacing: var(--letter-spacing); }
+.g-ans { opacity: var(--opacity-answer); }
+.g-ans line { stroke: var(--ink); stroke-width: var(--stroke-answer); }
+.g-lines line { stroke: var(--ink); stroke-width: var(--stroke-line); }
+.g-check .g-missing { stroke: var(--mark-missing); stroke-width: var(--stroke-missing); stroke-linecap: butt;
+  stroke-dasharray: calc(var(--stroke-missing) * 3) calc(var(--stroke-missing) * 2); }
+.g-check .g-mistake { stroke: var(--mark-mistake); stroke-width: var(--stroke-mistake); }
+.g-prev { opacity: var(--opacity-answer); }
+.g-prev line, .g-prev polyline { stroke: var(--ink); stroke-width: var(--stroke-line); stroke-linejoin: round; }
