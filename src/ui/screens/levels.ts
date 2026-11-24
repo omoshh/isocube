@@ -20,7 +20,7 @@ export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'vi
       ...(endless ? [h('a', { class: 'btn btn-outline', href: endless, text: S.endless })] : []))
   }
   const el = h('div', { class: 'screen levels' },
-    createTopBar({ title: (mode === 'reverse' ? S.reverse : S.views).toUpperCase(), back: '/' }),
+    createTopBar({ title: mode === 'reverse' ? S.reverse : S.views, back: '/' }),
     h('main', { class: 'tiles' },
       ...LEVELS.map(L => tile({ 'data-level': String(L.level) }, S.level(L.level), `${L.a}×${L.b}`,
         file.puzzles.filter(p => p.set === (mode === 'reverse' ? 'reverse' : 'level') && p.level === L.level), mode === 'reverse' ? `#/reverse/E${L.level}-new` : `#/endless/${L.level}/new`)),

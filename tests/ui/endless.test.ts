@@ -122,8 +122,8 @@ describe('endless screen', () => {
     root = sized()
     s = await endless.mountEndless(root, 1, String(seed), f.make)
     await vi.waitFor(() => expect(root.querySelector('.vp')).toBeTruthy()) // from memory, no worker round trip
-    expect(root.textContent).toContain('LEVEL 1')
-    expect(root.textContent).toContain('ENDLESS')
+    expect(root.textContent).toContain('Level 1')
+    expect(root.textContent).toContain('Endless')
     location.hash = '#/levels/views'
     s.destroy()
     expect(f.all[0].terminated).toBe(true)

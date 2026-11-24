@@ -6,7 +6,7 @@
 .g-guide polygon { stroke: var(--guide); stroke-width: var(--stroke-grid); }
 .g-guide line { stroke: var(--guide); stroke-width: var(--stroke-line); stroke-linecap: butt; }
 .g-guide polygon.head { fill: var(--guide); stroke: none; }
-.g-guide text { fill: var(--guide); font-family: var(--font-mono); font-weight: 600; letter-spacing: var(--letter-spacing); }
+.g-guide text { fill: var(--guide); font-family: var(--font-ui); font-weight: 600; }
 .g-ans { opacity: var(--opacity-answer); }
 .g-ans line { stroke: var(--ink); stroke-width: var(--stroke-answer); }
 .g-lines line { stroke: var(--ink); stroke-width: var(--stroke-line); }

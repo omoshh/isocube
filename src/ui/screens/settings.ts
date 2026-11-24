@@ -17,7 +17,7 @@ export async function mountSettings(root: HTMLElement) {
     await saveSettings(settings); applyTheme(settings)
   }
 
-  const themeBtns = THEMES.map((t, i) => h('button', { class: 'btn btn-outline', 'aria-pressed': String(settings.theme === t), text: S.themes[i].toUpperCase(),
+  const themeBtns = THEMES.map((t, i) => h('button', { class: 'btn btn-outline', 'aria-pressed': String(settings.theme === t), text: S.themes[i],
     onclick: async () => { await change({ theme: t }); themeBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))) } }))
 
   const sw = h('button', { class: 'switch', role: 'switch', 'aria-checked': String(settings.unlockAll),
@@ -47,7 +47,7 @@ export async function mountSettings(root: HTMLElement) {
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
 
-  const el = h('div', { class: 'screen' }, createTopBar({ title: S.settings.toUpperCase(), back: '/' }),
+  const el = h('div', { class: 'screen' }, createTopBar({ title: S.settings, back: '/' }),
     h('main', { class: 'settings-body' },
       ...(await storageAvailable() ? [] : [h('p', { 'data-storage-warning': '', class: 'hint', text: S.storageWarning })]),
       h('h2', { text: S.theme }), h('div', { class: 'seg' }, ...themeBtns),
@@ -55,7 +55,7 @@ export async function mountSettings(root: HTMLElement) {
       h('div', { class: 'accent-row' }, h('span', { class: 'accent-name', text: S.unlockAll }), sw),
       h('button', { class: 'btn btn-outline', text: S.exportProgress, onclick: () => void download() }),
       h('button', { class: 'btn btn-outline', text: S.importProgress, onclick: () => file.click() }), file, msg,
-      h('h2', { text: S.about }), h('p', { text: `${APP_NAME} · ${S.version(pkg.version)}` })))
+      h('h2', { text: S.about }), h('p', { text: `${APP_NAME}, ${S.version(pkg.version).toLowerCase()}` })))
   root.append(el)
   return { destroy: () => el.remove() }
 }

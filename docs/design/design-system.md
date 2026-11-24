@@ -46,8 +46,10 @@ right at the first choice. No accent is orange or blue (those are the check mark
 
 ## Type
 
-- Titles, buttons, labels, numbers: **IBM Plex Mono**, 600 for buttons, 400 for labels; letter-spacing 0.1em; UPPERCASE for buttons and screen titles.
-- Body text: **Space Grotesk** 500.
+- One family: **Archivo** (variable, weight and width axes). Changed 2026-11-24 by the owner: replaces IBM Plex Mono + Space Grotesk.
+- Screen titles and section headings: Archivo 650 in the wide cut (`font-stretch` 118%), like drafting lettering.
+- Body, buttons and labels: Archivo 400–600, normal width. Sentence case everywhere; no extra letter spacing; no uppercase labels.
+- Numbers: tabular figures (`font-variant-numeric: tabular-nums`), so counts and puzzle numbers line up.
 - Sizes (sp): screen title 20, body 16, secondary 14, label 11–12, button 15.
 - Bundle the fonts in the app (OFL licences in `app/src/main/assets/licences/`). No network fonts.
 
@@ -70,8 +72,8 @@ right at the first choice. No accent is orange or blue (those are the check mark
 
 ## Views panel
 
-- 2×2: TOP, FRONT, SIDE, KEY (key picture with FRONT and SIDE arrows), as in the web page.
-- Each view: light dashed cell grid; filled cells in `viewCell`; thick `ink` lines (2 dp) where neighbouring cells differ in depth (plane lines), exactly the web page rule. Labels in Plex Mono 10 sp `muted`.
+- One title-block strip across the full width: Key, Top, Side, Front, divided by thin ink rules (web, 2026-11-24; was a 2×2 of cards).
+- Each view: light dashed cell grid; filled cells in `viewCell`; thick `ink` lines (2 dp) where neighbouring cells differ in depth (plane lines), exactly the web page rule. Labels in Archivo 12 px `muted`, sentence case.
 - The panel folds away with a "HIDE VIEWS" toggle; the KEY stays as a small badge when folded.
 
 ## Components

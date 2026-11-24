@@ -25,7 +25,7 @@ export async function mountAccents(root: HTMLElement) {
         await saveSettings(s); applyTheme(s)
         for (const r of list.children) r.setAttribute('aria-pressed', String(r === rowEl))
       } },
-      h('span', { class: 'swatch', style: `background:var(--accent-${a.id})` }), h('span', { class: 'accent-name', text: a.name }), status)
+      h('span', { class: 'accent-dot', style: `background:var(--accent-${a.id})` }), h('span', { class: 'accent-name', text: a.name }), status)
     list.append(rowEl)
   }
   const next = settings.unlockAll ? null : nextAccent(solved)

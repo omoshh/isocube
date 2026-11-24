@@ -71,8 +71,8 @@ export async function mountNets(root: HTMLElement, level: Level) {
   function render() {
     cancelAnimationFrame(raf)
     const p = makeNetsPuzzle(level, rec.seed), fa = new FoldAnimation(p.options[p.correct], p.shape)
-    const select = h('select', { 'aria-label': S.nets, onchange: () => { location.hash = `#/nets/${select.value}` } },
-      ...S.netLevels.map((t, i) => h('option', { value: i + 1, text: t, selected: i + 1 === level })))
+    const select = h('nav', { class: 'seg', 'aria-label': S.nets },
+      ...S.netLevelNames.map((t, i) => h('a', { class: 'btn btn-outline', href: `#/nets/${i + 1}`, text: t, 'aria-pressed': String(i + 1 === level) })))
     const scoreEl = h('span', { class: 'score', text: S.netScore(score) })
     const msg = h('div', { class: 'netmsg', 'aria-live': 'polite' })
     const cards = p.options.map((net, i) => {
@@ -130,8 +130,9 @@ export async function mountNets(root: HTMLElement, level: Level) {
     mark()
 
     main.replaceChildren(
-      createTopBar({ title: S.nets, subtitle: S.level(level), back: '/' }),
-      h('div', { class: 'netbar' }, select, scoreEl, h('button', { class: 'btn btn-accent', text: S.newShape, onclick: () => { rec = fresh(); writeRec(level, rec); render() } })),
+      createTopBar({ title: S.nets, subtitle: S.netLevels[level - 1], back: '/' }),
+      select,
+      h('div', { class: 'netbar' }, scoreEl, h('button', { class: 'btn btn-accent', text: S.newShape, onclick: () => { rec = fresh(); writeRec(level, rec); render() } })),
       h('div', { class: 'netq', text: S.netQ }),
       h('div', { class: 'netshape view' }, shapeSvg(p.shape)),
       h('div', { class: 'netopts' }, ...cards), msg, box,

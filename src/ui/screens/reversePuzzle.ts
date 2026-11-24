@@ -24,7 +24,7 @@ export function mountReversePuzzle(root: HTMLElement, file: PuzzleFile, id: stri
   const idx = list.indexOf(e), next = list[idx + 1]
   return mountReverse(root, {
     id: 'R-' + id, key: 'reverse/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
-    title: `${S.reverse.toUpperCase()} · ${e.set === 'classic' ? S.classic : S.level(e.level)}`,
+    title: `${S.reverse}: ${e.set === 'classic' ? S.classic.toLowerCase() : S.level(e.level).toLowerCase()}`,
     subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows),
     nextRoute: next ? '#/reverse/' + next.id : '#/levels/reverse',
   })

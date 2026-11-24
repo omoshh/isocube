@@ -1,6 +1,4 @@
-@font-face { font-family: 'IBM Plex Mono'; font-weight: 400; font-display: swap; src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); }
-@font-face { font-family: 'IBM Plex Mono'; font-weight: 600; font-display: swap; src: url('/fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Space Grotesk'; font-weight: 500; font-display: swap; src: url('/fonts/space-grotesk-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('/fonts/archivo-latin-wdth-normal.woff2') format('woff2'); }
 
 :root {
   --accent-yellow: #FFD23F;
@@ -24,8 +22,8 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --font-ui: 'Archivo', system-ui, sans-serif;
+  --stretch-display: 118%; /* the wide cut: screen titles, like drafting lettering */
   --size-title: 20px;
   --size-body: 16px;
   --size-secondary: 14px;
@@ -33,7 +31,6 @@
   --size-label-small: 11px;
   --size-view-label: 10px;
   --size-button: 15px;
-  --letter-spacing: 0.1em;
 
   --stroke-line: 2px;
   --stroke-answer: 1.5px;
@@ -45,7 +42,7 @@
 
   --size-touch: 48px;
   --size-top-bar: 60px;
-  --size-swatch: 16px;
+  --size-swatch: 26px;
   --stroke-border: 1px;
   --stroke-swatch: 1.5px;
   --stroke-selected: 2px;

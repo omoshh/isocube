@@ -128,7 +128,7 @@ export async function mountEndless(root: HTMLElement, level: number, seed: strin
     wait.remove()
     const p = { cols: hm.cols, rows: hm.rows, maxH: LEVELS[level - 1].maxH, h: hm.h, subtitle: S.endlessSub(hm.cols, hm.rows), nextRoute: prefix + 'new' }
     const s = rev
-      ? await mountReverse(root, { ...p, id: `R-E${level}-${seed}`, key: `reverse/E${level}-${seed}`, title: `${S.reverse.toUpperCase()} · ${S.level(level)}` })
+      ? await mountReverse(root, { ...p, id: `R-E${level}-${seed}`, key: `reverse/E${level}-${seed}`, title: `${S.reverse}: ${S.level(level).toLowerCase()}` })
       : await mountPuzzle(root, { ...p, id: `E${level}-${seed}`, key: `endless/${level}/${seed}`, title: S.level(level) })
     if (dead) s.destroy(); else inner = s
   }

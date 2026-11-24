@@ -3,6 +3,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
   font-size: var(--size-body);
 }
+[hidden] { display: none !important; } /* component display rules must never show a hidden element */
