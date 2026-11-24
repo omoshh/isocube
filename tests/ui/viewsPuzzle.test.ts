@@ -53,6 +53,18 @@ describe('views puzzle screen', () => {
     s.destroy()
   })
 
+  it('answerClearsStaleCounts', async () => {
+    const { puzzle } = await load()
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-003')
+    button(root, 'CHECK').click()
+    const counts = root.querySelector('.vp-counts-text')!
+    expect(counts.textContent).toMatch(/missing/)
+    button(root, 'ANSWER').click()
+    expect(counts.textContent).toBe('')
+    s.destroy()
+  })
+
   it('drawingRestoredAfterReload', async () => {
     let { puzzle, storage } = await load()
     let root = sized(412, 915)

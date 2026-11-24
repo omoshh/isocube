@@ -51,6 +51,7 @@ export class EndlessQueue {
 
   private start() {
     this.worker = this.makeWorker()
+    this.worker.onerror = this.worker.onmessageerror = () => this.fail(new Error('worker'))
     this.worker.onmessage = (e: MessageEvent<Reply>) => {
       const { id, level, seed, cols, rows, h } = e.data, job = this.jobs.get(id)
       if (level !== this.level || !job) return
@@ -58,6 +59,11 @@ export class EndlessQueue {
       job({ seed, hm: new HeightMap(cols, rows, h) })
     }
     this.fill()
+  }
+
+  private fail(err: Error) {
+    for (const f of this.fails) f(err)
+    this.fails.clear(); this.jobs.clear(); this.waiters = []; this.filling = 0
   }
 
   private stop() {
@@ -128,16 +134,17 @@ export async function mountEndless(root: HTMLElement, level: number, seed: strin
   }
 
   if (seed === 'new') {
+    const failed = () => { if (!dead) wait.querySelector('p')!.textContent = S.generateFailed }
     q.next().then(async r => {
       if (dead) return
       made.set(`${level}/${r.seed}`, r.hm)
       await updateProgress(p => ({ ...p, endlessSeeds: { ...p.endlessSeeds, [level]: [...(p.endlessSeeds[level] ?? []), r.seed] } }))
       if (!dead) location.replace(prefix + r.seed) // Back skips the "Generating…" step
-    }, () => {}) // rejected only by cancel/dispose, after this screen is gone
+    }, failed) // cancel/dispose reject after this screen is gone (dead)
   } else {
     const hm = made.get(`${level}/${seed}`)
     if (hm) await open(hm)
-    else q.make(+seed).then(r => { if (!dead) { made.set(`${level}/${seed}`, r.hm); return open(r.hm) } }, () => {})
+    else q.make(+seed).then(r => { if (!dead) { made.set(`${level}/${seed}`, r.hm); return open(r.hm) } }, () => { if (!dead) wait.querySelector('p')!.textContent = S.generateFailed })
   }
 
   return {

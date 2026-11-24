@@ -47,6 +47,19 @@ describe('reverse puzzle screen', () => {
     expect(root.children.length).toBe(0)
   })
 
+  it('viewRestoredFromSession', async () => {
+    const { reverse } = await load()
+    const v = { panU: 1.5, panV: -2, scale: 33 }
+    sessionStorage.setItem('view/reverse/R-L1-004/top', JSON.stringify(v))
+    const root = sized()
+    const s = await reverse.mountReversePuzzle(root, file, 'L1-004')
+    const stored = JSON.parse(sessionStorage.getItem('view/reverse/R-L1-004/top')!)
+    expect(stored).toEqual(v)
+    button(root, 'FIT').click() // FIT resets and stores
+    expect(JSON.parse(sessionStorage.getItem('view/reverse/R-L1-004/top')!)).not.toEqual(v)
+    s.destroy()
+  })
+
   it('extraLineFails', async () => {
     const { reverse, storage } = await load()
     const root = sized()

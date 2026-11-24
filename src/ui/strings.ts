@@ -11,7 +11,7 @@ export const S = {
   classic: 'CLASSIC',
   endless: 'ENDLESS',
   endlessSub: (cols: number, rows: number) => `ENDLESS · ${cols}×${rows}`,
-  generating: 'Generating…', cancel: 'Cancel',
+  generating: 'Generating…', generateFailed: 'Could not generate puzzles.', importFailed: 'Could not read the file.', cancel: 'Cancel',
   puzzle: (n: number, total: number, cols: number, rows: number) =>
     `PUZZLE ${String(n).padStart(2, '0')} / ${total} · ${cols}×${rows}`,
   solvedOf: (n: number, total: number) => `${n} / ${total}`,

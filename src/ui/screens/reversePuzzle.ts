@@ -8,6 +8,7 @@ import { createTopBar } from '../components/topBar'
 import { h } from '../dom'
 import { mk } from '../grid/gestures'
 import { createSquareGrid } from '../grid/SquareGrid'
+import type { View } from '../grid/transform'
 import { loadDrawing, saveDrawing, updateProgress } from '../storage'
 import { S } from '../strings'
 import type { Puzzle } from './viewsPuzzle'
@@ -69,11 +70,14 @@ export async function mountReverse(root: HTMLElement, e: Puzzle) {
     checked = false; setNext(false)
     for (const v of VIEWS) { grids[v].setResult(null); cells[v].count.textContent = '' }
   }
+  const viewKey = (v: V) => `view/reverse/${id}/${v}`
+  const readView = (v: V): View | undefined => { try { const s = sessionStorage.getItem(viewKey(v)); return s ? JSON.parse(s) : undefined } catch { return undefined } }
+  const writeView = (v: V, w: View) => { try { sessionStorage.setItem(viewKey(v), JSON.stringify(w)) } catch { /* convenience */ } }
   const makeGrid = (v: V) => {
-    const view = grids[v]?.getView()
+    const view = grids[v]?.getView() ?? readView(v)
     grids[v]?.destroy()
     grids[v] = createSquareGrid(cells[v].grid, {
-      cols: size[v][0], rows: size[v][1], lines: drawn[v], penOnly: () => penOnly, initialView: view,
+      cols: size[v][0], rows: size[v][1], lines: drawn[v], penOnly: () => penOnly, initialView: view, onViewChange: w => writeView(v, w),
       onChange: lines => { drawn[v] = lines; changed() },
     })
   }

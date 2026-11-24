@@ -83,6 +83,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   })
   const ansBtn = h('button', { class: 'btn btn-outline', 'aria-pressed': 'false', text: S.answer, onclick: () => {
     answerOn = !answerOn; checked = false
+    counts.textContent = ''
     ansBtn.setAttribute('aria-pressed', String(answerOn))
     grid.setOverlay(answerOn ? { kind: 'answer', edges: answer.shape } : null)
   } })

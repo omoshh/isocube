@@ -58,6 +58,8 @@ export function createSurface(el: HTMLElement, o: SurfaceOpts) {
 
   function down(e: PointerEvent) {
     e.preventDefault()
+    // a new primary touch/pen means earlier pointers were lost (sleep, app switch): drop them
+    if (e.isPrimary && e.pointerType !== 'mouse' && ptrs.size) { if ([...ptrs.values()].some(q => q.mode === 'draw')) o.draw.cancel(); ptrs.clear() }
     const p = local(e), others = [...ptrs.values()]
     let mode: Mode
     if (e.button === 1 || e.button === 2 || (space && e.pointerType === 'mouse')) mode = 'pan'
@@ -114,12 +116,18 @@ export function createSurface(el: HTMLElement, o: SurfaceOpts) {
 
   const prevent = (e: Event) => e.preventDefault()
   const typing = (e: KeyboardEvent) => e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)
-  const keydown = (e: KeyboardEvent) => { if (e.key === ' ' && !typing(e)) space = true }
+  const keydown = (e: KeyboardEvent) => {
+    if (e.key !== ' ') return
+    const t = e.target
+    if (typing(e) || (t instanceof HTMLElement && t.isContentEditable)) return
+    space = true
+    e.preventDefault() // else releasing Space "clicks" the focused button
+  }
   const keyup = (e: KeyboardEvent) => { if (e.key === ' ') space = false }
-  const blur = () => { space = false }
+  const blur = () => { space = false; ptrs.clear() }
   const on: [EventTarget, string, EventListener][] = [
     [el, 'pointerdown', down as EventListener], [el, 'pointermove', move as EventListener],
-    [el, 'pointerup', up as EventListener], [el, 'pointercancel', up as EventListener],
+    [el, 'pointerup', up as EventListener], [el, 'pointercancel', up as EventListener], [el, 'lostpointercapture', up as EventListener],
     [el, 'wheel', wheel as EventListener], [el, 'contextmenu', prevent], [el, 'touchmove', prevent],
     [window, 'keydown', keydown as EventListener], [window, 'keyup', keyup as EventListener], [window, 'blur', blur],
   ]

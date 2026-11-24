@@ -3,6 +3,7 @@ import { snapDragIso, snapFreehandIso } from '../../core/snap'
 import type { Bounds, DrawingEditor } from '../../core/drawing'
 import type { CheckResult } from '../../core/checker'
 import { guideBounds, type View } from './transform'
+import { S as STR } from '../strings'
 import { createSurface, mk, type UV } from './gestures'
 
 export type Tool = 'line' | 'freehand' | 'fill' | 'erase'
@@ -144,7 +145,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       // the world is flipped (v up), so flip the label back
       mk('text', { transform: `translate(${u1} ${v1 - 0.45}) scale(1 -1)`, 'font-size': 0.3, 'text-anchor': 'middle' }, gGuide).textContent = label
     }
-    if (o.arrows) { arrow([C / 2, -2.2, 0.2], [C / 2, -0.55, 0.2], 'FRONT'); arrow([-2.2, R / 2, 0.2], [-0.55, R / 2, 0.2], 'SIDE') }
+    if (o.arrows) { arrow([C / 2, -2.2, 0.2], [C / 2, -0.55, 0.2], STR.front); arrow([-2.2, R / 2, 0.2], [-0.55, R / 2, 0.2], STR.side) }
   }
   drawGrid(); render()
 

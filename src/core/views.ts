@@ -4,7 +4,7 @@ import type { HeightMap } from './shape'
 export type Labels = number[][]
 export type ViewSet = { top: Set<string>; front: Set<string>; side: Set<string> }
 
-// Z = puzzle height (label length); a puzzle can be shorter than Z, and extra empty rows never change viewLines.
+// Z = puzzle height (label length); a puzzle can be shorter than Z, and extra empty rows shift the y coordinates of the lines (use the same Z for drawing and answer).
 // Label arrays are indexed [x][y] (page convention): top by cube column x / depth y, front by x / z, side by r / z.
 export function viewLabels(h: HeightMap, Z = Math.max(0, ...h.h)): { top: Labels; front: Labels; side: Labels } {
   const H = (x: number, y: number) => h.at(x, h.rows - 1 - y)

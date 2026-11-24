@@ -11,10 +11,10 @@ const W = 412, H = 500
 
 // jsdom: PointerEvent may lack pointerId/pointerType init support, so build on MouseEvent.
 class PE extends MouseEvent {
-  pointerId: number; pointerType: string
+  pointerId: number; pointerType: string; isPrimary: boolean
   constructor(type: string, init: MouseEventInit & { pointerId?: number; pointerType?: string }) {
     super(type, { bubbles: true, cancelable: true, ...init })
-    this.pointerId = init.pointerId ?? 1; this.pointerType = init.pointerType ?? 'touch'
+    this.pointerId = init.pointerId ?? 1; this.isPrimary = this.pointerId === 1; this.pointerType = init.pointerType ?? 'touch'
   }
 }
 const fire = (el: Element, type: string, x: number, y: number, id = 1, pointerType = 'touch', button = 0) => {
@@ -111,6 +111,22 @@ describe('iso grid', () => {
     fire(el, 'pointerup', ...toPx(v, { t: 0, m: 3 }), 1)
     expect(editor.drawing.lines).toEqual([])
     expect(el.querySelectorAll('.g-prev *').length).toBe(0)
+  })
+
+  it('lostPointerRecovers', () => {
+    const { editor, grid } = mount()
+    const v = grid.getView()
+    fire(el, 'pointerdown', ...toPx(v, { t: 0, m: 0 }), 1) // its pointerup never arrives
+    fire(el, 'pointerdown', ...toPx(v, { t: 0, m: 0 }), 1) // a new primary touch clears the stale entry
+    fire(el, 'pointermove', ...toPx(v, { t: 0, m: 1.2 }), 1)
+    fire(el, 'pointerup', ...toPx(v, { t: 0, m: 1.2 }), 1)
+    expect(editor.drawing.lines).toEqual([segKey({ t: 0, m: 0 }, { t: 0, m: 1 })])
+    fire(el, 'pointerdown', ...toPx(v, { t: 1, m: 0 }), 3) // stale second finger, then lostpointercapture
+    fire(el, 'lostpointercapture', 0, 0, 3)
+    fire(el, 'pointerdown', ...toPx(v, { t: 0, m: 3 }), 4)
+    fire(el, 'pointermove', ...toPx(v, { t: 0, m: 4.2 }), 4)
+    fire(el, 'pointerup', ...toPx(v, { t: 0, m: 4.2 }), 4)
+    expect(editor.drawing.lines.length).toBeGreaterThan(1)
   })
 
   it('penOnlyIgnoresTouch', () => {

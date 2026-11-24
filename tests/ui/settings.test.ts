@@ -68,6 +68,16 @@ describe('settings and accents', () => {
     expect(root().querySelector('[data-msg]')!.getAttribute('data-ok')).toBe('false')
   })
 
+  it('importUnreadableFileShowsErrorAndResets', async () => {
+    await mountSettings(root())
+    const input = root().querySelector<HTMLInputElement>('input[type="file"]')!
+    const file = { text: () => Promise.reject(new Error('boom')) } as unknown as File
+    Object.defineProperty(input, 'files', { value: [file] })
+    input.dispatchEvent(new Event('change')); await tick()
+    expect(root().querySelector('[data-msg]')!.textContent).toBe('boom')
+    expect(input.value).toBe('')
+  })
+
   it('storageWarningShown', async () => {
     probe.ok = false
     await mountSettings(root())

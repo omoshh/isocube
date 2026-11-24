@@ -130,6 +130,16 @@ describe('endless screen', () => {
     expect(root.children.length).toBe(0)
   })
 
+  it('worker error rejects the wait and shows a message', async () => {
+    const { endless } = await load()
+    const f = fakeWorkers()
+    const root = sized()
+    const s = await endless.mountEndless(root, 3, 'new', f.make)
+    ;(f.all[0] as unknown as { onerror: () => void }).onerror()
+    await vi.waitFor(() => expect(root.textContent).toContain('Could not generate'))
+    s.destroy()
+  })
+
   it('level 6 left mid-generation: worker stops, reopening level 2 shows level 2', async () => {
     const { endless } = await load()
     const f = fakeWorkers()

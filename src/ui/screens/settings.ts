@@ -37,9 +37,10 @@ export async function mountSettings(root: HTMLElement) {
     onchange: async () => {
       const f = file.files?.[0]
       if (!f) return
-      const r = await importBackup(await f.text())
-      if (r.ok) { applyTheme(await loadSettings()); say(true, S.imported) } else say(false, r.error ?? '')
-      file.value = ''
+      try {
+        const r = await importBackup(await f.text())
+        if (r.ok) { applyTheme(await loadSettings()); say(true, S.imported) } else say(false, r.error ?? '')
+      } catch (err) { say(false, err instanceof Error ? err.message : S.importFailed) } finally { file.value = '' }
     } })
   const download = async () => {
     const a = h('a', { download: `isocube-backup-${today()}.json`, href: URL.createObjectURL(new Blob([await exportBackup()], { type: 'application/json' })) })
