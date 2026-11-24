@@ -83,3 +83,19 @@
   --mark-missing: #8C9BFF;
   --mark-mistake: #FF7A45;
 }
+
+/* draw-mode palette: 12 calm colours, the same in both themes */
+:root {
+  --palette-4: #E3A29A;
+  --palette-5: #E6B36A;
+  --palette-6: #EFD684;
+  --palette-7: #B3C98C;
+  --palette-8: #7DB398;
+  --palette-9: #86C2C6;
+  --palette-10: #7CA3D3;
+  --palette-11: #A597D3;
+  --palette-12: #D49BBF;
+  --palette-13: #BE8967;
+  --palette-14: #8D9068;
+  --palette-15: #6C7280;
+}

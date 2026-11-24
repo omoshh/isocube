@@ -1,6 +1,6 @@
 import { segEnds, triEdges, triNeighbours, unitSegments, type Line, type SegKey, type TriKey } from './geometry'
 
-export type Drawing = { lines: SegKey[]; fills: Record<TriKey, number> }
+export type Drawing = { lines: SegKey[]; fills: Record<TriKey, number>; name?: string }
 export type Bounds = { t0: number; t1: number; v0: number; v1: number }
 
 const S = Math.sqrt(3) / 2
