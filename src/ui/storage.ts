@@ -85,10 +85,14 @@ export async function importBackup(text: string): Promise<{ ok: boolean; error?:
   if (!r.ok) return { ok: false, error: r.error } // nothing written
   const { backup } = r
   await flush()
-  for (const k of await drawingKeys()) if (!(k in backup.drawings)) await rawDel(k)
+  const wasOk = idbOk
+  const stale = (await drawingKeys()).filter(k => !(k in backup.drawings))
+  // New data first, stale deletes last: a failure midway never leaves old data deleted.
   for (const [k, d] of Object.entries(backup.drawings)) await rawSet(k, d)
   await saveProgress(backup.progress)
   await saveSettings(backup.settings)
+  if (wasOk && !idbOk) return { ok: false, error: 'Storage failed while importing. The backup was not saved permanently.' }
+  for (const k of stale) await rawDel(k)
   return { ok: true }
 }
 

@@ -88,4 +88,26 @@ describe('storage', () => {
     expect(await s.loadDrawing('draw/q')).toEqual(d(1))
     expect(await s.listDrawings('draw/')).toEqual(['draw/q'])
   })
+
+  it('import write failure reports ok:false and does not delete stale drawings', async () => {
+    const store = new Map<string, unknown>()
+    let failSet = false
+    vi.doMock('idb-keyval', () => ({
+      get: async (k: string) => store.get(k),
+      set: async (k: string, v: unknown) => { if (failSet) throw new Error('QuotaExceededError'); store.set(k, v) },
+      del: async (k: string) => { store.delete(k) },
+      keys: async () => [...store.keys()],
+    }))
+    const s = await load()
+    await s.saveProgress({ solved: ['old'], netsRight: 0, endlessSeeds: {} })
+    s.saveDrawing('draw/stale', d(1)); await s.flush()
+    const text = JSON.stringify({ app: 'isocube', version: 1, exportedAt: 'x', progress: { solved: ['new'], netsRight: 0, endlessSeeds: {} },
+      settings: { theme: 'dark', accent: 'yellow', unlockAll: false }, drawings: { 'views/n': d(2) } })
+    failSet = true
+    const r = await s.importBackup(text)
+    expect(r.ok).toBe(false)
+    expect(r.error).toBeTruthy()
+    expect(store.get('draw/stale')).toEqual(d(1))
+    expect(store.get('progress')).toMatchObject({ solved: ['old'] })
+  })
 })
