@@ -219,6 +219,22 @@ describe('iso grid', () => {
     expect(Object.values(m.editor.drawing.fills)).toEqual([1])
     expect(el.querySelector('.g-fills polygon')?.getAttribute('style')).toContain('var(--tone-1)')
   })
+  it('an eraser tap with no line nearby clears the colour under it', () => {
+    const m = mount()
+    const v = m.grid.getView()
+    drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 0, m: 1 })])
+    drag(el, [toPx(v, { t: 0, m: 1 }), toPx(v, { t: 1, m: 0 })])
+    drag(el, [toPx(v, { t: 1, m: 0 }), toPx(v, { t: 0, m: 0 })])
+    m.state.tool = 'fill'
+    drag(el, [toPx(v, { t: 0.3, m: 0.3 })])
+    m.state.tool = 'erase'
+    for (const p of [{ t: 0, m: 0.5 }, { t: 0.5, m: 0.5 }, { t: 0.5, m: 0 }]) drag(el, [toPx(v, p)])
+    expect(m.editor.drawing.lines).toEqual([]) // lines gone, colour still there
+    expect(Object.keys(m.editor.drawing.fills).length).toBe(1)
+    drag(el, [toPx(v, { t: 0.33, m: 0.33 })])
+    expect(m.editor.drawing.fills).toEqual({})
+    expect(el.querySelector('.g-fills polygon')).toBeNull()
+  })
 
   it('a second finger cancels an erase stroke: nothing is erased', () => {
     const m = mount()

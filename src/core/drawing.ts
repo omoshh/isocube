@@ -67,6 +67,20 @@ export class DrawingEditor {
     if (changed) this.commit({ lines: [...this.cur.lines], fills })
   }
 
+  /** Clears the colour of the area around `start`: neighbours of the same colour not across a drawn line. No closed region needed. */
+  unfill(start: TriKey) {
+    const c = this.cur.fills[start]
+    if (!c) return
+    const blocked = new Set(this.cur.lines), fills = { ...this.cur.fills }, queue = [start]
+    delete fills[start]
+    for (let i = 0; i < queue.length; i++) {
+      const ns = triNeighbours(queue[i])
+      for (const [j, e] of triEdges(queue[i]).entries())
+        if (!blocked.has(e) && fills[ns[j]] === c) { delete fills[ns[j]]; queue.push(ns[j]) }
+    }
+    this.commit({ lines: [...this.cur.lines], fills })
+  }
+
   clear() {
     if (!this.cur.lines.length && !Object.keys(this.cur.fills).length) return
     this.commit({ lines: [], fills: {} })

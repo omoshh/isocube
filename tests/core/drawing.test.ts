@@ -39,6 +39,21 @@ describe('drawing', () => {
     e.fill(start, 3)
     expect(e.drawing.fills[nb]).toBe(3)
   })
+  it('unfillClearsTheSameColourArea', () => {
+    const e = new DrawingEditor(empty(), B, () => {})
+    e.addLines(rhombus)
+    e.fill(start, 2)
+    e.unfill(start)
+    expect(e.drawing.fills).toEqual({}) // both triangles of the closed rhombus
+    e.undo()
+    expect(e.drawing.fills).toEqual({ [start]: 2, [nb]: 2 })
+    e.erase(e.drawing.lines[0]) // the area can now leak, but unfill needs no closed region
+    e.unfill(nb)
+    expect(e.drawing.fills).toEqual({})
+    const steps = e.canUndo
+    e.unfill(start) // nothing filled: no-op
+    expect(e.canUndo).toBe(steps)
+  })
   it('fillOpenRegionNothing', () => {
     const fn = vi.fn()
     const e = new DrawingEditor(empty(), B, fn)

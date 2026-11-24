@@ -114,7 +114,8 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       if (s.tool === 'line') { const l = snapDragIso(s.start, p); if (l) editor.addLines([l]) }
       else if (s.tool === 'freehand') editor.addLines(snapFreehandIso([...s.pts, p]))
       else if (s.tool === 'fill') editor.fill(triAt(p.u, p.v), o.colour())
-      else for (const k of erased) editor.erase(k)
+      else if (erased.size) for (const k of erased) editor.erase(k)
+      else editor.unfill(triAt(p.u, p.v)) // no line near: the eraser clears the colour under the finger
       render()
     },
     cancel,
