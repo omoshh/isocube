@@ -1,0 +1,77 @@
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 400; font-display: swap; src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 600; font-display: swap; src: url('/fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 500; font-display: swap; src: url('/fonts/space-grotesk-latin-500-normal.woff2') format('woff2'); }
+
+:root {
+  --accent-yellow: #FFD23F;
+  --accent-mint: #3DDC97;
+  --accent-lilac: #B9A6FF;
+  --accent-pink: #FF8FC7;
+  --accent-lime: #C6F432;
+  --accent-red: #E5383B;
+  --accent-sand: #E8C9A0;
+  --accent: var(--accent-yellow);
+  --on-accent: #16161A;
+
+  --radius-button: 24px;
+  --radius-row: 20px;
+  --radius-tile: 16px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --size-title: 20px;
+  --size-body: 16px;
+  --size-secondary: 14px;
+  --size-label: 12px;
+  --size-label-small: 11px;
+  --size-view-label: 10px;
+  --size-button: 15px;
+  --letter-spacing: 0.1em;
+
+  --stroke-line: 2px;
+  --stroke-answer: 1.5px;
+  --opacity-answer: 0.55;
+  --stroke-missing: 3.5px;
+  --stroke-mistake: 4px;
+  --stroke-grid: 1px;
+  --dash-grid: 2 3;
+}
+
+:root[data-theme="light"] {
+  --bg: #F5F2EA;
+  --surface: #FFFFFF;
+  --ink: #16161A;
+  --muted: #5D5A55;
+  --line: #D9D4C8;
+  --grid-line: #BDB6A6;
+  --guide: #8A8371;
+  --tone-1: #FFFFFF;
+  --tone-2: #C9C4B8;
+  --tone-3: #16161A;
+  --view-cell: #E6E2D8;
+  --mark-missing: #2B44E0;
+  --mark-mistake: #E4572E;
+}
+
+:root[data-theme="dark"] {
+  --bg: #121214;
+  --surface: #1C1C20;
+  --ink: #ECEAE4;
+  --muted: #A3A19B;
+  --line: #2E2E33;
+  --grid-line: #3E3E45;
+  --guide: #8E8C86;
+  --tone-1: #2A2A2F;
+  --tone-2: #55555C;
+  --tone-3: #ECEAE4;
+  --view-cell: #2A2A2F;
+  --mark-missing: #8C9BFF;
+  --mark-mistake: #FF7A45;
+}
