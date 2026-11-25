@@ -31,6 +31,23 @@ const drawAll = (s: Scr, a: ReturnType<typeof answerOf>) => (['top', 'front', 's
 beforeEach(() => { vi.resetModules(); indexedDB = new IDBFactory(); document.body.replaceChildren(); sessionStorage.clear() })
 
 describe('reverse puzzle screen', () => {
+  it('turn shows the back picture and back again', async () => {
+    const { reverse } = await load()
+    const root = sized()
+    const s = await reverse.mountReversePuzzle(root, file, 'L1-003')
+    const turn = root.querySelector<HTMLButtonElement>('.turn-btn')!
+    const label = () => root.querySelector('.side-label')!.textContent
+    const pic = () => [...root.querySelectorAll('.rv-pic polygon')].map(p => p.getAttribute('points')).join(' ')
+    const front = pic()
+    expect(label()).toBe('Front'); expect(turn.getAttribute('aria-pressed')).toBe('false'); expect(turn.getAttribute('aria-label')).toBe('Turn')
+    turn.click()
+    expect(label()).toBe('Back'); expect(turn.getAttribute('aria-pressed')).toBe('true')
+    expect(pic()).not.toBe(front)
+    root.querySelector<SVGElement>('.rv-pic')!.dispatchEvent(new MouseEvent('click', { bubbles: true })) // a tap on the picture turns it too
+    expect(label()).toBe('Front'); expect(pic()).toBe(front)
+    s.destroy()
+  })
+
   it('exactViewsSolve', async () => {
     const { reverse, storage } = await load()
     const root = sized()

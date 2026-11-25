@@ -3,6 +3,8 @@ import { checkDrawing } from '../../core/checker'
 import { DrawingEditor, type Bounds } from '../../core/drawing'
 import type { PuzzleFile } from '../../core/generator'
 import { computeEdges, HeightMap } from '../../core/shape'
+import { rotate180 } from '../../core/visibility'
+import { turnButton } from './reversePuzzle'
 import { createLives } from '../components/lives'
 import { createToolBar } from '../components/toolBar'
 import { createTopBar } from '../components/topBar'
@@ -47,7 +49,7 @@ export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string
 /** The views puzzle screen for any puzzle: level sets and endless. */
 export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const { id, key } = e
-  const hm = new HeightMap(e.cols, e.rows, e.h), answer = computeEdges(hm)
+  const hm = new HeightMap(e.cols, e.rows, e.h), answer = computeEdges(hm), backEdges = computeEdges(rotate180(hm)).shape
   // the guide box (cube origin at 0,0,0) plus margin, as on the reference page
   const bounds: Bounds = { t0: -e.rows - 3, t1: e.cols + 3, v0: -2.6, v1: (e.cols + e.rows) / 2 + e.maxH + 1.5 }
   const saved = await loadDrawing(key)
@@ -74,6 +76,11 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
     iconBtn(S.zoomIn, '<path d="M12 5v14M5 12h14"/>', () => grid.zoomBy(1.25)),
     iconBtn(S.zoomOut, '<path d="M5 12h14"/>', () => grid.zoomBy(0.8)),
     h('button', { class: 'icon-btn fit', text: S.fit, onclick: () => grid.fit() }))
+  // the answer seen from the back; only while Answer is on
+  const turn = turnButton(back => grid.setOverlay({ kind: 'answer', edges: back ? backEdges : answer.shape }))
+  turn.el.hidden = true
+  zoom.append(turn.el)
+  const answerOff = () => { turn.el.hidden = true; turn.el.setAttribute('aria-pressed', 'false') }
   const counts = h('span', { class: 'vp-counts-text', 'aria-live': 'polite' })
   const swatches = [1, 2, 3].map(n => h('button', {
     class: 'swatch', 'aria-label': S.tone(n), style: `--swatch: var(--tone-${n})`,
@@ -90,6 +97,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
     if (answerOn) lv.reveal()
     counts.textContent = ''
     ansBtn.setAttribute('aria-pressed', String(answerOn))
+    answerOff(); turn.el.hidden = !answerOn
     grid.setOverlay(answerOn ? { kind: 'answer', edges: answer.shape } : null)
   } })
   const checkBtn = h('button', { class: 'btn btn-accent', text: S.check, onclick: () => void (checkBtn.dataset.next ? goNext() : check()) })
@@ -101,7 +109,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
 
   async function check() {
     const result = checkDrawing(new Set(editor.drawing.lines), answer)
-    checked = true; answerOn = false; ansBtn.setAttribute('aria-pressed', 'false')
+    checked = true; answerOn = false; ansBtn.setAttribute('aria-pressed', 'false'); answerOff()
     grid.setOverlay({ kind: 'check', result })
     counts.textContent = result.correct ? S.solved : S.counts(result.missing.size, result.mistakes.size)
     if (!result.correct) {

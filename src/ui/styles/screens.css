@@ -87,6 +87,7 @@ button { font: inherit; color: inherit; }
 .vp-grid { position: absolute; inset: 0; }
 .vp-zoom { position: absolute; right: var(--space-2); top: var(--space-2); display: flex; flex-direction: column; gap: var(--space-1); }
 .vp-zoom .icon-btn { background: var(--bg); border: var(--stroke-border) solid var(--line); }
+.vp-zoom .icon-btn[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); }
 .vp-zoom .fit { font: 600 var(--size-label) var(--font-ui); }
 .vp-counts { display: flex; align-items: center; justify-content: space-between; flex: none; min-height: var(--size-touch);
   font: 400 var(--size-secondary) var(--font-ui); color: var(--ink); }
@@ -133,6 +134,10 @@ button { font: inherit; color: inherit; }
 .rv-pic { flex: 1; min-height: 0; width: 100%; padding: var(--space-2); box-sizing: border-box; }
 .rv-pic polygon { stroke: none; }
 .rv-pic line { stroke: var(--ink); stroke-width: var(--stroke-static); stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.rv-shape .turn-btn { position: absolute; right: var(--space-1); top: var(--space-1); }
+.rv-shape .side-label { position: absolute; right: calc(var(--size-touch) + var(--space-2)); top: var(--space-1); line-height: var(--size-touch);
+  font: 500 var(--size-label) var(--font-ui); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.rv-pic { cursor: pointer; }
 .rv-shape .key-badge { display: block; position: absolute; left: var(--space-1); top: var(--space-1); }
 .rv-view figcaption { display: flex; justify-content: space-between; gap: var(--space-2); flex: none; padding: var(--space-2) var(--space-3) 0;
   font: 500 var(--size-label) var(--font-ui); color: var(--muted); }

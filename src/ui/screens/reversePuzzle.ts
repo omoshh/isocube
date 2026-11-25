@@ -2,17 +2,30 @@ import { checkViews } from '../../core/checker'
 import { proj, segEnds, type Pt } from '../../core/geometry'
 import type { PuzzleFile } from '../../core/generator'
 import { computeEdges, HeightMap } from '../../core/shape'
+import { rotate180 } from '../../core/visibility'
 import { viewLabels, viewLines, type ViewSet } from '../../core/views'
 import { createLives } from '../components/lives'
 import { keyPicture } from '../components/keyPicture'
 import { createTopBar } from '../components/topBar'
-import { h } from '../dom'
+import { h, icon } from '../dom'
 import { mk } from '../grid/gestures'
 import { createSquareGrid } from '../grid/SquareGrid'
 import type { View } from '../grid/transform'
 import { loadDrawing, saveDrawing, saveLast, updateProgress } from '../storage'
 import { S } from '../strings'
 import type { Puzzle } from './viewsPuzzle'
+
+/** Turn icon (an arrow going round), shared with the views screen. */
+export const TURN_ICON = '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>'
+
+/** A small ⟲ button that toggles front / back; `onTurn` gets true for the back. */
+export function turnButton(onTurn: (back: boolean) => void) {
+  const b = h('button', { class: 'icon-btn turn-btn', 'aria-label': S.turn, title: S.turn, 'aria-pressed': 'false' })
+  b.innerHTML = icon(TURN_ICON)
+  const set = (back: boolean) => { b.setAttribute('aria-pressed', String(back)); onTurn(back) }
+  b.addEventListener('click', () => set(b.getAttribute('aria-pressed') !== 'true'))
+  return { el: b, set, get back() { return b.getAttribute('aria-pressed') === 'true' } }
+}
 
 type V = keyof ViewSet
 const VIEWS: V[] = ['top', 'side', 'front'] // the page's order after KEY
@@ -116,10 +129,14 @@ export async function mountReverse(root: HTMLElement, e: Puzzle) {
   }
 
   const label = { top: S.top, front: S.front, side: S.side }
+  const pics = [shapePicture(hm), shapePicture(rotate180(hm))], side = h('span', { class: 'side-label', text: S.frontSide })
+  const turn = turnButton(back => { pics[back ? 0 : 1].replaceWith(pics[back ? 1 : 0]); side.textContent = back ? S.backSide : S.frontSide })
+  pics.forEach(p => p.addEventListener('click', () => turn.set(!turn.back)))
+  const shapeCell = h('figure', { class: 'rv-cell rv-shape' }, pics[0], h('div', { class: 'key-badge' }, keyPicture()), side, turn.el)
   const el = h('div', { class: 'screen rv' }, top,
     lv.notice,
     h('main', { class: 'rv-body' },
-      h('figure', { class: 'rv-cell rv-shape' }, shapePicture(hm), h('div', { class: 'key-badge' }, keyPicture())),
+      shapeCell,
       ...VIEWS.map(v => h('figure', { class: 'rv-cell rv-view', 'data-view': v },
         h('figcaption', {}, h('span', { text: label[v] }), cells[v].count), cells[v].grid))),
     h('div', { class: 'action-row' },

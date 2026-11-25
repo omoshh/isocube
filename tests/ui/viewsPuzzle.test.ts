@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { segEnds } from '../../src/core/geometry'
 import { computeEdges, HeightMap } from '../../src/core/shape'
 import type { PuzzleFile } from '../../src/core/generator'
+import { rotate180 } from '../../src/core/visibility'
 
 const file: PuzzleFile = JSON.parse(readFileSync('public/puzzles.json', 'utf8'))
 const load = async () => ({
@@ -25,6 +26,37 @@ const button = (root: Element, text: string) =>
 beforeEach(() => { vi.resetModules(); indexedDB = new IDBFactory(); document.body.replaceChildren(); sessionStorage.clear() })
 
 describe('views puzzle screen', () => {
+  it('turn button shows only with Answer and turns the answer to the back', async () => {
+    const { puzzle } = await load()
+    const e = file.puzzles.find(p => p.id === 'L1-003')!, hm = new HeightMap(e.cols, e.rows, e.h)
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-003')
+    const turn = root.querySelector<HTMLButtonElement>('.turn-btn')!
+    const ans = () => root.querySelectorAll('.g-ans line').length
+    expect(turn.hidden).toBe(true)
+    button(root, 'Answer').click()
+    expect(turn.hidden).toBe(false)
+    expect(ans()).toBe(computeEdges(hm).shape.size)
+    turn.click()
+    expect(turn.getAttribute('aria-pressed')).toBe('true')
+    expect(ans()).toBe(computeEdges(rotate180(hm)).shape.size)
+    button(root, 'Answer').click() // off: hidden and back to front
+    expect(turn.hidden).toBe(true); expect(turn.getAttribute('aria-pressed')).toBe('false')
+    button(root, 'Answer').click()
+    expect(ans()).toBe(computeEdges(hm).shape.size)
+    s.destroy()
+  })
+  it('Check resets the turn to front', async () => {
+    const { puzzle } = await load()
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-008')
+    const turn = root.querySelector<HTMLButtonElement>('.turn-btn')!
+    button(root, 'Answer').click(); turn.click()
+    button(root, 'Check').click()
+    expect(turn.hidden).toBe(true); expect(turn.getAttribute('aria-pressed')).toBe('false')
+    s.destroy()
+  })
+
   it('correctDrawingSolves', async () => {
     const { puzzle, storage } = await load()
     const e = file.puzzles.find(p => p.id === 'L1-001')!
