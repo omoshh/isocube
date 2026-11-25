@@ -69,17 +69,17 @@ describe('storage', () => {
   it('v2 import restores lives, section seeds and the Continue record, replacing stale lives', async () => {
     const s = await load()
     await s.saveLives('nets/2/a', { left: 1, revealed: false })
-    await s.saveLast({ kind: 'sections', level: 2, route: '#/sections/2' })
+    await s.saveLast({ kind: 'nets', level: 2, route: '#/nets/2' })
     localStorage.setItem('sections/2', JSON.stringify({ seed: 77, answered: true, pick: 1 }))
     const text = await s.exportBackup()
-    expect(JSON.parse(text)).toMatchObject({ lives: { 'nets/2/a': { left: 1, revealed: false } }, sectionSeeds: { 2: [77] }, last: { route: '#/sections/2' } })
+    expect(JSON.parse(text)).toMatchObject({ lives: { 'nets/2/a': { left: 1, revealed: false } }, sectionSeeds: { 2: [77] }, last: { route: '#/nets/2' } })
     await s.saveLives('nets/2/a', { left: 3, revealed: false }); await s.saveLives('nets/2/stale', { left: 0, revealed: true })
     await s.saveLast({ kind: 'nets', level: 1, route: '#/nets/1' })
     localStorage.setItem('sections/2', JSON.stringify({ seed: 1, answered: false, pick: -1 }))
     expect(await s.importBackup(text)).toEqual({ ok: true })
     expect(await s.loadLives('nets/2/a')).toEqual({ left: 1, revealed: false })
     expect(await s.loadLives('nets/2/stale')).toEqual({ left: 3, revealed: false }) // START: stale entry removed
-    expect((await s.loadLast())?.route).toBe('#/sections/2')
+    expect((await s.loadLast())?.route).toBe('#/nets/2')
     expect(JSON.parse(localStorage.getItem('sections/2')!).seed).toBe(77)
   })
 
@@ -215,5 +215,13 @@ describe('purgeOldPuzzles', () => {
     expect((await s.importBackup(text)).ok).toBe(true)
     expect((await s.loadProgress()).solved).toEqual(['L1-001'])
     expect(await s.loadDrawing('views/L1-001')).toEqual(d(1))
+  })
+})
+
+describe('Sections removed', () => {
+  it('a saved Continue record for Sections is dropped', async () => {
+    const s = await load()
+    await s.saveLast({ kind: 'sections' as never, level: 1, route: '#/sections/1' })
+    expect(await s.loadLast()).toBeUndefined()
   })
 })

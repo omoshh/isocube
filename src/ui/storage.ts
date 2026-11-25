@@ -71,7 +71,7 @@ export function updateProgress(fn: (p: Progress) => Progress): Promise<Progress>
   return r
 }
 /** The puzzle screen opened last, for Home's Continue pill. n = number in its list (none for endless and Nets). */
-const KINDS = ['views', 'reverse', 'nets', 'shadows', 'sections'] as const
+const KINDS = ['views', 'reverse', 'nets', 'shadows'] as const // Sections removed for now (branch `sections`)
 export type LastPuzzle = { kind: (typeof KINDS)[number]; level: number; n?: number; route: string }
 export const saveLast = (l: LastPuzzle) => rawSet('last', l)
 export async function loadLast(): Promise<LastPuzzle | undefined> {

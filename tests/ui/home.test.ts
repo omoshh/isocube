@@ -84,12 +84,10 @@ describe('home', () => {
     const root = sized(), s = await home.mountHome(root)
     const t = (k: string) => root.querySelector(`[data-tile="${k}"]`)!
     const count = (k: string) => t(k).querySelector('.tile-big')!.textContent
-    expect([...root.querySelectorAll('[data-tile]')].map(e => e.getAttribute('data-tile'))).toEqual(['views', 'reverse', 'nets', 'sections', 'shadows', 'draw'])
-    expect(t('sections').getAttribute('href')).toBe('#/sections/1')
+    expect([...root.querySelectorAll('[data-tile]')].map(e => e.getAttribute('data-tile'))).toEqual(['views', 'reverse', 'nets', 'shadows', 'draw']) // Sections removed for now
     expect(t('shadows').getAttribute('href')).toBe('#/levels/shadows')
-    expect(t('sections').textContent).toContain('Find the cut')
     expect(t('shadows').textContent).toContain('Draw the shadow')
-    expect([count('views'), count('sections'), count('shadows')]).toEqual(['1', '2', '1'])
+    expect([count('views'), count('shadows')]).toEqual(['1', '1']) // X… ids (Sections) still do not count as Views
     expect(root.querySelector('.home-total')!.textContent).toBe('5')
     s.destroy()
   })
