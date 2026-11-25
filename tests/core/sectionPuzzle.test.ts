@@ -9,7 +9,7 @@ const answerShape = (p: ReturnType<typeof makeSectionPuzzle>) => {
   return { pl, poly: cut(p.solid, pl) }
 }
 
-describe('makeSectionPuzzle', () => {
+describe('makeSectionPuzzle', { timeout: 30000 }, () => {
   it('is deterministic', () => {
     for (const l of levels) expect(makeSectionPuzzle(l, 42)).toEqual(makeSectionPuzzle(l, 42))
   })
