@@ -141,10 +141,11 @@ export async function importBackup(text: string): Promise<{ ok: boolean; error?:
   return { ok: true }
 }
 
-// Round 3 regenerated every Views/Reverse/Shadows puzzle and dropped Classic: data saved for the old ones is deleted.
-const OLD_ID = /^(R-|S\d-)?(L|RL)\d-\d{3}$|^(R-)?C-\d{3}$/
-const OLD_KEY = ['views/L', 'views/C', 'reverse/RL', 'reverse/C', 'shadow/']
-const OLD_ROUTE = ['#/views/L', '#/views/C', '#/reverse/RL', '#/reverse/C', '#/shadows/']
+// Round 3 regenerated every Views/Reverse/Shadows puzzle, changed what an Endless seed gives, and dropped Classic:
+// data saved for the old puzzles is deleted.
+const OLD_ID = /^(R-|S\d-)?(L|RL)\d-\d{3}$|^(R-)?C-\d{3}$|^(R-)?E\d-\d+$/
+const OLD_KEY = ['views/L', 'views/C', 'reverse/RL', 'reverse/C', 'shadow/', 'endless/', 'reverse/E']
+const OLD_ROUTE = ['#/views/L', '#/views/C', '#/reverse/RL', '#/reverse/C', '#/shadows/', '#/endless/', '#/reverse/E']
 const PUZZLE_SET = 3
 
 async function deleteOldPuzzleData() {

@@ -170,22 +170,32 @@ describe('storage', () => {
 describe('purgeOldPuzzles', () => {
   const seed = async (s: Awaited<ReturnType<typeof load>>) => {
     await s.saveProgress({ solved: ['L1-001', 'R-RL2-004', 'S1-L1-003', 'C-007', 'R-C-002', 'E1-55', 'R-E2-9', 'X1-3'], netsRight: 2, endlessSeeds: {} })
-    s.saveDrawing('views/L1-001', d(1)); s.saveDrawing('reverse/RL1-002', d(2)); s.saveDrawing('shadow/1/L1-001', d(3)); s.saveDrawing('draw/abc', d(4)); s.saveDrawing('endless/1/55', d(5))
+    s.saveDrawing('views/L1-001', d(1)); s.saveDrawing('reverse/RL1-002', d(2)); s.saveDrawing('shadow/1/L1-001', d(3)); s.saveDrawing('draw/abc', d(4)); s.saveDrawing('endless/1/55', d(5)); s.saveDrawing('reverse/E2-9', d(6))
     await s.flush()
-    await s.saveLives('views/L1-001', { left: 2, revealed: true }); await s.saveLives('nets/1/5', { left: 1, revealed: false })
+    await s.saveLives('views/L1-001', { left: 2, revealed: true }); await s.saveLives('endless/1/55', { left: 1, revealed: true }); await s.saveLives('nets/1/5', { left: 1, revealed: false })
     await s.saveLast({ kind: 'views', level: 1, n: 1, route: '#/views/L1-001' })
   }
   it('deletes old puzzle data and keeps the rest', async () => {
     const s = await load()
     await seed(s)
     await s.purgeOldPuzzles()
-    expect((await s.loadProgress()).solved).toEqual(['E1-55', 'R-E2-9', 'X1-3'])
+    expect((await s.loadProgress()).solved).toEqual(['X1-3']) // Endless seeds now give new figures too
     expect((await s.loadProgress()).netsRight).toBe(2)
     for (const k of ['views/L1-001', 'reverse/RL1-002', 'shadow/1/L1-001']) expect(await s.loadDrawing(k), k).toBeUndefined()
     expect(await s.loadDrawing('draw/abc')).toEqual(d(4))
-    expect(await s.loadDrawing('endless/1/55')).toEqual(d(5))
+    expect(await s.loadDrawing('endless/1/55')).toBeUndefined()
+    expect(await s.loadDrawing('reverse/E2-9')).toBeUndefined()
+    expect(await s.loadLives('endless/1/55')).toEqual({ left: 3, revealed: false })
     expect(await s.loadLives('views/L1-001')).toEqual({ left: 3, revealed: false })
     expect(await s.loadLives('nets/1/5')).toEqual({ left: 1, revealed: false })
+    expect(await s.loadLast()).toBeUndefined()
+  })
+  it('drops a Continue record for an old Endless puzzle', async () => {
+    const s = await load()
+    await s.saveLast({ kind: 'reverse', level: 3, route: '#/reverse/E3-77' })
+    // idb-keyval keeps the once-only flag across tests, so use the import path, which always cleans a pre-round-3 backup
+    const text = JSON.stringify({ ...JSON.parse(await s.exportBackup()), version: 2 })
+    expect((await s.importBackup(text)).ok).toBe(true)
     expect(await s.loadLast()).toBeUndefined()
   })
   it('runs only once', async () => {
@@ -201,7 +211,7 @@ describe('purgeOldPuzzles', () => {
     const text = JSON.stringify({ ...JSON.parse(await s.exportBackup()), version: 2 }) // made before round 3
     await s.purgeOldPuzzles()
     expect((await s.importBackup(text)).ok).toBe(true)
-    expect((await s.loadProgress()).solved).toEqual(['E1-55', 'R-E2-9', 'X1-3'])
+    expect((await s.loadProgress()).solved).toEqual(['X1-3'])
     expect(await s.loadDrawing('views/L1-001')).toBeUndefined()
     expect(await s.loadLast()).toBeUndefined()
   })
