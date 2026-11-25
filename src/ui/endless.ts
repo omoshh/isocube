@@ -4,7 +4,7 @@ import { h } from './dom'
 import type { Screen } from './router'
 import { mountReverse } from './screens/reversePuzzle'
 import { mountPuzzle } from './screens/viewsPuzzle'
-import { loadProgress, updateProgress } from './storage'
+import { loadProgress, saveLast, updateProgress } from './storage'
 import { S } from './strings'
 
 type Result = { seed: number; hm: HeightMap }
@@ -126,6 +126,7 @@ export async function mountEndless(root: HTMLElement, level: number, seed: strin
 
   const open = async (hm: HeightMap) => {
     wait.remove()
+    void saveLast({ kind: rev ? 'reverse' : 'views', level, route: prefix + seed })
     const p = { cols: hm.cols, rows: hm.rows, maxH: LEVELS[level - 1].maxH, h: hm.h, subtitle: S.endlessSub(hm.cols, hm.rows), nextRoute: prefix + 'new' }
     const s = rev
       ? await mountReverse(root, { ...p, id: `R-E${level}-${seed}`, key: `reverse/E${level}-${seed}`, title: `${S.reverse}: ${S.level(level).toLowerCase()}` })

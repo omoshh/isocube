@@ -3,7 +3,7 @@ import { makeNetsPuzzle, type Net, type Polycube } from '../../core/nets'
 import { createTopBar } from '../components/topBar'
 import { h } from '../dom'
 import { mk } from '../grid/gestures'
-import { loadProgress, updateProgress } from '../storage'
+import { loadProgress, saveLast, updateProgress } from '../storage'
 import { S } from '../strings'
 
 type Level = 1 | 2 | 3
@@ -63,6 +63,7 @@ function netSvg(net: Net): SVGSVGElement {
 /** #/nets/<level>: shape, four nets A-D, then the fold box once answered. */
 export async function mountNets(root: HTMLElement, level: Level) {
   let rec = readRec(level), raf = 0
+  void saveLast({ kind: 'nets', level, route: '#/nets/' + level })
   const main = h('main', { class: 'nets' })
   root.append(main)
   const netsRight = (await loadProgress()).netsRight

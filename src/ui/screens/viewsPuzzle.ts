@@ -8,7 +8,7 @@ import { createViewsPanel } from '../components/viewsPanel'
 import { h, icon } from '../dom'
 import { createIsoGrid, type Tool } from '../grid/IsoGrid'
 import type { View } from '../grid/transform'
-import { loadDrawing, saveDrawing, updateProgress } from '../storage'
+import { loadDrawing, saveDrawing, saveLast, updateProgress } from '../storage'
 import { S } from '../strings'
 
 // kept across puzzles for the session
@@ -33,6 +33,7 @@ export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string
   const e = file.puzzles.find(p => p.id === id)!
   const list = file.puzzles.filter(p => p.set === e.set && (e.set === 'classic' || p.level === e.level))
   const idx = list.indexOf(e), next = list[idx + 1]
+  void saveLast({ kind: 'views', level: e.set === 'classic' ? 0 : e.level, n: idx + 1, route: '#/views/' + id })
   return mountPuzzle(root, {
     id, key: 'views/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
     title: e.set === 'classic' ? S.classic : S.level(e.level),

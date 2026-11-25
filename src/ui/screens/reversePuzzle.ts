@@ -9,7 +9,7 @@ import { h } from '../dom'
 import { mk } from '../grid/gestures'
 import { createSquareGrid } from '../grid/SquareGrid'
 import type { View } from '../grid/transform'
-import { loadDrawing, saveDrawing, updateProgress } from '../storage'
+import { loadDrawing, saveDrawing, saveLast, updateProgress } from '../storage'
 import { S } from '../strings'
 import type { Puzzle } from './viewsPuzzle'
 
@@ -22,6 +22,7 @@ export function mountReversePuzzle(root: HTMLElement, file: PuzzleFile, id: stri
   const e = file.puzzles.find(p => p.id === id)!
   const list = file.puzzles.filter(p => p.set === e.set && (e.set === 'classic' || p.level === e.level))
   const idx = list.indexOf(e), next = list[idx + 1]
+  void saveLast({ kind: 'reverse', level: e.set === 'classic' ? 0 : e.level, n: idx + 1, route: '#/reverse/' + id })
   return mountReverse(root, {
     id: 'R-' + id, key: 'reverse/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
     title: `${S.reverse}: ${e.set === 'classic' ? S.classic.toLowerCase() : S.level(e.level).toLowerCase()}`,

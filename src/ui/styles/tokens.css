@@ -27,6 +27,8 @@
   --size-label-small: 11px;
   --size-view-label: 10px;
   --size-button: 15px;
+  --size-count: 104px; /* Home total */
+  --size-tile-count: 40px;
 
   --stroke-line: 2px;
   --stroke-answer: 1.5px;
