@@ -80,8 +80,9 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
 
   function eraseAt(p: UV) {
     let best: SegKey | null = null, bd = ERASE_DIST
-    for (const k of editor.drawing.lines) { if (pending.has(k)) continue; const d = segDist(k, p); if (d <= bd) { bd = d; best = k } }
-    if (best) { pending.add(best); render() }
+    for (const k of editor.drawing.lines) { const d = segDist(k, p); if (d <= bd) { bd = d; best = k } }
+    // the nearest line already taken in this stroke blocks the next one: one tap (start + end) erases one line
+    if (best && !pending.has(best)) { pending.add(best); render() }
   }
 
   function preview(s: NonNullable<typeof stroke>, p: UV) {

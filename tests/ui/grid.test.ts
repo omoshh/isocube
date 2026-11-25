@@ -219,6 +219,30 @@ describe('iso grid', () => {
     expect(Object.values(m.editor.drawing.fills)).toEqual([1])
     expect(el.querySelector('.g-fills polygon')?.getAttribute('style')).toContain('var(--tone-1)')
   })
+  describe('eraser takes only the line under the finger', () => {
+    const two = (a: [Pt, Pt], b: [Pt, Pt]) => {
+      const m = mount(), v = m.grid.getView()
+      drag(el, [toPx(v, a[0]), toPx(v, a[1])]); drag(el, [toPx(v, b[0]), toPx(v, b[1])])
+      expect(m.editor.drawing.lines.length).toBe(2)
+      m.state.tool = 'erase'
+      return { m, v }
+    }
+    it('tap near a shared end point erases one line', () => {
+      const { m, v } = two([{ t: 0, m: 0 }, { t: 0, m: 1 }], [{ t: 0, m: 0 }, { t: 1, m: 0 }])
+      drag(el, [toPx(v, { t: 0, m: 0.1 })]) // 0.1 from the node along the first line, 0.09 from the second
+      expect(m.editor.drawing.lines).toEqual(['0:0|1:0'])
+    })
+    it('tap near one of two parallel lines erases only that one', () => {
+      const { m, v } = two([{ t: 0, m: 0 }, { t: 0, m: 1 }], [{ t: 1, m: 0 }, { t: 1, m: 1 }])
+      drag(el, [toPx(v, { t: 0.35, m: 0.4 })]) // 0.30 from the first line, 0.56 from the second
+      expect(m.editor.drawing.lines).toEqual(['1:0|1:1'])
+    })
+    it('drag across two touching lines erases both', () => {
+      const { m, v } = two([{ t: 0, m: 0 }, { t: 0, m: 1 }], [{ t: 0, m: 0 }, { t: 1, m: 0 }])
+      drag(el, [toPx(v, { t: 0, m: 0.5 }), toPx(v, { t: 0.1, m: 0.4 }), toPx(v, { t: 0.3, m: 0.2 }), toPx(v, { t: 0.5, m: 0 })])
+      expect(m.editor.drawing.lines).toEqual([])
+    })
+  })
   it('an eraser tap with no line nearby clears the colour under it', () => {
     const m = mount()
     const v = m.grid.getView()
