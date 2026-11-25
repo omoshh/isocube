@@ -19,7 +19,7 @@ export async function mountHome(root: HTMLElement) {
   settings.innerHTML = SETTINGS
   const play = h('span', { class: 'home-play' })
   play.innerHTML = PLAY
-  const label = last && S.lastLabel(S[last.kind], last.level, last.n ? S.puzzleN(last.n) : last.kind === 'nets' ? '' : S.endlessLower)
+  const label = last && S.lastLabel(S[last.kind], last.level, last.n ? S.puzzleN(last.n) : last.kind === 'nets' || last.kind === 'sections' ? '' : S.endlessLower)
   const el = h('main', { class: 'screen home' },
     h('header', { class: 'home-head' }, h('h1', {}, glyph(), APP_NAME), settings),
     h('div', { class: 'home-count' }, h('div', { class: 'home-total', text: solvedCount(p) }), h('div', { class: 'home-solved', text: S.solvedLabel })),

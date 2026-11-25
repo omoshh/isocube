@@ -6,6 +6,7 @@ import { mountHome } from './screens/home'
 import { mountSettings } from './screens/settings'
 import { mountDrawing, mountDrawList } from './screens/draw'
 import { mountNets } from './screens/nets'
+import { mountSections } from './screens/sections'
 import { mountLevels } from './screens/levels'
 import { mountReversePuzzle } from './screens/reversePuzzle'
 import { mountShadowPuzzle } from './screens/shadowPuzzle'
@@ -35,6 +36,7 @@ const routes: [RegExp, Mount][] = [
   [/^\/reverse\/E([1-6])-(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed, undefined, 'reverse')],
   [/^\/reverse\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountReversePuzzle(root, f, id) : placeholder(root, S.notFound)],
   [/^\/nets\/([1-3])$/, (root, _f, level) => mountNets(root, +level as 1 | 2 | 3)],
+  [/^\/sections\/([1-3])$/, (root, _f, level) => mountSections(root, +level as 1 | 2 | 3)],
   [/^\/draw(?:\/([\w-]+))?$/, (root, _f, id) => id ? mountDrawing(root, id) : mountDrawList(root)],
   [/^\/settings$/, root => mountSettings(root)],
   [/^\/settings\/accent$/, root => mountAccents(root)],
