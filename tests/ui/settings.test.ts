@@ -95,6 +95,7 @@ describe('settings and accents', () => {
     Object.defineProperty(input, 'files', { value: [file] })
     input.dispatchEvent(new Event('change')); await tick()
     expect(root().querySelector('[data-msg]')!.textContent).toBe('boom')
+    expect(input.value).toBe('')
   })
 
   it('storageWarningShown', async () => {
