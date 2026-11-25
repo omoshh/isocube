@@ -43,7 +43,7 @@ export const S = {
   netLevelNames: ['Easy', 'Medium', 'Hard'],
   netLevels: ['1–3 cubes in a row', '3–4 cubes', '4 cubes in 3D'],
   netScore: (n: number) => `${n} right first time`,
-  newShape: 'New shape',
+  newShape: 'New shape', yourPick: 'Your pick',
   netQ: 'Which net folds into this shape?',
   netRight: 'Correct!',
   netWrong: 'Not this one. The outlined net is correct.',

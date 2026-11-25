@@ -96,6 +96,27 @@ describe('views puzzle screen', () => {
   })
 })
 
+describe('puzzle layout', () => {
+  it('fourViewCardsToolBarAndActions', async () => {
+    const { puzzle } = await load()
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-001')
+    expect([...root.querySelectorAll('.views > .view figcaption')].map(c => c.textContent)).toEqual(['Key', 'Top', 'Side', 'Front'])
+    const toggle = button(root, 'Hide views')
+    toggle.click()
+    expect(root.querySelector('.views-panel')!.classList.contains('folded')).toBe(true)
+    expect(toggle.textContent).toBe('Show views')
+    const labels = [...root.querySelectorAll('.tool-bar > *')].map(b => b.getAttribute('aria-label') ?? b.className)
+    expect(labels).toEqual(['Line', 'Freehand', 'Fill', 'Erase', 'divider', 'Undo', 'Redo'])
+    expect(root.querySelector('.tool-bar [aria-pressed="true"]')!.getAttribute('aria-label')).toBe('Line')
+    expect([...root.querySelectorAll('.action-row button')].map(b => b.textContent)).toEqual(['Answer', 'Check'])
+    const bar = root.querySelector('.top-bar')!
+    expect(bar.firstElementChild!.getAttribute('aria-label')).toBe('Back')
+    expect(bar.lastElementChild!.querySelector('summary')!.getAttribute('aria-label')).toBe('More')
+    s.destroy()
+  })
+})
+
 describe('level list', () => {
   it('classicListed', async () => {
     const { levels, storage } = await load()

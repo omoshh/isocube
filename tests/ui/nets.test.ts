@@ -39,6 +39,43 @@ describe('nets screen', () => {
     expect(await right(storage)).toBe(n0)
   })
 
+  it('scoreLineAndNewShape', async () => {
+    const { nets } = await load()
+    seedAt(1, 5)
+    const root = document.body
+    await nets.mountNets(root, 1)
+    expect(root.querySelector('.score')!.textContent).toMatch(/^\d+ right first time$/)
+    expect(root.querySelector('.score-n')!.textContent).toMatch(/^\d+$/)
+    expect([...root.querySelectorAll('button')].some(b => b.textContent === 'New shape')).toBe(true)
+    expect(root.querySelector<HTMLElement>('.netresult')!.hidden).toBe(true)
+  })
+
+  it('wrongPickMarkedAndResultBar', async () => {
+    const { nets } = await load()
+    seedAt(1, 5)
+    const root = document.body, p = makeNetsPuzzle(1, 5), bad = (p.correct + 1) % 4
+    await nets.mountNets(root, 1)
+    opts(root)[bad].click()
+    expect(opts(root)[bad].textContent).toBe('Your pick')
+    expect(opts(root)[p.correct].querySelector('.badge svg')).toBeTruthy()
+    expect(opts(root)[bad].querySelector('.badge')).toBeNull()
+    const bar = root.querySelector<HTMLElement>('.netresult')!
+    expect(bar.hidden).toBe(false)
+    expect(bar.textContent).toContain('Not this one')
+    expect([...bar.querySelectorAll('button')].map(b => b.textContent)).toEqual(['Fold'])
+  })
+
+  it('rightPickGetsBadgeNoYourPick', async () => {
+    const { nets } = await load()
+    seedAt(1, 5)
+    const root = document.body, p = makeNetsPuzzle(1, 5)
+    await nets.mountNets(root, 1)
+    opts(root)[p.correct].click()
+    expect(opts(root)[p.correct].querySelector('.badge svg')).toBeTruthy()
+    expect(root.querySelector('.netresult')!.textContent).toContain('Correct!')
+    expect(root.textContent).not.toContain('Your pick')
+  })
+
   it('seedSurvivesReload', async () => {
     const { nets, storage } = await load()
     const root = document.body, n0 = await right(storage)

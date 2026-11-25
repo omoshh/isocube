@@ -1,7 +1,7 @@
 import { FoldAnimation } from '../../core/fold'
 import { makeNetsPuzzle, type Net, type Polycube } from '../../core/nets'
 import { createTopBar } from '../components/topBar'
-import { h } from '../dom'
+import { h, icon } from '../dom'
 import { mk } from '../grid/gestures'
 import { loadProgress, saveLast, updateProgress } from '../storage'
 import { S } from '../strings'
@@ -74,16 +74,21 @@ export async function mountNets(root: HTMLElement, level: Level) {
     const p = makeNetsPuzzle(level, rec.seed), fa = new FoldAnimation(p.options[p.correct], p.shape)
     const select = h('nav', { class: 'seg', 'aria-label': S.nets },
       ...S.netLevelNames.map((t, i) => h('a', { class: 'btn btn-outline', href: `#/nets/${i + 1}`, text: t, 'aria-pressed': String(i + 1 === level) })))
-    const scoreEl = h('span', { class: 'score', text: S.netScore(score) })
+    const scoreN = h('span', { class: 'score-n' }), scoreEl = h('span', { class: 'score' }, scoreN, ' ')
+    const scoreText = h('span')
+    scoreEl.append(scoreText)
+    const setScore = () => { const [n, ...rest] = S.netScore(score).split(' '); scoreN.textContent = n; scoreText.textContent = rest.join(' ') }
+    setScore()
     const msg = h('div', { class: 'netmsg', 'aria-live': 'polite' })
     const cards = p.options.map((net, i) => {
       const c = h('button', { class: 'netopt', 'aria-label': 'ABCD'[i], onclick: () => answer(i) }, netSvg(net), h('span', { class: 'lbl', text: 'ABCD'[i] }))
       return c
     })
-    const box = h('div', { class: 'view foldbox', hidden: !rec.answered })
+    const box = h('div', { class: 'foldbox', hidden: !rec.answered })
     const fsvg = mk('svg', { role: 'img', 'aria-label': S.foldNote })
     const slider = h('input', { type: 'range', min: 0, max: 1000, value: 0, 'aria-label': S.foldAmount })
-    const play = h('button', { class: 'btn btn-outline', text: S.fold })
+    const play = h('button', { class: 'btn btn-accent', text: S.fold })
+    const result = h('div', { class: 'netresult', hidden: !rec.answered }, msg, play)
 
     const quads = (t: number) => p.options[p.correct].map((_, i) => fa.pose(i, t))
     const all: number[][] = []
@@ -113,30 +118,33 @@ export async function mountNets(root: HTMLElement, level: Level) {
       raf = requestAnimationFrame(step)
     })
     draw(0)
-    box.append(fsvg, h('div', { class: 'foldctl' }, play, slider), h('div', { class: 'netq', text: S.foldNote }))
+    box.append(fsvg, h('div', { class: 'foldctl' }, slider), h('div', { class: 'netq', text: S.foldNote }))
 
     const mark = () => {
       if (!rec.answered) return
       cards[p.correct].classList.add('right')
-      if (rec.pick !== p.correct) cards[rec.pick]?.classList.add('wrong')
+      cards[p.correct].append(h('span', { class: 'badge' }))
+      cards[p.correct].lastElementChild!.innerHTML = icon('<path d="M5 12l5 5 9-10"/>')
+      const bad = rec.pick !== p.correct ? cards[rec.pick] : undefined
+      if (bad) { bad.classList.add('wrong'); bad.querySelector('.lbl')!.textContent = S.yourPick }
       msg.textContent = rec.pick === p.correct ? S.netRight : S.netWrong
     }
     function answer(i: number) {
       if (rec.answered) return
       rec = { ...rec, answered: true, pick: i }
       writeRec(level, rec)
-      if (i === p.correct) { score++; scoreEl.textContent = S.netScore(score); void updateProgress(pr => ({ ...pr, netsRight: pr.netsRight + 1 })) }
-      mark(); box.hidden = false
+      if (i === p.correct) { score++; setScore(); void updateProgress(pr => ({ ...pr, netsRight: pr.netsRight + 1 })) }
+      mark(); box.hidden = result.hidden = false
     }
     mark()
 
     main.replaceChildren(
-      createTopBar({ title: S.nets, subtitle: S.netLevels[level - 1], back: '/' }),
+      createTopBar({ title: S.nets, subtitle: `${S.netLevelNames[level - 1]}, ${S.netLevels[level - 1]}`, back: '/' }),
       select,
-      h('div', { class: 'netbar' }, scoreEl, h('button', { class: 'btn btn-accent', text: S.newShape, onclick: () => { rec = fresh(); writeRec(level, rec); render() } })),
+      h('div', { class: 'netbar' }, scoreEl, h('button', { class: 'btn btn-outline', text: S.newShape, onclick: () => { rec = fresh(); writeRec(level, rec); render() } })),
+      h('div', { class: 'netshape' }, shapeSvg(p.shape)),
       h('div', { class: 'netq', text: S.netQ }),
-      h('div', { class: 'netshape view' }, shapeSvg(p.shape)),
-      h('div', { class: 'netopts' }, ...cards), msg, box,
+      h('div', { class: 'netopts' }, ...cards), result, box,
       h('p', { class: 'hint', text: S.netHint }))
   }
   writeRec(level, rec)

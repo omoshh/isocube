@@ -1,13 +1,29 @@
-# Isometric Puzzles — Design System (v1)
+# Isometric Puzzles — Design System (v2)
 
 Approved direction 2026-11-23: mockups F (light) and H (dark) on the canvas
 https://claude.ai/artifact/NwzCoG2h7VD6DQJT1F5STv. The owner may still change the style; every value
 below lives in ONE theme file (`app/…/ui/theme/Tokens.kt`), so a restyle is a change to that file only.
 
-Feel: warm drawing paper, black ink, calm and precise; rounded shapes; one bright accent.
+Round 2 (2026-11-25): three styles, each with a light and a dark mode, a new glyph and app icon, and new
+Home, Levels, Puzzle and Nets layouts. The web app keeps all values as CSS variables in `src/ui/styles/tokens.css`.
+
+Feel (Paper): warm drawing paper, black ink, calm and precise; rounded shapes; one bright accent.
 Do not copy Nothing's brand: no dot-matrix font, no Nothing red as the default accent.
 
-## Colours
+## Styles and modes
+
+- Three styles: **Paper** (warm paper, black ink, the default), **Blueprint** (blue ink on pale blue paper), **Concrete** (grey, square-ish corners, a light noise behind the content).
+- Each style has a light and a dark mode. Settings has two independent choices: style and mode (System, Light, Dark), plus the accent.
+- Every colour comes from a token (`--bg`, `--surface`, `--ink`, `--muted`, `--line`, `--grid-line`, `--guide`, `--tone-1..3`, `--view-cell`, `--mark-missing`, `--mark-mistake`) set per style and mode on `<html>` (`data-style`, `data-theme`). The table below gives the Paper values.
+- Radius tokens per style: `--radius-button` (24, Concrete 6), `--radius-row` (20, Concrete 6), `--radius-tile` (16, Concrete 6). Panels use the row radius, cards the tile radius, buttons, pills and the tool bar the button radius.
+- The accent is a separate setting and is the same in every style and mode.
+
+## Glyph and app icon
+
+- Glyph: a small isometric cube in `ink` (`src/ui/components/glyph.ts`), used on Home next to "Isocube".
+- App icon: the same cube on the accent-yellow field (`public/icons/`: SVG, 192, 512 and a maskable 512).
+
+## Colours (Paper)
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
@@ -56,7 +72,7 @@ right at the first choice. No accent is orange or blue (those are the check mark
 ## Shape and spacing
 
 - Spacing steps (dp): 4, 8, 12, 16, 24, 32. Screen side padding 16.
-- Corner radius: 24 for buttons and pills, 20 for list rows, 16 for tiles and the view panel cells.
+- Corner radius: the radius tokens above (Paper: 24 buttons and pills, 20 list rows and panels, 16 tiles and cards).
 - Touch targets ≥ 48 dp. Tool bar buttons 48×48.
 - Borders 1 dp `line`; selected state 1.5–2 dp `ink`.
 
@@ -72,26 +88,28 @@ right at the first choice. No accent is orange or blue (those are the check mark
 
 ## Views panel
 
-- One title-block strip across the full width: Key, Top, Side, Front, divided by thin ink rules (web, 2026-11-24; was a 2×2 of cards).
+- Four separate cards in one row: Key, Top, Side, Front. Each is a `surface` card with a `line` border and the tile radius (round 2; was one strip divided by ink rules). On a wide screen the cards go 2×2.
 - Each view: light dashed cell grid; filled cells in `viewCell`; thick `ink` lines (2 dp) where neighbouring cells differ in depth (plane lines), exactly the web page rule. Labels in Archivo 12 px `muted`, sentence case.
-- The panel folds away with a "HIDE VIEWS" toggle; the KEY stays as a small badge when folded.
+- The panel folds away with a "Hide views" toggle; the KEY stays as a small badge when folded.
 
 ## Components
 
 | Component | Spec |
 |---|---|
-| Top bar | 60 dp; back button left, title (Plex Mono 20) + subtitle (e.g. "PUZZLE 07 / 50 · 4×4", 11 sp `muted`), more button right |
-| Tool bar | Bottom, above the action row: Line, Freehand, Fill, Erase · divider · Undo, Redo. Selected tool = `ink` fill, inverted icon |
-| Action row | ANSWER (outlined, 1/3 width) + CHECK (accent fill, 2/3 width), 48 dp tall, radius 24 |
+| Top bar | Back (round, bordered, `aria-label`), title (wide cut) and subtitle centred, More (round) right. Shared by Levels, Puzzle, Reverse and Nets |
+| Tool bar | One pill with the `ink` fill, above the action row: Line, Freehand, Fill, Erase · divider · Undo, Redo. The selected tool is an accent circle |
+| Action row | Answer (outlined, 1/3 width) + Check (accent fill, 2/3 width), 52 tall, button radius |
 | Tone swatches | 16 dp circles/squares with 1.5 dp `ink` border, right of the counts line |
-| Level tile | `surface`, radius 16, level name, base size, "solved / total" bar, lock icon on locked puzzles |
+| Level card | `surface`, tile radius; name, base size, solved count, a 10×5 dot grid (filled = solved), "Endless". Complete = `ink` fill, last opened = accent fill |
 | List row | 64 dp, radius 20, used for accents and draw-mode drawings |
 | Lock | Outline padlock icon in `muted`; tapping a locked item opens the purchase screen |
 
 Icons: simple 1.8 dp stroke icons with labels (`contentDescription`) on every icon-only button.
 
-## Screens covered by mockups
+## Screen layouts (round 2)
 
-- Views puzzle (F light, H dark).
-- Accent colours (I).
-- Still to mock up before polishing: home, level list, nets puzzle, draw mode, purchase, settings. They use only the components above.
+- **Home**: glyph + "Isocube" and a round Settings button; the solved total in large wide numbers; a full-width accent "Continue" pill with the last puzzle (hidden if none); a 2-column tile grid: Views (tall), Reverse, Nets, Draw (full width), each with name, one line and a count.
+- **Levels** (Views, Reverse): top bar, one hint line, a 2-column grid of level cards with Classic full width at the end. Tapping a card opens its numbered puzzles.
+- **Puzzle** (Views, Reverse): top bar; four view cards; the grid panel (`surface`, large radius); the counts line left and tone swatches right; the tool bar pill; the Answer / Check row. Reverse shows the shape and three drawing grids as four cards, then Fit / Check.
+- **Nets**: top bar (level name and description); the level choice; the score as a large number ("6 right first time") with "New shape"; the shape card; the question; four nets in a 2×2 grid. After an answer a wrong pick gets a `markMistake` border and a "Your pick" label; the correct net gets a 2 dp `ink` border and a round check badge; a result bar (`ink` fill) under the grid shows the result text and a "Fold" button, with the fold picture below it.
+- **Draw, Settings, Accent colour**: unchanged layouts; they only take the tokens and the glyph.
