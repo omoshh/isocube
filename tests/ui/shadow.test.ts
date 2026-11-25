@@ -140,7 +140,7 @@ describe('shadow puzzle screen', () => {
     s.destroy()
   })
 
-  it('levels screen: 4 cards naming the light, dots from S<level>-<id>', async () => {
+  it('levels screen: 4 cards naming the light, bar from S<level>-<id>', async () => {
     const { levels, storage } = await load()
     await storage.updateProgress(p => ({ ...p, solved: ['S1-L1-001', 'L1-002'] }))
     const root = sized()
@@ -150,7 +150,7 @@ describe('shadow puzzle screen', () => {
     expect(root.textContent).not.toContain('Endless')
     expect(root.textContent).toContain('Light from above')
     expect(root.textContent).toContain('Light slanted')
-    expect(root.querySelectorAll('[data-level="1"] .dot[data-solved]').length).toBe(1)
+    expect(root.querySelector<HTMLElement>('[data-level="1"] .bar span')!.style.width).toBe('2%')
     expect(root.querySelector<HTMLAnchorElement>('[data-level="2"] .num')!.getAttribute('href')).toBe('#/shadows/2/L2-001')
     s.destroy()
   })

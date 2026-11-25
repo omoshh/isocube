@@ -96,7 +96,7 @@ describe('home', () => {
 })
 
 describe('levels cards', () => {
-  it('statesAndDots', async () => {
+  it('statesBarAndSizes', async () => {
     const { levels, storage } = await load()
     const l1 = file.puzzles.filter(p => p.set === 'level' && p.level === 1)
     const l2 = file.puzzles.filter(p => p.set === 'level' && p.level === 2)
@@ -107,19 +107,20 @@ describe('levels cards', () => {
     expect(state('[data-level="1"]')).toBe('complete')
     expect(state('[data-level="2"]')).toBe('last')
     expect(state('[data-level="3"]')).toBeNull()
-    const dots = root.querySelectorAll('[data-level="2"] .dot')
-    expect(dots.length).toBe(l2.length)
-    expect(root.querySelectorAll('[data-level="2"] .dot[data-solved]').length).toBe(1)
-    expect(root.querySelectorAll('[data-level="1"] .dot[data-solved]').length).toBe(l1.length)
-    expect(root.querySelector('.levels-hint')!.textContent).toBe('Each dot is one puzzle. Filled dots are solved.')
+    expect(root.querySelector('.dot')).toBeNull()
+    expect(root.querySelector<HTMLElement>('[data-level="2"] .bar span')!.style.width).toBe('2%')
+    expect(root.querySelector<HTMLElement>('[data-level="1"] .bar span')!.style.width).toBe('100%')
+    expect(root.querySelector('[data-level="1"] .tile-size')!.textContent).toBe('3×3×2')
+    expect(root.querySelector('[data-level="6"] .tile-size')!.textContent).toBe('5×6×5')
+    expect(root.querySelector('.levels-hint')!.textContent).toBe('Tap a level to see its puzzles.')
     expect(root.querySelectorAll('[data-level="2"] a.num').length).toBe(l2.length)
     s.destroy()
   })
 
-  it('stylesKeepEndlessVisibleAndDotsEqual', () => {
+  it('stylesKeepEndlessVisibleAndOneColumn', () => {
     const css = readFileSync('src/ui/styles/screens.css', 'utf8')
     expect(css).toMatch(/\.tile\[data-state\] > \.btn \{ color: inherit; \}/)
-    expect(css).toMatch(/\.dots \{[^}]*repeat\(10, minmax\(0, 10px\)\)/)
+    expect(css).toMatch(/\.tiles \{ display: flex; flex-direction: column;/)
     expect(css).toMatch(/\.netbar \.btn \{ height: var\(--size-touch\)/)
     expect(css).toMatch(/\.netresult \.btn \{ min-height: var\(--size-touch\)/)
     expect(css).toMatch(/\.tool-bar \.icon-btn \{[^}]*border-radius: 50%/)

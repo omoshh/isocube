@@ -51,7 +51,7 @@ button { font: inherit; color: inherit; }
 /* level list */
 .levels { height: auto; min-height: 100%; }
 .levels-hint { margin: 0 0 var(--space-3); color: var(--muted); font: 400 var(--size-secondary) var(--font-ui); }
-.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: var(--space-3); padding-bottom: var(--space-4); }
+.tiles { display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: var(--space-4); }
 .tile { background: var(--surface); color: var(--ink); border-radius: var(--radius-tile); padding: var(--space-3) var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
 .tile summary { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1) var(--space-3); cursor: pointer; list-style: none; min-height: var(--size-touch); align-items: center; }
 .tile summary::-webkit-details-marker { display: none; }
@@ -59,9 +59,12 @@ button { font: inherit; color: inherit; }
 .tile-size, .tile-count { font: 400 var(--size-secondary) var(--font-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 .tile-count { grid-column: 2; grid-row: 1; }
 .tile-size:empty { display: none; }
-.dots { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(10, minmax(0, 10px)); gap: var(--space-1); } /* same dot size on every card; Classic is just wider */
-.dot { aspect-ratio: 1; border-radius: 50%; border: var(--stroke-border) solid currentColor; opacity: .4; }
-.dot[data-solved] { background: currentColor; opacity: 1; }
+.tile-size { grid-column: 1 / -1; }
+.bar { grid-column: 1 / -1; height: var(--space-1); background: var(--line); border-radius: var(--space-1); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--accent); }
+/* accent row: accent fill would vanish; complete row: full bar in the row's text colour */
+.tile[data-state] .bar span { background: currentColor; }
+.tile[data-state] .bar { background: color-mix(in srgb, currentColor 25%, transparent); }
 .tile[data-state="complete"] { background: var(--ink); color: var(--bg); }
 .tile[data-state="last"] { background: var(--accent); color: var(--on-accent); }
 .tile[data-state] .tile-size, .tile[data-state] .tile-count { color: inherit; }

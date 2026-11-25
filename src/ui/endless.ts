@@ -127,7 +127,7 @@ export async function mountEndless(root: HTMLElement, level: number, seed: strin
   const open = async (hm: HeightMap) => {
     wait.remove()
     void saveLast({ kind: rev ? 'reverse' : 'views', level, route: prefix + seed })
-    const p = { cols: hm.cols, rows: hm.rows, maxH: LEVELS[level - 1].maxH, h: hm.h, subtitle: S.endlessSub(hm.cols, hm.rows), nextRoute: prefix + 'new' }
+    const p = { cols: hm.cols, rows: hm.rows, maxH: LEVELS[level - 1].maxH, h: hm.h, subtitle: S.endlessSub(hm.cols, hm.rows, LEVELS[level - 1].maxH), nextRoute: prefix + 'new' }
     const s = rev
       ? await mountReverse(root, { ...p, id: `R-E${level}-${seed}`, key: `reverse/E${level}-${seed}`, title: `${S.reverse}: ${S.level(level).toLowerCase()}` })
       : await mountPuzzle(root, { ...p, id: `E${level}-${seed}`, key: `endless/${level}/${seed}`, title: S.level(level) })

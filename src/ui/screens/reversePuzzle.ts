@@ -40,7 +40,7 @@ export function mountReversePuzzle(root: HTMLElement, file: PuzzleFile, id: stri
   return mountReverse(root, {
     id: 'R-' + id, key: 'reverse/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
     title: `${S.reverse}: ${S.level(e.level).toLowerCase()}`,
-    subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows),
+    subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows, e.maxH),
     nextRoute: next ? '#/reverse/' + next.id : '#/levels/reverse',
   })
 }

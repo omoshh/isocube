@@ -41,7 +41,7 @@ export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string
   return mountPuzzle(root, {
     id, key: 'views/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
     title: S.level(e.level),
-    subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows),
+    subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows, e.maxH),
     nextRoute: next ? '#/views/' + next.id : '#/levels/views',
   })
 }

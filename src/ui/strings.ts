@@ -12,10 +12,10 @@ export const S = {
   levels: 'Levels',
   level: (n: number) => `Level ${n}`,
   endless: 'Endless',
-  endlessSub: (cols: number, rows: number) => `Endless, ${cols}×${rows} base`,
+  endlessSub: (cols: number, rows: number, h: number) => `Endless, ${cols}×${rows}×${h}`,
   generating: 'Generating…', generateFailed: 'Could not generate puzzles.', importFailed: 'Could not read the file.', cancel: 'Cancel',
-  puzzle: (n: number, total: number, cols: number, rows: number) =>
-    `Puzzle ${n} of ${total}, ${cols}×${rows} base`,
+  puzzle: (n: number, total: number, cols: number, rows: number, h: number) =>
+    `Puzzle ${n} of ${total}, ${cols}×${rows}×${h}`,
   solvedOf: (n: number, total: number) => `${n} / ${total}`,
   settings: 'Settings', style: 'Style', styles: ['Paper', 'Blueprint', 'Concrete'] as const, lineWidth: 'Line width', lineWidths: ['Thin', 'Normal', 'Thick'] as const, theme: 'Theme', themes: ['System', 'Light', 'Dark'] as const, accent: 'Accent colour', accents: 'Accent colour',
   unlockAll: 'Unlock all accents', exportProgress: 'Export progress', importProgress: 'Import progress',
@@ -24,7 +24,7 @@ export const S = {
   viewsDesc: 'Read 3 views, draw the stack', reverseDesc: 'Draw the views', netsDesc: 'Pick the net', drawDesc: 'Free drawing', sectionsDesc: 'Find the cut', shadowsDesc: 'Draw the shadow',
   lastLabel: (kind: string, level: number, tail?: string) => [kind, level && `level ${level}`, tail].filter(Boolean).join(', '),
   puzzleN: (n: number) => `puzzle ${n}`, endlessLower: 'endless',
-  levelsHint: 'Each dot is one puzzle. Filled dots are solved.',
+  levelsHint: 'Tap a level to see its puzzles.',
   about: 'About', version: (v: string) => `Version ${v}`,
   selected: 'Selected', unlocked: 'Unlocked', needSolved: (n: number) => `${n} solved`, locked: 'Locked',
   moreToUnlock: (n: number, name: string) => `${n} more to unlock ${name}`,

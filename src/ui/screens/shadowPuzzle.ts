@@ -95,7 +95,7 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
   })
 
   const top = createTopBar({
-    title: S.shadows, subtitle: `${S.level(level)}, ${S.puzzle(idx + 1, list.length, e.cols, e.rows)}`,
+    title: S.shadows, subtitle: `${S.level(level)}, ${S.puzzle(idx + 1, list.length, e.cols, e.rows, e.maxH)}`,
     back: '/levels/shadows', lives: lv.el,
     menu: [
       { label: S.clear, onClick: () => { editor.clear(); grid.render() } },
