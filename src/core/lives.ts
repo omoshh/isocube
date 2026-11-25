@@ -3,7 +3,7 @@ export type LivesState = { left: 0 | 1 | 2 | 3; revealed: boolean }
 export const START: LivesState = { left: 3, revealed: false }
 
 export function loseLife(s: LivesState): { state: LivesState; restart: boolean } {
-  if (s.left <= 1) return { state: { ...START, revealed: s.revealed }, restart: true } // a revealed puzzle stays revealed
+  if (s.left <= 1) return { state: START, restart: true } // a full restart also clears revealed (owner, round 3)
   return { state: { ...s, left: (s.left - 1) as LivesState['left'] }, restart: false }
 }
 export const reveal = (s: LivesState): LivesState => ({ ...s, revealed: true })

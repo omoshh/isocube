@@ -84,6 +84,22 @@ describe('lives', () => {
     expect((await storage.loadProgress()).solved).toEqual([])
   })
 
+  it('after Answer and a full restart, a correct check solves', async () => {
+    const { views, storage } = await load()
+    await storage.saveLives('views/L1-007', { left: 1, revealed: true })
+    const root = sized()
+    const s = await views.mountViewsPuzzle(root, file, 'L1-007')
+    wrongViews(s)
+    button(root, 'Check').click()
+    await vi.waitFor(async () => expect(await storage.loadLives('views/L1-007')).toEqual({ left: 3, revealed: false }))
+    const { computeEdges, HeightMap } = await import('../../src/core/shape')
+    const { segEnds } = await import('../../src/core/geometry')
+    const e = file.puzzles.find(p => p.id === 'L1-007')!
+    s.editor.addLines([...computeEdges(new HeightMap(e.cols, e.rows, e.h)).shape].map(k => { const [a, b] = segEnds(k); return { a, b } }))
+    button(root, 'Check').click()
+    await vi.waitFor(async () => expect((await storage.loadProgress()).solved).toEqual(['L1-007']))
+  })
+
   it('livesOffUnlimited', async () => {
     const { views, storage } = await load()
     await storage.saveSettings({ ...(await storage.loadSettings()), lives: false })
