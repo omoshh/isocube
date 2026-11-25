@@ -100,6 +100,21 @@ describe('levels cards', () => {
     s.destroy()
   })
 
+  it('stylesKeepEndlessVisibleAndDotsEqual', () => {
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8')
+    expect(css).toMatch(/\.tile\[data-state\] > \.btn \{ color: inherit; \}/)
+    expect(css).toMatch(/\.dots \{[^}]*repeat\(10, minmax\(0, 10px\)\)/)
+  })
+
+  it('endlessLinkSitsDirectlyInStatefulCard', async () => {
+    const { levels, storage } = await load()
+    const l1 = file.puzzles.filter(p => p.set === 'level' && p.level === 1)
+    await storage.saveProgress({ solved: l1.map(p => p.id), netsRight: 0, endlessSeeds: {} })
+    const root = sized(), s = await levels.mountLevels(root, file)
+    expect(root.querySelector('[data-level="1"][data-state="complete"] > a.btn')!.getAttribute('href')).toBe('#/endless/1/new')
+    s.destroy()
+  })
+
   it('lastOpenedOnlyForSameKind', async () => {
     const { levels, storage } = await load()
     await storage.saveLast({ kind: 'reverse', level: 2, n: 1, route: '#/reverse/x' })

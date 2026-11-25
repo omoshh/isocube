@@ -47,7 +47,7 @@ button { font: inherit; color: inherit; }
 .tile-size, .tile-count { font: 400 var(--size-secondary) var(--font-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 .tile-count { grid-column: 2; grid-row: 1; }
 .tile-size:empty { display: none; }
-.dots { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--space-1); }
+.dots { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(10, minmax(0, 10px)); gap: var(--space-1); } /* same dot size on every card; Classic is just wider */
 .dot { aspect-ratio: 1; border-radius: 50%; border: var(--stroke-border) solid currentColor; opacity: .4; }
 .dot[data-solved] { background: currentColor; opacity: 1; }
 .tile[data-state="complete"] { background: var(--ink); color: var(--bg); }
@@ -61,6 +61,8 @@ button { font: inherit; color: inherit; }
 .num[data-solved] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .tile > .btn { align-self: flex-start; height: var(--size-touch); padding: 0; border: 0; background: none; font-weight: 500;
   text-decoration: underline; text-underline-offset: 3px; }
+/* the Endless link takes the card's text colour (ink on the complete card would vanish) */
+.tile[data-state] > .btn { color: inherit; }
 /* open/close mark, so the tile reads as something that expands */
 .tile-name::after { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 0 3px 10px;
   border-right: var(--stroke-selected) solid var(--muted); border-bottom: var(--stroke-selected) solid var(--muted); transform: rotate(45deg); }
