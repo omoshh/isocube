@@ -153,7 +153,7 @@ button { font: inherit; color: inherit; }
 
 /* home and settings */
 .home { align-items: center; justify-content: center; gap: var(--space-4); }
-.home h1 { font: 700 40px/1 var(--font-ui); font-stretch: var(--stretch-display); margin: 0; }
+.home h1 { font: 700 40px/1 var(--font-ui); font-stretch: var(--stretch-display); margin: 0; display: flex; align-items: center; gap: 10px; }
 .home-solved { color: var(--muted); font: 400 var(--size-label) var(--font-ui); margin: 0; }
 .home nav { display: flex; flex-direction: column; gap: var(--space-3); width: min(100%, 320px); }
 .settings-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: var(--space-4); }
