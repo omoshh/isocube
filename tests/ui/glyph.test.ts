@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { glyph } from '../../src/ui/components/glyph'
-import { iconSvg } from '../../scripts/generate-icons'
+import { createTopBar } from '../../src/ui/components/topBar'
+import { iconSvg, MASKABLE_SCALE } from '../../scripts/generate-icons'
 
 describe('glyph', () => {
   const svg = glyph()
@@ -32,11 +33,20 @@ describe('app icon', () => {
     expect(b.subarray(1, 4).toString()).toBe('PNG')
     expect([b.readUInt32BE(16), b.readUInt32BE(20)]).toEqual([px, px])
   })
-  it('keeps the shape inside the centre 80%', () => {
-    const pts = [...iconSvg().matchAll(/points="([^"]+)"/g)].flatMap(m => m[1].split(' ').map(p => p.split(',').map(Number)))
-    for (const [x, y] of pts) for (const v of [x, y]) { expect(v).toBeGreaterThanOrEqual(51.2); expect(v).toBeLessThanOrEqual(460.8) }
+  it('keeps the maskable shape, stroke included, inside the safe circle (r = 40%)', () => {
+    const svg = iconSvg(MASKABLE_SCALE)
+    const half = Number(svg.match(/stroke-width="([\d.]+)"/)![1]) / 2
+    const pts = [...svg.matchAll(/points="([^"]+)"/g)].flatMap(m => m[1].split(' ').map(p => p.split(',').map(Number)))
+    for (const [x, y] of pts) expect(Math.hypot(x - 256, y - 256) + half).toBeLessThanOrEqual(204.8)
   })
   it('favicon is linked', () => {
     expect(readFileSync('index.html', 'utf8')).toMatch(/rel="icon"/)
+  })
+})
+
+describe('top bar', () => {
+  it('adds an aria-hidden spacer only when there is no menu', () => {
+    expect(createTopBar({ title: 'T', back: '/' }).querySelector('.top-spacer')!.getAttribute('aria-hidden')).toBe('true')
+    expect(createTopBar({ title: 'T', back: '/', menu: [] }).querySelector('.top-spacer')).toBeNull()
   })
 })

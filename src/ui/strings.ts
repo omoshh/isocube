@@ -23,7 +23,7 @@ export const S = {
   lastLabel: (kind: string, level: number, tail?: string) => [kind, level ? `level ${level}` : 'Classic', tail].filter(Boolean).join(', '),
   puzzleN: (n: number) => `puzzle ${n}`, endlessLower: 'endless',
   levelsHint: 'Each dot is one puzzle. Filled dots are solved.',
-  about: 'About', version: (v: string) => `Version ${v}`, solvedTotal: (n: number) => `${n} solved`,
+  about: 'About', version: (v: string) => `Version ${v}`,
   selected: 'Selected', unlocked: 'Unlocked', needSolved: (n: number) => `${n} solved`, locked: 'Locked',
   moreToUnlock: (n: number, name: string) => `${n} more to unlock ${name}`,
   notBuilt: 'This screen is not built yet.',

@@ -61,6 +61,7 @@ describe('nets screen', () => {
     expect(opts(root)[bad].querySelector('.badge')).toBeNull()
     const bar = root.querySelector<HTMLElement>('.netresult')!
     expect(bar.hidden).toBe(false)
+    expect(bar.getAttribute('aria-live')).toBe('polite')
     expect(bar.textContent).toContain('Not this one')
     expect([...bar.querySelectorAll('button')].map(b => b.textContent)).toEqual(['Fold'])
   })

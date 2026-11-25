@@ -12,7 +12,8 @@ export function createTopBar(o: { title: string; subtitle?: string; back: string
   back.innerHTML = BACK
   const bar = h('header', { class: 'top-bar' }, back,
     h('div', { class: 'top-titles' }, h('h1', { text: o.title }), ...(o.subtitle ? [h('p', { text: o.subtitle })] : [])))
-  if (o.menu) {
+  if (!o.menu) bar.append(h('span', { class: 'top-spacer', 'aria-hidden': 'true' }))
+  else {
     const summary = h('summary', { class: 'icon-btn', 'aria-label': S.more })
     summary.innerHTML = MORE
     const menu = h('details', { class: 'more' }, summary)

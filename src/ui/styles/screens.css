@@ -20,6 +20,7 @@ button { font: inherit; color: inherit; }
 .top-bar { display: flex; align-items: center; gap: var(--space-2); height: var(--size-top-bar); flex: none; }
 .top-bar { gap: var(--space-3); }
 .top-bar > .icon-btn, .top-bar .more > summary { flex: none; width: var(--size-touch); border-radius: var(--radius-button); border: var(--stroke-border) solid var(--line); background: var(--surface); }
+.top-spacer { flex: none; width: var(--size-touch); }
 .top-titles { flex: 1; min-width: 0; text-align: center; }
 .top-titles h1 { margin: 0; font: 600 var(--size-title)/1.1 var(--font-ui); font-stretch: var(--stretch-display); }
 .top-titles p { margin: 2px 0 0; font: 400 var(--size-label) var(--font-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -35,7 +36,7 @@ button { font: inherit; color: inherit; }
 /* tool bar */
 .tool-bar { display: flex; align-items: center; justify-content: space-around; flex: none; height: 64px; padding: 0 var(--space-2);
   background: var(--ink); color: var(--bg); border-radius: var(--radius-button); }
-.tool-bar .icon-btn { width: var(--size-touch); border-radius: var(--radius-button); color: var(--bg); }
+.tool-bar .icon-btn { width: var(--size-touch); border-radius: 50%; color: var(--bg); }
 .tool-bar .icon-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 .tool-bar .icon-btn:disabled { color: var(--bg); opacity: .4; }
 .tool-bar .divider { width: var(--stroke-border); height: var(--space-5); background: var(--bg); opacity: .4; }
@@ -138,7 +139,7 @@ button { font: inherit; color: inherit; }
 .netbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .netbar .score { display: flex; align-items: baseline; gap: var(--space-2); font: 400 var(--size-secondary) var(--font-ui); color: var(--muted); }
 .score-n { font: 700 52px/1 var(--font-ui); font-stretch: var(--stretch-display); font-variant-numeric: tabular-nums; color: var(--ink); }
-.netbar .btn { height: 40px; padding: 0 var(--space-4); font-size: var(--size-secondary); }
+.netbar .btn { height: var(--size-touch); padding: 0 var(--space-4); font-size: var(--size-secondary); }
 .netq { font: 600 20px var(--font-ui); margin-top: var(--space-2); }
 .netshape, .foldbox { background: var(--surface); border: var(--stroke-border) solid var(--line); border-radius: var(--radius-row); padding: var(--space-2); }
 .netshape svg, .foldbox svg { width: 100%; height: 140px; display: block; }
@@ -157,7 +158,7 @@ button { font: inherit; color: inherit; }
 .netresult { display: flex; align-items: center; gap: var(--space-3); min-height: 56px; padding: 6px 6px 6px var(--space-5); background: var(--ink); color: var(--bg); border-radius: var(--radius-button); }
 .netresult[hidden] { display: none; }
 .netresult .netmsg { flex: 1; font: 400 var(--size-secondary) var(--font-ui); }
-.netresult .btn { height: 44px; border-radius: var(--radius-button); padding: 0 var(--space-4); font-size: var(--size-secondary); }
+.netresult .btn { min-height: var(--size-touch); border-radius: var(--radius-button); padding: 0 var(--space-4); font-size: var(--size-secondary); }
 .ncell { fill: var(--view-cell); }
 .nline { stroke: var(--ink); stroke-width: .06; stroke-linecap: round; }
 .nline.fold { stroke-width: .04; stroke-dasharray: .12 .08; }

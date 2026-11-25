@@ -10,13 +10,14 @@ const tok = (n: string) => paper.match(new RegExp(`--${n}:\\s*([^;]+);`))![1].tr
 // Stack [[2,1],[1,0]] (canvas option 5) as cubes: top-vertex x, y, in a 96-unit box, back to front.
 const CUBES = [[48, 26.4], [48, 4.8], [66.7, 37.2], [29.3, 37.2]]
 const W = 18.7, D = 10.8, H = 21.6
-const SCALE = 5.3 // shape ~403px of 512, inside the maskable safe zone (centre 80% = 410px)
+const SCALE = 5.3 // shape ~403px of 512
+export const MASKABLE_SCALE = 4.3 // maskable safe zone is a circle of radius 40% (205px) from the centre, stroke included
 
-export function iconSvg(): string {
+export function iconSvg(scale = SCALE): string {
   const [ink, left, bg, top] = [tok('ink'), tok('tone-2'), tok('bg'), ACCENT_HEX.yellow]
-  const f = (n: number) => +(n * SCALE).toFixed(1)
+  const f = (n: number) => +(n * scale).toFixed(1)
   // shape bbox in 96 units is x 10.6..85.4, y 4.8..80.4; centre it on 256
-  const ox = 256 - 48 * SCALE, oy = 256 - 42.6 * SCALE
+  const ox = 256 - 48 * scale, oy = 256 - 42.6 * scale
   const poly = (fill: string, p: number[][]) =>
     `<polygon points="${p.map(([x, y]) => `${+(f(x) + ox).toFixed(1)},${+(f(y) + oy).toFixed(1)}`).join(' ')}" fill="${fill}" stroke="${ink}" stroke-width="${f(2.4)}" stroke-linejoin="round"/>`
   const cube = ([x, y]: number[]) => [
@@ -34,7 +35,7 @@ async function main() {
   const browser = await chromium.launch()
   for (const [name, px] of [['icon-192', 192], ['icon-512', 512], ['icon-maskable-512', 512]] as const) {
     const page = await browser.newPage({ viewport: { width: px, height: px } })
-    await page.setContent(`<body style="margin:0"><img width="${px}" height="${px}" src="data:image/svg+xml;base64,${Buffer.from(iconSvg()).toString('base64')}">`)
+    await page.setContent(`<body style="margin:0"><img width="${px}" height="${px}" src="data:image/svg+xml;base64,${Buffer.from(iconSvg(name === 'icon-maskable-512' ? MASKABLE_SCALE : SCALE)).toString('base64')}">`)
     await page.screenshot({ path: `public/icons/${name}.png` })
     await page.close()
   }

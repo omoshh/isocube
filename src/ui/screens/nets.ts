@@ -79,7 +79,7 @@ export async function mountNets(root: HTMLElement, level: Level) {
     scoreEl.append(scoreText)
     const setScore = () => { const [n, ...rest] = S.netScore(score).split(' '); scoreN.textContent = n; scoreText.textContent = rest.join(' ') }
     setScore()
-    const msg = h('div', { class: 'netmsg', 'aria-live': 'polite' })
+    const msg = h('div', { class: 'netmsg' })
     const cards = p.options.map((net, i) => {
       const c = h('button', { class: 'netopt', 'aria-label': 'ABCD'[i], onclick: () => answer(i) }, netSvg(net), h('span', { class: 'lbl', text: 'ABCD'[i] }))
       return c
@@ -88,7 +88,7 @@ export async function mountNets(root: HTMLElement, level: Level) {
     const fsvg = mk('svg', { role: 'img', 'aria-label': S.foldNote })
     const slider = h('input', { type: 'range', min: 0, max: 1000, value: 0, 'aria-label': S.foldAmount })
     const play = h('button', { class: 'btn btn-accent', text: S.fold })
-    const result = h('div', { class: 'netresult', hidden: !rec.answered }, msg, play)
+    const result = h('div', { class: 'netresult', 'aria-live': 'polite', hidden: !rec.answered }, msg, play)
 
     const quads = (t: number) => p.options[p.correct].map((_, i) => fa.pose(i, t))
     const all: number[][] = []

@@ -7,8 +7,9 @@ import { S } from '../strings'
 /** #/levels/views and #/levels/reverse: one tile per level and Classic; a tile opens to a numbered grid of its puzzles. */
 export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'views' | 'reverse' = 'views') {
   const pre = mode === 'reverse' ? 'R-' : ''
-  const solved = new Set((await loadProgress()).solved.filter(s => s.startsWith(pre)).map(s => s.slice(pre.length)))
-  const last = await loadLast(), lastLevel = last?.kind === mode ? last.level : undefined
+  const [progress, last] = await Promise.all([loadProgress(), loadLast()])
+  const solved = new Set(progress.solved.filter(s => s.startsWith(pre)).map(s => s.slice(pre.length)))
+  const lastLevel = last?.kind === mode ? last.level : undefined
   const tile = (data: Record<string, string>, name: string, size: string, list: PuzzleEntry[], level: number, endless?: string) => {
     const n = list.filter(p => solved.has(p.id)).length
     const dots = h('span', { class: 'dots', 'aria-hidden': 'true' }, ...list.map(p => h('span', { class: 'dot', 'data-solved': solved.has(p.id) })))

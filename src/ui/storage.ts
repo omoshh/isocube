@@ -70,11 +70,12 @@ export function updateProgress(fn: (p: Progress) => Progress): Promise<Progress>
   return r
 }
 /** The puzzle screen opened last, for Home's Continue pill. level 0 = Classic; n = number in its list (none for endless and Nets). */
-export type LastPuzzle = { kind: 'views' | 'reverse' | 'nets'; level: number; n?: number; route: string }
+const KINDS = ['views', 'reverse', 'nets'] as const
+export type LastPuzzle = { kind: (typeof KINDS)[number]; level: number; n?: number; route: string }
 export const saveLast = (l: LastPuzzle) => rawSet('last', l)
 export async function loadLast(): Promise<LastPuzzle | undefined> {
   const l = await rawGet<LastPuzzle>('last')
-  const ok = !!l && ['views', 'reverse', 'nets'].includes(l.kind) && Number.isInteger(l.level) && typeof l.route === 'string' && l.route.startsWith('#/') && (l.n === undefined || Number.isInteger(l.n))
+  const ok = !!l && (KINDS as readonly string[]).includes(l.kind) && Number.isInteger(l.level) && typeof l.route === 'string' && l.route.startsWith('#/') && (l.n === undefined || Number.isInteger(l.n))
   return ok ? l : undefined
 }
 export const loadSettings = async (): Promise<Settings> => ({ ...DEFAULT_SETTINGS(), ...(await rawGet<Settings>('settings')) })
