@@ -162,3 +162,40 @@ describe('lives', () => {
     await vi.waitFor(async () => expect((await storage.loadSettings()).lives).toBe(false))
   })
 })
+
+describe('nets right-first-time with lives', () => {
+  const seed = () => localStorage.setItem('nets/1', JSON.stringify({ seed: 5, answered: false, pick: -1 }))
+  const setup = async () => {
+    const m = await load()
+    seed()
+    const p = makeNetsPuzzle(1, 5), bads = [0, 1, 2, 3].filter(i => i !== p.correct)
+    return { ...m, p, bads, n0: (await m.storage.updateProgress(x => x)).netsRight }
+  }
+  const nr = async (s: Awaited<ReturnType<typeof load>>['storage']) => (await s.updateProgress(x => x)).netsRight
+
+  it('right first pick counts with lives on', async () => {
+    const { nets, storage, p, n0 } = await setup()
+    await nets.mountNets(document.body, 1)
+    opts(document.body)[p.correct].click()
+    expect(await nr(storage)).toBe(n0 + 1)
+  })
+
+  it('restart then right pick does not count', async () => {
+    const { nets, storage, p, bads, n0 } = await setup()
+    await nets.mountNets(document.body, 1)
+    bads.forEach(i => opts(document.body)[i].click())
+    expect(marks(document.body)!.getAttribute('aria-label')).toBe('Lives: 3 of 3')
+    opts(document.body)[p.correct].click()
+    expect(await nr(storage)).toBe(n0)
+  })
+
+  it('same after a reload following the restart', async () => {
+    const { nets, storage, p, bads, n0 } = await setup()
+    const s = await nets.mountNets(document.body, 1)
+    bads.forEach(i => opts(document.body)[i].click())
+    s.destroy()
+    await nets.mountNets(document.body, 1)
+    opts(document.body)[p.correct].click()
+    expect(await nr(storage)).toBe(n0)
+  })
+})

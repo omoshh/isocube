@@ -9,7 +9,7 @@ import { S } from '../strings'
 
 type Level = 1 | 2 | 3
 // The current puzzle survives a reload as localStorage `nets/<level>` (smaller than a storage.ts field; try/catch for blocked storage).
-type Rec = { seed: number; answered: boolean; pick: number; wrong?: number[] } // wrong: picks that cost a life (lives on)
+type Rec = { seed: number; answered: boolean; pick: number; wrong?: number[]; guessed?: boolean } // wrong: picks that cost a life (lives on)
 const fresh = (): Rec => ({ seed: Math.floor(Math.random() * 2 ** 32), answered: false, pick: -1 })
 function readRec(level: Level): Rec {
   try {
@@ -137,11 +137,12 @@ export async function mountNets(root: HTMLElement, level: Level) {
     function answer(i: number) {
       if (rec.answered || rec.wrong?.includes(i)) return
       if (lives.on && i !== p.correct) { // a wrong pick costs a life; the correct net stays hidden
+        rec = { ...rec, guessed: true } // survives a restart and a reload: never counts as right first time
         if (lives.fail()) { rec = { ...rec, wrong: [] }; writeRec(level, rec); render(); lives.say(S.outOfLives); return }
         rec = { ...rec, wrong: [...(rec.wrong ?? []), i] }
         writeRec(level, rec); mark(); return
       }
-      const first = !rec.wrong?.length
+      const first = !rec.guessed
       rec = { ...rec, answered: true, pick: i }
       writeRec(level, rec)
       if (i === p.correct && first) { score++; setScore(); void updateProgress(pr => ({ ...pr, netsRight: pr.netsRight + 1 })) }
