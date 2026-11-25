@@ -15,7 +15,7 @@ export const S = {
   puzzle: (n: number, total: number, cols: number, rows: number) =>
     `Puzzle ${n} of ${total}, ${cols}×${rows} base`,
   solvedOf: (n: number, total: number) => `${n} / ${total}`,
-  settings: 'Settings', theme: 'Theme', themes: ['System', 'Light', 'Dark'] as const, accent: 'Accent colour', accents: 'Accent colour',
+  settings: 'Settings', style: 'Style', styles: ['Paper', 'Blueprint', 'Concrete'] as const, theme: 'Theme', themes: ['System', 'Light', 'Dark'] as const, accent: 'Accent colour', accents: 'Accent colour',
   unlockAll: 'Unlock all accents', exportProgress: 'Export progress', importProgress: 'Import progress',
   imported: 'Progress imported.', storageWarning: 'Storage is unavailable, so progress is lost when you close the app.',
   about: 'About', version: (v: string) => `Version ${v}`, solvedTotal: (n: number) => `${n} solved`,

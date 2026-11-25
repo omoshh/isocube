@@ -11,10 +11,6 @@
   --accent: var(--accent-yellow);
   --on-accent: #16161A;
 
-  --radius-button: 24px;
-  --radius-row: 20px;
-  --radius-tile: 16px;
-
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -49,7 +45,7 @@
   --stroke-icon: 1.8px;
 }
 
-:root[data-theme="light"] {
+:root[data-style="paper"][data-theme="light"] {
   --bg: #F5F2EA;
   --surface: #FFFFFF;
   --ink: #16161A;
@@ -65,7 +61,7 @@
   --mark-mistake: #E4572E;
 }
 
-:root[data-theme="dark"] {
+:root[data-style="paper"][data-theme="dark"] {
   --bg: #121214;
   --surface: #1C1C20;
   --ink: #ECEAE4;
@@ -79,6 +75,94 @@
   --view-cell: #2A2A2F;
   --mark-missing: #8C9BFF;
   --mark-mistake: #FF7A45;
+}
+
+:root[data-style="blueprint"][data-theme="light"] {
+  --bg: #F4F7FB;
+  --surface: #FFFFFF;
+  --ink: #1F4E8C;
+  --muted: #4A6587;
+  --line: #C9D8EA;
+  --grid-line: #A9C1DE;
+  --guide: #6F8DB3;
+  --tone-1: #FFFFFF;
+  --tone-2: #9DBCE0;
+  --tone-3: #1F4E8C;
+  --view-cell: #E3ECF6;
+  --mark-missing: #7B3FE4;
+  --mark-mistake: #E4572E;
+}
+
+:root[data-style="blueprint"][data-theme="dark"] {
+  --bg: #1F4E8C;
+  --surface: #24599B;
+  --ink: #F2F6FB;
+  --muted: #C9D8EA;
+  --line: #4F7DB8;
+  --grid-line: #4A78B5;
+  --guide: #9DB9DC;
+  --tone-1: #9DBCE0;
+  --tone-2: #5F8CC4;
+  --tone-3: #2F5F9E;
+  --view-cell: #3D6CA8;
+  --mark-missing: #8CE8FF;
+  --mark-mistake: #FF8A4C;
+}
+
+:root[data-style="concrete"][data-theme="light"] {
+  --bg: #D3D2CE;
+  --surface: #E6E5E1;
+  --ink: #1E1F21;
+  --muted: #505155;
+  --line: #B3B2AD;
+  --grid-line: #A9A8A3;
+  --guide: #6F7073;
+  --tone-1: #F1F0EC;
+  --tone-2: #A9A8A3;
+  --tone-3: #5E5F62;
+  --view-cell: #C9C8C3;
+  --mark-missing: #2B44E0;
+  --mark-mistake: #E4572E;
+}
+
+:root[data-style="concrete"][data-theme="dark"] {
+  --bg: #2A2B2D;
+  --surface: #343538;
+  --ink: #E4E3DF;
+  --muted: #A6A6A2;
+  --line: #45464A;
+  --grid-line: #55565A;
+  --guide: #8D8E90;
+  --tone-1: #6E6F72;
+  --tone-2: #4A4B4E;
+  --tone-3: #343538;
+  --view-cell: #3E3F42;
+  --mark-missing: #8C9BFF;
+  --mark-mistake: #FF7A45;
+}
+
+:root[data-style="paper"] {
+  --radius-button: 24px;
+  --radius-row: 20px;
+  --radius-tile: 16px;
+}
+
+:root[data-style="blueprint"] {
+  --radius-button: 24px;
+  --radius-row: 20px;
+  --radius-tile: 16px;
+}
+
+:root[data-style="concrete"] {
+  --radius-button: 6px;
+  --radius-row: 6px;
+  --radius-tile: 6px;
+}
+
+/* Concrete only: a light noise layer behind the content. Pure CSS on the page, so exported images (built from drawing data) never contain it. */
+:root[data-style="concrete"]::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* draw-mode palette: 12 calm colours, the same in both themes */

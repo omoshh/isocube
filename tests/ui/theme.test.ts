@@ -11,8 +11,9 @@ const block = (sel: string) => {
   return m[1]
 }
 const tok = (b: string, name: string) => b.match(new RegExp(`--${name}:\\s*([^;]+);`))?.[1].trim()
-const light = block(':root[data-theme="light"]')
-const dark = block(':root[data-theme="dark"]')
+const mode = (style: string, m: string) => block(`:root[data-style="${style}"][data-theme="${m}"]`)
+const light = mode('paper', 'light')
+const dark = mode('paper', 'dark')
 const root = block(':root')
 
 const lum = (hex: string) => {
@@ -31,7 +32,6 @@ describe('tokens', () => {
     expect(tok(dark, 'bg')).toBe('#121214')
     expect(tok(light, 'mark-mistake')).toBe('#E4572E')
     expect(tok(dark, 'tone-3')).toBe('#ECEAE4')
-    expect(tok(root, 'radius-button')).toBe('24px')
   })
   it('accent table mirrors tokens.css', () => {
     for (const a of ACCENTS) expect(ACCENT_HEX[a.id]).toBe(tok(root, 'accent-' + a.id))
@@ -50,8 +50,37 @@ describe('tokens', () => {
   })
 })
 
+describe('style tokens', () => {
+  const vars = (b: string) => [...b.matchAll(/--([\w-]+):/g)].map(m => m[1]).sort()
+  it('every style x mode block sets the Paper light colour variables', () => {
+    for (const s of ['paper', 'blueprint', 'concrete']) for (const m of ['light', 'dark'])
+      expect(vars(mode(s, m)), `${s} ${m}`).toEqual(vars(light))
+  })
+  it('Blueprint and Concrete values', () => {
+    expect(tok(mode('blueprint', 'dark'), 'bg')).toBe('#1F4E8C')
+    expect(tok(mode('blueprint', 'light'), 'mark-missing')).toBe('#7B3FE4')
+    expect(tok(mode('concrete', 'light'), 'bg')).toBe('#D3D2CE')
+    expect(tok(mode('concrete', 'dark'), 'mark-mistake')).toBe('#FF7A45')
+  })
+  it('shape tokens per style', () => {
+    const shape = (s: string) => block(`:root[data-style="${s}"]`)
+    expect(tok(shape('paper'), 'radius-button')).toBe('24px')
+    expect(tok(shape('blueprint'), 'radius-row')).toBe('20px')
+    for (const t of ['button', 'row', 'tile']) expect(tok(shape('concrete'), 'radius-' + t)).toBe('6px')
+  })
+  it('noise layer ignores taps and is not in exported images', () => {
+    const noise = block(':root[data-style="concrete"]::before')
+    expect(noise).toMatch(/pointer-events:\s*none/)
+    expect(noise).toMatch(/position:\s*fixed/)
+    expect(noise).toMatch(/z-index:\s*-1/)
+    expect(noise).toMatch(/feTurbulence/)
+    // exports are built from drawing data, never from the page, so the layer cannot leak in
+    expect(readFileSync('src/ui/exportImage.ts', 'utf8')).not.toMatch(/feTurbulence|::before|noise/)
+  })
+})
+
 describe('applyTheme', () => {
-  const base = { theme: 'system' as const, accent: 'mint' as const, unlockAll: false }
+  const base = { theme: 'system' as const, accent: 'mint' as const, unlockAll: false, style: 'paper' as const }
   afterEach(() => vi.unstubAllGlobals())
   it('sets accent vars and explicit theme', () => {
     applyTheme({ ...base, theme: 'dark' })
@@ -59,6 +88,18 @@ describe('applyTheme', () => {
     expect(el.dataset.theme).toBe('dark')
     expect(el.style.getPropertyValue('--accent')).toBe('var(--accent-mint)')
     expect(el.style.getPropertyValue('--on-accent')).toBe(onAccent(ACCENT_HEX.mint))
+  })
+  it('sets data-style', () => {
+    applyTheme({ ...base, theme: 'light', style: 'concrete' })
+    expect(document.documentElement.dataset.style).toBe('concrete')
+  })
+  it('shows yellow when the saved accent is hidden, without touching the setting', () => {
+    const s = { ...base, theme: 'dark' as const, style: 'blueprint' as const, accent: 'red' as const }
+    applyTheme(s)
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('var(--accent-yellow)')
+    expect(s.accent).toBe('red')
+    applyTheme({ ...s, style: 'paper' })
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('var(--accent-red)')
   })
   it('systemThemeFollows', () => {
     let fire = () => {}

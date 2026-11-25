@@ -1,4 +1,4 @@
-import { ACCENTS, accentUnlocked, nextAccent, solvedCount } from '../../core/unlocks'
+import { ACCENTS, accentUnlocked, hiddenAccents, nextAccent, solvedCount } from '../../core/unlocks'
 import { createTopBar } from '../components/topBar'
 import { h, icon } from '../dom'
 import { loadProgress, loadSettings, saveSettings } from '../storage'
@@ -12,7 +12,8 @@ export async function mountAccents(root: HTMLElement) {
   const [progress, settings] = await Promise.all([loadProgress(), loadSettings()])
   const solved = solvedCount(progress)
   const list = h('div', { class: 'accent-list' })
-  for (const a of ACCENTS) {
+  const hidden = hiddenAccents(settings.style, document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
+  for (const a of ACCENTS.filter(x => !hidden.includes(x.id))) {
     const open = accentUnlocked(a.id, solved, settings.unlockAll)
     const status = h('span', { class: 'accent-status' })
     if (settings.accent === a.id) status.textContent = S.selected

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accentUnlocked, nextAccent, solvedCount } from '../../src/core/unlocks'
+import { accentUnlocked, hiddenAccents, nextAccent, shownAccent, solvedCount } from '../../src/core/unlocks'
 
 describe('accentRules', () => {
   it('unlocks by threshold', () => {
@@ -19,5 +19,19 @@ describe('accentRules', () => {
   })
   it('solvedCount', () => {
     expect(solvedCount({ solved: ['a', 'b'], netsRight: 3, endlessSeeds: {} })).toBe(5)
+  })
+})
+
+describe('hidden accents per style', () => {
+  it('Blueprint dark hides only red', () => {
+    expect(hiddenAccents('blueprint', 'dark')).toEqual(['red'])
+    expect(hiddenAccents('blueprint', 'light')).toEqual([])
+    expect(hiddenAccents('paper', 'dark')).toEqual([])
+    expect(hiddenAccents('concrete', 'dark')).toEqual([])
+  })
+  it('shownAccent falls back to yellow when hidden', () => {
+    expect(shownAccent('red', 'blueprint', 'dark')).toBe('yellow')
+    expect(shownAccent('red', 'blueprint', 'light')).toBe('red')
+    expect(shownAccent('mint', 'blueprint', 'dark')).toBe('mint')
   })
 })

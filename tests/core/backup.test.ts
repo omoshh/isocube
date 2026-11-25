@@ -4,13 +4,18 @@ import { parseBackup, type Backup } from '../../src/core/backup'
 const good: Backup = {
   app: 'isocube', version: 1, exportedAt: '2026-11-24T00:00:00.000Z',
   progress: { solved: ['V1-1', 'E2-5'], netsRight: 2, endlessSeeds: { 2: [5, 6] } },
-  settings: { theme: 'dark', accent: 'mint', unlockAll: true },
+  settings: { theme: 'dark', accent: 'mint', unlockAll: true, style: 'paper' },
   drawings: { 'views/V1-1': { lines: ['a', 'b'], fills: { t1: 2 } } },
 }
 
 describe('parseBackup', () => {
   it('round-trips', () => {
     const r = parseBackup(JSON.stringify(good))
+    expect(r).toEqual({ ok: true, backup: good })
+  })
+  it('old backup without style imports as paper', () => {
+    const { style: _s, ...old } = good.settings
+    const r = parseBackup(JSON.stringify({ ...good, settings: old }))
     expect(r).toEqual({ ok: true, backup: good })
   })
   it('rejects bad input with a message', () => {
@@ -25,6 +30,7 @@ describe('parseBackup', () => {
       { ...good, settings: { ...good.settings, theme: 'pink' } },
       { ...good, settings: { ...good.settings, accent: 'blue' } },
       { ...good, settings: { ...good.settings, unlockAll: 1 } },
+      { ...good, settings: { ...good.settings, style: 'neon' } },
       { ...good, drawings: { k: { lines: [1], fills: {} } } },
       { ...good, drawings: { k: { lines: [], fills: { t: 'x' } } } },
       { ...good, drawings: { k: { lines: [] } } },

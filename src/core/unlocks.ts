@@ -9,9 +9,18 @@ export const ACCENTS: { id: Accent; name: string; threshold: number }[] = [
   { id: 'sand', name: 'Sand', threshold: 200 },
 ]
 
+export type Style = 'paper' | 'blueprint' | 'concrete'
+export const STYLES: Style[] = ['paper', 'blueprint', 'concrete']
+
+/** Accents with too little contrast on a style's background, per mode. */
+const HIDDEN_ACCENTS: Partial<Record<`${Style}-${'light' | 'dark'}`, Accent[]>> = { 'blueprint-dark': ['red'] }
+export const hiddenAccents = (style: Style, mode: 'light' | 'dark'): Accent[] => HIDDEN_ACCENTS[`${style}-${mode}`] ?? []
+/** The accent to show: yellow when the saved one is hidden (the saved setting is left alone). */
+export const shownAccent = (a: Accent, style: Style, mode: 'light' | 'dark'): Accent => hiddenAccents(style, mode).includes(a) ? 'yellow' : a
+
 /** solved: puzzle ids incl. "E{level}-{seed}" and "R-{id}" */
 export type Progress = { solved: string[]; netsRight: number; endlessSeeds: Record<number, number[]> }
-export type Settings = { theme: 'system' | 'light' | 'dark'; accent: Accent; unlockAll: boolean }
+export type Settings = { theme: 'system' | 'light' | 'dark'; accent: Accent; unlockAll: boolean; style: Style }
 
 export const solvedCount = (p: Progress) => p.solved.length + p.netsRight
 

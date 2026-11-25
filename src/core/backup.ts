@@ -1,5 +1,5 @@
 import type { Drawing } from './drawing'
-import { ACCENTS, type Progress, type Settings } from './unlocks'
+import { ACCENTS, STYLES, type Progress, type Settings } from './unlocks'
 
 export type Backup = { app: 'isocube'; version: 1; exportedAt: string; progress: Progress; settings: Settings; drawings: Record<string, Drawing> }
 
@@ -25,6 +25,8 @@ export function parseBackup(text: string): { ok: true; backup: Backup } | { ok: 
   if (!isObj(s)) return fail('The settings are missing.')
   if (s.theme !== 'system' && s.theme !== 'light' && s.theme !== 'dark') return fail('The theme setting is invalid.')
   if (!ACCENTS.some(a => a.id === s.accent)) return fail('The accent setting is invalid.')
+  if (s.style === undefined) s.style = 'paper' // backups from before styles
+  if (!STYLES.includes(s.style as never)) return fail('The style setting is invalid.')
   if (typeof s.unlockAll !== 'boolean') return fail('The unlock-all setting is invalid.')
 
   if (!isObj(b.drawings)) return fail('The drawings are missing.')

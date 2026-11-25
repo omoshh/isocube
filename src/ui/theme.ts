@@ -1,4 +1,4 @@
-import type { Accent, Settings } from '../core/unlocks'
+import { shownAccent, type Accent, type Settings } from '../core/unlocks'
 
 /** Mirror of the --accent-<id> values in tokens.css; tests/ui/theme.test.ts keeps them equal. */
 export const ACCENT_HEX: Record<Accent, string> = {
@@ -26,15 +26,21 @@ export function applyTheme(s: Settings): void {
   stopListening?.()
   stopListening = undefined
   const el = document.documentElement
+  el.dataset.style = s.style
+  // The shown accent depends on the mode, so it is set together with it.
+  const paint = (mode: 'light' | 'dark') => {
+    el.dataset.theme = mode
+    const a = shownAccent(s.accent, s.style, mode)
+    el.style.setProperty('--accent', `var(--accent-${a})`)
+    el.style.setProperty('--on-accent', onAccent(ACCENT_HEX[a]))
+  }
   if (s.theme === 'system') {
     const mq = matchMedia('(prefers-color-scheme: dark)')
-    const set = () => { el.dataset.theme = mq.matches ? 'dark' : 'light' }
+    const set = () => paint(mq.matches ? 'dark' : 'light')
     set()
     mq.addEventListener('change', set)
     stopListening = () => mq.removeEventListener('change', set)
   } else {
-    el.dataset.theme = s.theme
+    paint(s.theme)
   }
-  el.style.setProperty('--accent', `var(--accent-${s.accent})`)
-  el.style.setProperty('--on-accent', onAccent(ACCENT_HEX[s.accent]))
 }
