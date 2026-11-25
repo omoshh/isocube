@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -74,6 +75,19 @@ describe('settings and accents', () => {
     expect(root().querySelector('[data-accent="red"]')).toBeNull()
     expect(row('mint')).not.toBeNull()
     expect((await loadSettings()).accent).toBe('red')
+  })
+
+  it('picking an accent moves Selected to the new row', async () => {
+    await saveSettings({ theme: 'light', accent: 'yellow', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true })
+    await mountAccents(root())
+    row('mint').click(); await tick()
+    expect(row('mint').querySelector('.accent-status')!.textContent).toBe('Selected')
+    expect(row('yellow').querySelector('.accent-status')!.textContent).toBe('Unlocked')
+    expect(row('mint').getAttribute('aria-pressed')).toBe('true')
+  })
+  it('selected row is marked inside its own edge (an outline is clipped at the screen edge)', () => {
+    const css = readFileSync('src/ui/styles/screens.css', 'utf8')
+    expect(css).toMatch(/\.accent-row\[aria-pressed="true"\] \{ box-shadow: inset 0 0 0 var\(--stroke-selected\) var\(--ink\); \}/)
   })
 
   it('unlockAllUnlocks', async () => {

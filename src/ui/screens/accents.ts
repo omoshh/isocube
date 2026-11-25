@@ -24,7 +24,12 @@ export async function mountAccents(root: HTMLElement) {
         if (!open) return
         const s = { ...(await loadSettings()), accent: a.id }
         await saveSettings(s); applyTheme(s)
-        for (const r of list.children) r.setAttribute('aria-pressed', String(r === rowEl))
+        for (const r of list.children) {
+          r.setAttribute('aria-pressed', String(r === rowEl))
+          const st = r.querySelector('.accent-status')!
+          if (r === rowEl) st.textContent = S.selected
+          else if (st.textContent === S.selected) st.textContent = S.unlocked // the old pick is unlocked by definition
+        }
       } },
       h('span', { class: 'accent-dot', style: `background:var(--accent-${a.id})` }), h('span', { class: 'accent-name', text: a.name }), status)
     list.append(rowEl)
