@@ -8,6 +8,7 @@ import { mountDrawing, mountDrawList } from './screens/draw'
 import { mountNets } from './screens/nets'
 import { mountLevels } from './screens/levels'
 import { mountReversePuzzle } from './screens/reversePuzzle'
+import { mountShadowPuzzle } from './screens/shadowPuzzle'
 import { mountViewsPuzzle } from './screens/viewsPuzzle'
 import { S } from './strings'
 
@@ -26,6 +27,8 @@ function placeholder(root: HTMLElement, text = S.notBuilt): Screen {
 const routes: [RegExp, Mount][] = [
   [/^\/$/, root => mountHome(root)],
   [/^\/levels\/views$/, (root, f) => mountLevels(root, f)],
+  [/^\/levels\/shadows$/, (root, f) => mountLevels(root, f, 'shadows')],
+  [/^\/shadows\/([1-4])\/([\w-]+)$/, (root, f, level, id) => f.puzzles.some(p => p.id === id && p.set === 'level' && p.level === +level) ? mountShadowPuzzle(root, f, +level, id) : placeholder(root, S.notFound)],
   [/^\/views\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountViewsPuzzle(root, f, id) : placeholder(root, S.notFound)],
   [/^\/endless\/([1-6])\/(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed)],
   [/^\/levels\/reverse$/, (root, f) => mountLevels(root, f, 'reverse')],

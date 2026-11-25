@@ -5,7 +5,7 @@ import type { Drawing } from '../core/drawing'
 import type { Progress, Settings } from '../core/unlocks'
 
 const DEBOUNCE_MS = 300
-const DRAW_PREFIXES = ['views/', 'reverse/', 'draw/', 'endless/']
+const DRAW_PREFIXES = ['views/', 'reverse/', 'draw/', 'endless/', 'shadow/']
 
 // Every write is mirrored in `mem`. If any IndexedDB call fails (private window, quota),
 // `idbOk` goes false for the session and `mem` serves everything.
@@ -71,7 +71,7 @@ export function updateProgress(fn: (p: Progress) => Progress): Promise<Progress>
   return r
 }
 /** The puzzle screen opened last, for Home's Continue pill. level 0 = Classic; n = number in its list (none for endless and Nets). */
-const KINDS = ['views', 'reverse', 'nets'] as const
+const KINDS = ['views', 'reverse', 'nets', 'shadows'] as const
 export type LastPuzzle = { kind: (typeof KINDS)[number]; level: number; n?: number; route: string }
 export const saveLast = (l: LastPuzzle) => rawSet('last', l)
 export async function loadLast(): Promise<LastPuzzle | undefined> {

@@ -16,6 +16,8 @@ export type IsoGridOpts = {
   tool: () => Tool
   colour: () => number
   penOnly: () => boolean
+  /** Drawn translucent above the grid; pointer events pass through to the grid. */
+  shape?: Set<SegKey>
   initialView?: View
   onViewChange?: (v: View) => void
 }
@@ -130,8 +132,11 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   }
   surf = createSurface(el, { content, penOnly: o.penOnly, draw, onView: drawGrid, initialView: o.initialView, onViewChange: o.onViewChange })
   const layer = (cls: string) => mk('g', { class: cls }, surf!.world)
-  const gGrid = layer('g-grid'), gFills = layer('g-fills'), gGuide = layer('g-guide'), gAns = layer('g-ans')
+  const gGrid = layer('g-grid'), gFills = layer('g-fills'), gGuide = layer('g-guide'), gShape = layer('g-shape'), gAns = layer('g-ans')
   const gLines = layer('g-lines'), gCheck = layer('g-check'), gPrev = layer('g-prev')
+
+  gShape.style.opacity = '0.6'; gShape.style.pointerEvents = 'none'
+  for (const k of o.shape ?? []) seg(k, gShape)
 
   if (o.guide) {
     const { cols: C, rows: R, maxH: Z } = o.guide

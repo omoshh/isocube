@@ -6,6 +6,8 @@ export const S = {
   more: 'More',
   views: 'Views',
   reverse: 'Reverse',
+  shadows: 'Shadows',
+  lights: ['Light from above', 'Light from the front', 'Light from the side', 'Light slanted'] as const,
   levels: 'Levels',
   level: (n: number) => `Level ${n}`,
   classic: 'Classic',
