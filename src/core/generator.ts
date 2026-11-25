@@ -1,6 +1,7 @@
 import { HeightMap, visibleFaces } from './shape'
 import { gridSegKey } from './geometry'
 import { sameViews, views, type ViewSet } from './views'
+import { fairPicture } from './visibility'
 
 export type Rng = () => number
 export function rng(seed: number): Rng {
@@ -19,7 +20,7 @@ export const LEVELS = [
   { level: 4, a: 4, b: 5, maxH: 4 }, { level: 5, a: 5, b: 5, maxH: 4 }, { level: 6, a: 5, b: 6, maxH: 5 },
 ] as const
 
-export type PuzzleEntry = { id: string; set: 'level' | 'classic' | 'reverse'; level: number; cols: number; rows: number; maxH: number; h: number[] }
+export type PuzzleEntry = { id: string; set: 'level' | 'reverse'; level: number; cols: number; rows: number; maxH: number; h: number[] }
 export type PuzzleFile = { version: 1; puzzles: PuzzleEntry[] }
 
 const pick = (r: Rng, n: number) => Math.floor(r() * n)
@@ -155,7 +156,7 @@ export function makePuzzle(level: number, seed: number): { seed: number; hm: Hei
   const { a, b, maxH } = LEVELS[level - 1], r = rng(seed), [cols, rows] = r() < 0.5 ? [a, b] : [b, a]
   for (;;) {
     const hm = sampleShape(cols, rows, maxH, r)
-    if (countSolutions(views(hm), cols, rows, maxH) === 1) return { seed, hm }
+    if (fairPicture(hm) && countSolutions(views(hm), cols, rows, maxH) === 1) return { seed, hm } // fairPicture first: it is cheaper
   }
 }
 

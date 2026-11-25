@@ -141,15 +141,12 @@ describe('puzzle layout', () => {
 })
 
 describe('level list', () => {
-  it('classicListed', async () => {
+  it('levelsListed (no Classic tile)', async () => {
     const { levels, storage } = await load()
-    await storage.saveProgress({ solved: ['C-002', 'L1-001'], netsRight: 0, endlessSeeds: {} })
+    await storage.saveProgress({ solved: ['L1-001'], netsRight: 0, endlessSeeds: {} })
     const root = sized(412, 915)
     const s = await levels.mountLevels(root, file)
-    const classic = root.querySelector('[data-set="classic"]')!
-    expect(classic.textContent).toContain('Classic')
-    expect(classic.textContent).toContain('1 / 49')
-    expect(classic.querySelectorAll('a.num').length).toBe(49)
+    expect(root.querySelector('[data-set="classic"]')).toBeNull()
     expect(root.querySelector('[data-level="1"]')!.textContent).toContain('1 / 50')
     expect(root.querySelectorAll('a[href^="#/endless/"]').length).toBe(6)
     s.destroy()
@@ -164,7 +161,7 @@ describe('router', () => {
     const stop = startRouter(root, file)
     await vi.waitFor(() => expect(root.textContent).toContain('not built yet'))
     navigate('/levels/views')
-    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(7))
+    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(6))
     expect(root.children.length).toBe(1)
     navigate('/views/nope')
     await vi.waitFor(() => expect(root.textContent).toContain('Puzzle not found'))

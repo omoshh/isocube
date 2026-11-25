@@ -4,7 +4,7 @@ import { h } from '../dom'
 import { loadLast, loadProgress } from '../storage'
 import { S } from '../strings'
 
-/** #/levels/views, #/levels/reverse and #/levels/shadows (levels 1-4, the light named per card, no Classic or Endless): one tile per level and Classic; a tile opens to a numbered grid of its puzzles. */
+/** #/levels/views, #/levels/reverse and #/levels/shadows (levels 1-4, the light named per card, no Endless): one tile per level; a tile opens to a numbered grid of its puzzles. */
 export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'views' | 'reverse' | 'shadows' = 'views') {
   const [progress, last] = await Promise.all([loadProgress(), loadLast()])
   const solved = new Set(progress.solved)
@@ -27,8 +27,7 @@ export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'vi
     h('p', { class: 'levels-hint', text: S.levelsHint }),
     h('main', { class: 'tiles' },
       ...LEVELS.filter(L => mode !== 'shadows' || L.level <= 4).map(L => tile({ 'data-level': String(L.level) }, S.level(L.level), mode === 'shadows' ? S.lights[L.level - 1] : `${L.a}×${L.b}`,
-        file.puzzles.filter(p => p.set === (mode === 'reverse' ? 'reverse' : 'level') && p.level === L.level), L.level, mode === 'shadows' ? undefined : mode === 'reverse' ? `#/reverse/E${L.level}-new` : `#/endless/${L.level}/new`)),
-      ...(mode === 'shadows' ? [] : [tile({ 'data-set': 'classic' }, S.classic, '', file.puzzles.filter(p => p.set === 'classic'), 0)])))
+        file.puzzles.filter(p => p.set === (mode === 'reverse' ? 'reverse' : 'level') && p.level === L.level), L.level, mode === 'shadows' ? undefined : mode === 'reverse' ? `#/reverse/E${L.level}-new` : `#/endless/${L.level}/new`))))
   root.append(el)
   return { destroy: () => el.remove() }
 }

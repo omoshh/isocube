@@ -18,15 +18,15 @@ type V = keyof ViewSet
 const VIEWS: V[] = ['top', 'side', 'front'] // the page's order after KEY
 let penOnly = false // kept across puzzles for the session
 
-/** #/reverse/<id> for a level or Classic id (the router checks it exists). Solved as R-<id>. */
+/** #/reverse/<id> for a level id (the router checks it exists). Solved as R-<id>. */
 export function mountReversePuzzle(root: HTMLElement, file: PuzzleFile, id: string) {
   const e = file.puzzles.find(p => p.id === id)!
-  const list = file.puzzles.filter(p => p.set === e.set && (e.set === 'classic' || p.level === e.level))
+  const list = file.puzzles.filter(p => p.set === e.set && p.level === e.level)
   const idx = list.indexOf(e), next = list[idx + 1]
-  void saveLast({ kind: 'reverse', level: e.set === 'classic' ? 0 : e.level, n: idx + 1, route: '#/reverse/' + id })
+  void saveLast({ kind: 'reverse', level: e.level, n: idx + 1, route: '#/reverse/' + id })
   return mountReverse(root, {
     id: 'R-' + id, key: 'reverse/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
-    title: `${S.reverse}: ${e.set === 'classic' ? S.classic.toLowerCase() : S.level(e.level).toLowerCase()}`,
+    title: `${S.reverse}: ${S.level(e.level).toLowerCase()}`,
     subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows),
     nextRoute: next ? '#/reverse/' + next.id : '#/levels/reverse',
   })

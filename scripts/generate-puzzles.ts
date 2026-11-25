@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { LEVELS, difficulty, makePuzzle, rng, sampleShape, type PuzzleEntry, type PuzzleFile } from '../src/core/generator'
-import { classicPuzzles } from '../src/core/classic'
+import { fairPicture } from '../src/core/visibility'
 
 const puzzles: PuzzleEntry[] = [], key = (hm: { cols: number; h: number[] }) => hm.cols + ':' + hm.h.join(',')
 for (const { level, maxH } of LEVELS) {
@@ -18,7 +18,7 @@ for (const { level, maxH } of LEVELS) {
   const rev: typeof found = []
   for (let seed = 9026; rev.length < 50; seed++) {
     const { a, b } = LEVELS[level - 1], r = rng(seed), [c, rw] = r() < 0.5 ? [a, b] : [b, a], hm = sampleShape(c, rw, maxH, r), k = key(hm)
-    if (!seen.has(k)) { seen.add(k); rev.push({ seed, hm }) }
+    if (!seen.has(k) && fairPicture(hm)) { seen.add(k); rev.push({ seed, hm }) }
   }
   const dr = new Map(rev.map(p => [p, difficulty(p.hm)]))
   rev.sort((p, q) => dr.get(p)![0] - dr.get(q)![0] || dr.get(p)![1] - dr.get(q)![1] || p.seed - q.seed)
@@ -27,8 +27,6 @@ for (const { level, maxH } of LEVELS) {
   }))
   console.log(`level ${level}: ${((performance.now() - t0) / 1000).toFixed(2)} s`)
 }
-const ref = JSON.parse(readFileSync(new URL('../tests/fixtures/reference-puzzles.json', import.meta.url), 'utf8'))
-puzzles.push(...classicPuzzles(ref))
 const file: PuzzleFile = { version: 1, puzzles }
 writeFileSync(new URL('../public/puzzles.json', import.meta.url), JSON.stringify(file) + '\n')
 console.log(`wrote ${puzzles.length} puzzles`)

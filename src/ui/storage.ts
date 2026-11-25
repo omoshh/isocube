@@ -70,7 +70,7 @@ export function updateProgress(fn: (p: Progress) => Progress): Promise<Progress>
   progressChain = r.catch(() => {})
   return r
 }
-/** The puzzle screen opened last, for Home's Continue pill. level 0 = Classic; n = number in its list (none for endless and Nets). */
+/** The puzzle screen opened last, for Home's Continue pill. n = number in its list (none for endless and Nets). */
 const KINDS = ['views', 'reverse', 'nets', 'shadows', 'sections'] as const
 export type LastPuzzle = { kind: (typeof KINDS)[number]; level: number; n?: number; route: string }
 export const saveLast = (l: LastPuzzle) => rawSet('last', l)

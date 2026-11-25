@@ -33,18 +33,18 @@ export type Puzzle = { id: string; key: string; cols: number; rows: number; maxH
 /** #/views/<id>. `id` must exist in the file (the router checks). */
 export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string) {
   const e = file.puzzles.find(p => p.id === id)!
-  const list = file.puzzles.filter(p => p.set === e.set && (e.set === 'classic' || p.level === e.level))
+  const list = file.puzzles.filter(p => p.set === e.set && p.level === e.level)
   const idx = list.indexOf(e), next = list[idx + 1]
-  void saveLast({ kind: 'views', level: e.set === 'classic' ? 0 : e.level, n: idx + 1, route: '#/views/' + id })
+  void saveLast({ kind: 'views', level: e.level, n: idx + 1, route: '#/views/' + id })
   return mountPuzzle(root, {
     id, key: 'views/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
-    title: e.set === 'classic' ? S.classic : S.level(e.level),
+    title: S.level(e.level),
     subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows),
     nextRoute: next ? '#/views/' + next.id : '#/levels/views',
   })
 }
 
-/** The views puzzle screen for any puzzle: level sets, Classic, endless. */
+/** The views puzzle screen for any puzzle: level sets and endless. */
 export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const { id, key } = e
   const hm = new HeightMap(e.cols, e.rows, e.h), answer = computeEdges(hm)
