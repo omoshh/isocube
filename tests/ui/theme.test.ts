@@ -80,7 +80,7 @@ describe('style tokens', () => {
 })
 
 describe('applyTheme', () => {
-  const base = { theme: 'system' as const, accent: 'mint' as const, unlockAll: false, style: 'paper' as const }
+  const base = { theme: 'system' as const, accent: 'mint' as const, unlockAll: false, style: 'paper' as const, lineWidth: 'normal' as const }
   afterEach(() => vi.unstubAllGlobals())
   it('sets accent vars and explicit theme', () => {
     applyTheme({ ...base, theme: 'dark' })
@@ -88,6 +88,16 @@ describe('applyTheme', () => {
     expect(el.dataset.theme).toBe('dark')
     expect(el.style.getPropertyValue('--accent')).toBe('var(--accent-mint)')
     expect(el.style.getPropertyValue('--on-accent')).toBe(onAccent(ACCENT_HEX.mint))
+  })
+  it('sets stroke variables per line width', () => {
+    const el = document.documentElement.style
+    const v = (n: string) => el.getPropertyValue(n)
+    applyTheme({ ...base, theme: 'light', lineWidth: 'thick' })
+    expect([v('--stroke-line'), v('--stroke-missing'), v('--stroke-mistake')]).toEqual(['3px', '4.5px', '5px'])
+    applyTheme({ ...base, theme: 'light', lineWidth: 'thin' })
+    expect([v('--stroke-line'), v('--stroke-missing'), v('--stroke-mistake')]).toEqual(['1.5px', '3px', '3.5px'])
+    applyTheme({ ...base, theme: 'light' })
+    expect([v('--stroke-line'), v('--stroke-missing'), v('--stroke-mistake')]).toEqual(['2px', '3.5px', '4px'])
   })
   it('sets data-style', () => {
     applyTheme({ ...base, theme: 'light', style: 'concrete' })

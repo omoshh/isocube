@@ -27,6 +27,10 @@ export function applyTheme(s: Settings): void {
   stopListening = undefined
   const el = document.documentElement
   el.dataset.style = s.style
+  const w = { thin: 1.5, normal: 2, thick: 3 }[s.lineWidth]
+  el.style.setProperty('--stroke-line', `${w}px`)
+  el.style.setProperty('--stroke-missing', `${w + 1.5}px`)
+  el.style.setProperty('--stroke-mistake', `${w + 2}px`)
   // The shown accent depends on the mode, so it is set together with it.
   const paint = (mode: 'light' | 'dark') => {
     el.dataset.theme = mode

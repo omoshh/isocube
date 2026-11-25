@@ -20,7 +20,9 @@ export const shownAccent = (a: Accent, style: Style, mode: 'light' | 'dark'): Ac
 
 /** solved: puzzle ids incl. "E{level}-{seed}" and "R-{id}" */
 export type Progress = { solved: string[]; netsRight: number; endlessSeeds: Record<number, number[]> }
-export type Settings = { theme: 'system' | 'light' | 'dark'; accent: Accent; unlockAll: boolean; style: Style }
+export type LineWidth = 'thin' | 'normal' | 'thick'
+export const LINE_WIDTHS: LineWidth[] = ['thin', 'normal', 'thick']
+export type Settings = { theme: 'system' | 'light' | 'dark'; accent: Accent; unlockAll: boolean; style: Style; lineWidth: LineWidth }
 
 export const solvedCount = (p: Progress) => p.solved.length + p.netsRight
 

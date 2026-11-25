@@ -4,7 +4,7 @@
 .g-grid line { stroke: var(--grid-line); stroke-width: var(--stroke-grid); stroke-dasharray: var(--dash-grid); stroke-linecap: butt; }
 .g-fills polygon { stroke-width: var(--stroke-grid); stroke-linejoin: round; }
 .g-guide polygon { stroke: var(--guide); stroke-width: var(--stroke-grid); }
-.g-guide line { stroke: var(--guide); stroke-width: var(--stroke-line); stroke-linecap: butt; }
+.g-guide line { stroke: var(--guide); stroke-width: var(--stroke-static); stroke-linecap: butt; }
 .g-guide polygon.head { fill: var(--guide); stroke: none; }
 .g-guide text { fill: var(--guide); font-family: var(--font-ui); font-weight: 600; }
 .g-ans { opacity: var(--opacity-answer); }

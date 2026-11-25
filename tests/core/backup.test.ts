@@ -4,7 +4,7 @@ import { parseBackup, type Backup } from '../../src/core/backup'
 const good: Backup = {
   app: 'isocube', version: 1, exportedAt: '2026-11-24T00:00:00.000Z',
   progress: { solved: ['V1-1', 'E2-5'], netsRight: 2, endlessSeeds: { 2: [5, 6] } },
-  settings: { theme: 'dark', accent: 'mint', unlockAll: true, style: 'paper' },
+  settings: { theme: 'dark', accent: 'mint', unlockAll: true, style: 'paper', lineWidth: 'normal' },
   drawings: { 'views/V1-1': { lines: ['a', 'b'], fills: { t1: 2 } } },
 }
 
@@ -17,6 +17,13 @@ describe('parseBackup', () => {
     const { style: _s, ...old } = good.settings
     const r = parseBackup(JSON.stringify({ ...good, settings: old }))
     expect(r).toEqual({ ok: true, backup: good })
+  })
+  it('old backup without lineWidth imports as normal', () => {
+    const { lineWidth: _w, ...old } = good.settings
+    expect(parseBackup(JSON.stringify({ ...good, settings: old }))).toEqual({ ok: true, backup: good })
+  })
+  it('rejects an invalid lineWidth', () => {
+    expect(parseBackup(JSON.stringify({ ...good, settings: { ...good.settings, lineWidth: 'huge' } })).ok).toBe(false)
   })
   it('rejects bad input with a message', () => {
     const bad = (o: unknown) => parseBackup(typeof o === 'string' ? o : JSON.stringify(o))

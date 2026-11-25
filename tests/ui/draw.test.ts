@@ -75,6 +75,11 @@ describe('exportSvg', () => {
     expect(svg).toContain('<polygon')
   })
 
+  it('svg uses the chosen line width', () => {
+    document.documentElement.style.setProperty('--stroke-line', '3px')
+    expect(exportSvg(d, view)).toContain('stroke-width="3"')
+  })
+
   it('svgStandalone', () => {
     const svg = exportSvg(d, view)
     expect(svg).not.toContain('var(')

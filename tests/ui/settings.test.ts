@@ -18,7 +18,7 @@ beforeEach(async () => {
   document.body.innerHTML = '<div id="root"></div>'
   document.documentElement.removeAttribute('style')
   probe.ok = true
-  await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper' })
+  await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal' })
   await updateProgress(() => ({ solved: [], netsRight: 0, endlessSeeds: {} }))
 })
 
@@ -41,8 +41,20 @@ describe('settings and accents', () => {
     expect(btns.map(b => b.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true'])
   })
 
+  it('line width row sets, saves and applies at once', async () => {
+    await mountSettings(root())
+    const btns = [...root().querySelectorAll<HTMLElement>('[data-width-btn]')]
+    expect(btns.map(b => b.textContent)).toEqual(['Thin', 'Normal', 'Thick'])
+    expect(btns[1].getAttribute('aria-pressed')).toBe('true')
+    btns[2].click(); await tick()
+    expect((await loadSettings()).lineWidth).toBe('thick')
+    const st = document.documentElement.style
+    expect([st.getPropertyValue('--stroke-line'), st.getPropertyValue('--stroke-mistake')]).toEqual(['3px', '5px'])
+    expect(btns.map(b => b.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true'])
+  })
+
   it('accent picker hides red in Blueprint dark; saved red survives', async () => {
-    await saveSettings({ theme: 'dark', accent: 'red', unlockAll: true, style: 'blueprint' })
+    await saveSettings({ theme: 'dark', accent: 'red', unlockAll: true, style: 'blueprint', lineWidth: 'normal' })
     document.documentElement.dataset.theme = 'dark' // applyTheme has run at boot
     await mountAccents(root())
     expect(root().querySelector('[data-accent="red"]')).toBeNull()
@@ -63,7 +75,7 @@ describe('settings and accents', () => {
   })
 
   it('accentChangesCheckColour', async () => {
-    await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: true, style: 'paper' })
+    await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: true, style: 'paper', lineWidth: 'normal' })
     await mountAccents(root())
     row('mint').click(); await tick()
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('var(--accent-mint)')
@@ -71,7 +83,7 @@ describe('settings and accents', () => {
   })
 
   it('accentFallsBackToYellowWhenRelocked', async () => {
-    await saveSettings({ theme: 'system', accent: 'sand', unlockAll: true, style: 'paper' })
+    await saveSettings({ theme: 'system', accent: 'sand', unlockAll: true, style: 'paper', lineWidth: 'normal' })
     await mountSettings(root())
     root().querySelector<HTMLElement>('[role="switch"]')!.click(); await tick()
     expect(await loadSettings()).toMatchObject({ unlockAll: false, accent: 'yellow' })

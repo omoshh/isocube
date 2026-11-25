@@ -31,6 +31,7 @@
   --size-tile-count: 40px;
 
   --stroke-line: 2px;
+  --stroke-static: 2px; /* puzzle pictures and guides; not the user line width */
   --stroke-answer: 1.5px;
   --opacity-answer: 0.55;
   --stroke-missing: 3.5px;

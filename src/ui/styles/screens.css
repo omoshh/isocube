@@ -104,14 +104,14 @@ button { font: inherit; color: inherit; }
 .view svg line, .key-pic line, .key-pic polygon { vector-effect: non-scaling-stroke; }
 .vcell { fill: var(--view-cell); }
 .vgrid { stroke: var(--grid-line); stroke-width: var(--stroke-grid); stroke-dasharray: var(--dash-grid); }
-.vline { stroke: var(--ink); stroke-width: var(--stroke-line); stroke-linecap: round; }
+.vline { stroke: var(--ink); stroke-width: var(--stroke-static); stroke-linecap: round; }
 .key-pic text { font-family: var(--font-ui); font-weight: 600; fill: var(--ink); }
 .key-pic text.on-dark { fill: var(--surface); }
 .key-pic text.k-label { fill: var(--guide); }
 .key-pic polygon { stroke: var(--ink); stroke-width: var(--stroke-border); }
 .k-top { fill: var(--tone-1); } .k-front { fill: var(--tone-2); } .k-side { fill: var(--tone-3); }
 .key-pic polygon.k-head { fill: var(--guide); stroke: none; }
-.k-arrow { stroke: var(--guide); stroke-width: var(--stroke-line); }
+.k-arrow { stroke: var(--guide); stroke-width: var(--stroke-static); }
 .key-badge { display: none; }
 .folded .views { display: none; }
 .folded { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-2); }
@@ -127,7 +127,7 @@ button { font: inherit; color: inherit; }
   background: var(--surface); border: var(--stroke-border) solid var(--line); border-radius: var(--radius-tile); }
 .rv-pic { flex: 1; min-height: 0; width: 100%; padding: var(--space-2); box-sizing: border-box; }
 .rv-pic polygon { stroke: none; }
-.rv-pic line { stroke: var(--ink); stroke-width: var(--stroke-line); stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.rv-pic line { stroke: var(--ink); stroke-width: var(--stroke-static); stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .rv-shape .key-badge { display: block; position: absolute; left: var(--space-1); top: var(--space-1); }
 .rv-view figcaption { display: flex; justify-content: space-between; gap: var(--space-2); flex: none; padding: var(--space-2) var(--space-3) 0;
   font: 500 var(--size-label) var(--font-ui); color: var(--muted); }

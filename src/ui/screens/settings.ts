@@ -1,5 +1,5 @@
 import pkg from '../../../package.json'
-import { ACCENTS, STYLES, accentUnlocked, solvedCount, type Settings } from '../../core/unlocks'
+import { ACCENTS, STYLES, LINE_WIDTHS, accentUnlocked, solvedCount, type Settings } from '../../core/unlocks'
 import { createTopBar } from '../components/topBar'
 import { h } from '../dom'
 import { exportBackup, importBackup, loadProgress, loadSettings, saveSettings, storageAvailable } from '../storage'
@@ -21,6 +21,9 @@ export async function mountSettings(root: HTMLElement) {
     onclick: async () => { await change({ style: st }); styleBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))) } }))
   const themeBtns = THEMES.map((t, i) => h('button', { class: 'btn btn-outline', 'aria-pressed': String(settings.theme === t), text: S.themes[i],
     onclick: async () => { await change({ theme: t }); themeBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))) } }))
+
+  const widthBtns = LINE_WIDTHS.map((w, i) => h('button', { class: 'btn btn-outline', 'data-width-btn': w, 'aria-pressed': String(settings.lineWidth === w), text: S.lineWidths[i],
+    onclick: async () => { await change({ lineWidth: w }); widthBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))) } }))
 
   const sw = h('button', { class: 'switch', role: 'switch', 'aria-checked': String(settings.unlockAll),
     onclick: async () => {
@@ -54,6 +57,7 @@ export async function mountSettings(root: HTMLElement) {
       ...(await storageAvailable() ? [] : [h('p', { 'data-storage-warning': '', class: 'hint', text: S.storageWarning })]),
       h('h2', { text: S.style }), h('div', { class: 'seg' }, ...styleBtns),
       h('h2', { text: S.theme }), h('div', { class: 'seg' }, ...themeBtns),
+      h('h2', { text: S.lineWidth }), h('div', { class: 'seg' }, ...widthBtns),
       h('a', { class: 'accent-row', href: '#/settings/accent' }, h('span', { class: 'accent-name', text: S.accent }), accentName),
       h('div', { class: 'accent-row' }, h('span', { class: 'accent-name', text: S.unlockAll }), sw),
       h('button', { class: 'btn btn-outline', text: S.exportProgress, onclick: () => void download() }),

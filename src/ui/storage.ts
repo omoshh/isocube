@@ -58,7 +58,7 @@ export async function deleteDrawing(key: string): Promise<void> {
 }
 
 const DEFAULT_PROGRESS = (): Progress => ({ solved: [], netsRight: 0, endlessSeeds: {} })
-const DEFAULT_SETTINGS = (): Settings => ({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper' })
+const DEFAULT_SETTINGS = (): Settings => ({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal' })
 
 export const loadProgress = async () => (await rawGet<Progress>('progress')) ?? DEFAULT_PROGRESS()
 export const saveProgress = (p: Progress) => rawSet('progress', p)
