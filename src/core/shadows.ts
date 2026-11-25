@@ -32,9 +32,8 @@ function polygon(key: string, light: Light, w: number): P3[] {
   return hh === 0 ? [[a, b, 0], [a + 1, b, 0], [a + 1, b + 1, 0]] : [[a, b, 0], [a, b + 1, 0], [a + 1, b + 1, 0]]
 }
 
-/** `wall` is the wall plane coordinate (see wallPos); unused for floor lights. */
-export function shadowOutline(cells: Set<string>, light: Light, wall = 0): Set<SegKey> {
-  const out = new Set<SegKey>()
+export function shadowOutline(cells: Set<string>, light: Light, h: HeightMap): Set<SegKey> {
+  const wall = wallPos(h, light), out = new Set<SegKey>()
   for (const c of cells) {
     const p = polygon(c, light, wall)
     p.forEach((u, i) => {
