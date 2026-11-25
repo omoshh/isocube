@@ -63,7 +63,7 @@ export async function mountDrawing(root: HTMLElement, id: string) {
   const zoom = h('div', { class: 'vp-zoom' },
     iconBtn(S.zoomIn, '<path d="M12 5v14M5 12h14"/>', () => grid.zoomBy(1.25)),
     iconBtn(S.zoomOut, '<path d="M5 12h14"/>', () => grid.zoomBy(0.8)),
-    h('button', { class: 'icon-btn fit', text: S.fit, onclick: () => grid.fit() }))
+    h('button', { class: 'icon-btn fit', text: S.fit, 'aria-label': S.fitHint, title: S.fitHint, onclick: () => grid.fit() }))
   const swatches = Array.from({ length: 15 }, (_, i) => i + 1).map(n => h('button', {
     class: 'swatch', 'aria-label': n <= 3 ? S.tone(n) : S.palette(n), style: `--swatch: var(--${n <= 3 ? 'tone-' + n : 'palette-' + n})`,
     onclick: () => { colour = n; tool = 'fill'; bar.setTool(tool); sync() },

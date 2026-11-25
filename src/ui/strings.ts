@@ -35,7 +35,7 @@ export const S = {
   line: 'Line', freehand: 'Freehand', fill: 'Fill', erase: 'Erase', undo: 'Undo', redo: 'Redo',
   clear: 'Clear', penOnly: 'Pen only',
   turn: 'Turn', frontSide: 'Front', backSide: 'Back',
-  zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit',
+  zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit', fitHint: 'Show the whole grid', fitAll: 'Show all grids',
   tone: (n: number) => `Tone ${n}`,
   lives: 'Lives', livesLabel: (n: number) => `Lives: ${n} of 3`, outOfLives: 'Out of lives — the puzzle starts again',
   answer: 'Answer', check: 'Check', next: 'Next puzzle',

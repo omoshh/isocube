@@ -46,6 +46,16 @@ describe('views puzzle screen', () => {
     expect(ans()).toBe(computeEdges(hm).shape.size)
     s.destroy()
   })
+  it('the small Fit button says what it does', async () => {
+    const { puzzle } = await load()
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-009')
+    const fit = root.querySelector('.vp-zoom .fit')!
+    expect(fit.textContent).toBe('Fit')
+    expect(fit.getAttribute('aria-label')).toBe('Show the whole grid')
+    expect(fit.getAttribute('title')).toBe('Show the whole grid')
+    s.destroy()
+  })
   it('Check resets the turn to front', async () => {
     const { puzzle } = await load()
     const root = sized(412, 915)

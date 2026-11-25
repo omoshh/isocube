@@ -95,7 +95,7 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
   const zoom = h('div', { class: 'vp-zoom' },
     iconBtn(S.zoomIn, '<path d="M12 5v14M5 12h14"/>', () => grid.zoomBy(1.25)),
     iconBtn(S.zoomOut, '<path d="M5 12h14"/>', () => grid.zoomBy(0.8)),
-    h('button', { class: 'icon-btn fit', text: S.fit, onclick: () => grid.fit() }))
+    h('button', { class: 'icon-btn fit', text: S.fit, 'aria-label': S.fitHint, title: S.fitHint, onclick: () => grid.fit() }))
   const counts = h('span', { class: 'vp-counts-text', 'aria-live': 'polite' })
   const bar = createToolBar({
     tool, onTool: t => { tool = t },

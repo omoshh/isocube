@@ -72,7 +72,8 @@ describe('reverse puzzle screen', () => {
     const s = await reverse.mountReversePuzzle(root, file, 'L1-004')
     const stored = JSON.parse(sessionStorage.getItem('view/reverse/R-L1-004/top')!)
     expect(stored).toEqual(v)
-    button(root, 'Fit').click() // FIT resets and stores
+    expect(button(root, 'Show all grids')).toBeTruthy() // clearer than 'Fit' (round 3)
+    button(root, 'Show all grids').click() // resets and stores
     expect(JSON.parse(sessionStorage.getItem('view/reverse/R-L1-004/top')!)).not.toEqual(v)
     s.destroy()
   })

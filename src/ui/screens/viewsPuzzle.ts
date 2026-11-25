@@ -75,7 +75,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const zoom = h('div', { class: 'vp-zoom' },
     iconBtn(S.zoomIn, '<path d="M12 5v14M5 12h14"/>', () => grid.zoomBy(1.25)),
     iconBtn(S.zoomOut, '<path d="M5 12h14"/>', () => grid.zoomBy(0.8)),
-    h('button', { class: 'icon-btn fit', text: S.fit, onclick: () => grid.fit() }))
+    h('button', { class: 'icon-btn fit', text: S.fit, 'aria-label': S.fitHint, title: S.fitHint, onclick: () => grid.fit() }))
   // the answer seen from the back; only while Answer is on
   const turn = turnButton(back => grid.setOverlay({ kind: 'answer', edges: back ? backEdges : answer.shape }))
   turn.el.hidden = true

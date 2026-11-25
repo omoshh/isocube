@@ -120,7 +120,7 @@ export async function mountReverse(root: HTMLElement, e: Puzzle) {
       ...VIEWS.map(v => h('figure', { class: 'rv-cell rv-view', 'data-view': v },
         h('figcaption', {}, h('span', { text: label[v] }), cells[v].count), cells[v].grid))),
     h('div', { class: 'action-row' },
-      h('button', { class: 'btn btn-outline', text: S.fit, onclick: () => VIEWS.forEach(v => grids[v].fit()) }), checkBtn))
+      h('button', { class: 'btn btn-outline', text: S.fitAll, onclick: () => VIEWS.forEach(v => grids[v].fit()) }), checkBtn))
   root.append(el)
   VIEWS.forEach(makeGrid)
 
