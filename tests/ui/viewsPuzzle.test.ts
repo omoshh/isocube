@@ -65,7 +65,7 @@ describe('views puzzle screen', () => {
     s.destroy()
   })
 
-  it('revealedSurvivesRestartAndReload', async () => {
+  it('restartClearsRevealedAndReload', async () => {
     let { puzzle, storage } = await load()
     const e = file.puzzles.find(p => p.id === 'L1-004')!
     const shape = computeEdges(new HeightMap(e.cols, e.rows, e.h)).shape
@@ -83,11 +83,9 @@ describe('views puzzle screen', () => {
     for (let i = 0; i < 3; i++) button(root, 'Check').click() // empty drawing: three failures, lives restart
     expect(root.textContent).toContain('Out of lives')
     s.destroy()
-    await solveRight() // after the restart
-    expect((await storage.loadProgress()).solved).not.toContain('L1-004')
-    vi.resetModules(); ;({ puzzle, storage } = await load()) // reload
-    await solveRight()
-    expect((await storage.loadProgress()).solved).not.toContain('L1-004')
+    vi.resetModules(); ;({ puzzle, storage } = await load()) // reload: the restart was saved
+    await solveRight() // a full restart clears revealed, so this counts
+    await vi.waitFor(async () => expect((await storage.loadProgress()).solved).toContain('L1-004'))
   })
 
   it('drawingRestoredAfterReload', async () => {
