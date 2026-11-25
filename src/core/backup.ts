@@ -3,7 +3,7 @@ import type { LivesState } from './lives'
 import { ACCENTS, STYLES, LINE_WIDTHS, type Progress, type Settings } from './unlocks'
 
 export type BackupLast = { kind: string; level: number; n?: number; route: string }
-export type Backup = { app: 'isocube'; version: 1 | 2; exportedAt: string; progress: Progress; settings: Settings; drawings: Record<string, Drawing>
+export type Backup = { app: 'isocube'; version: 1 | 2 | 3; exportedAt: string; progress: Progress; settings: Settings; drawings: Record<string, Drawing>
   lives: Record<string, LivesState>; sectionSeeds: Record<number, number[]>; last?: BackupLast }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -15,7 +15,7 @@ export function parseBackup(text: string): { ok: true; backup: Backup } | { ok: 
   let b: unknown
   try { b = JSON.parse(text) } catch { return fail('This file is not valid JSON.') }
   if (!isObj(b) || b.app !== 'isocube') return fail('This is not an Isocube backup file.')
-  if (b.version !== 1 && b.version !== 2) return fail('This backup has an unsupported version.')
+  if (b.version !== 1 && b.version !== 2 && b.version !== 3) return fail('This backup has an unsupported version.')
   if (typeof b.exportedAt !== 'string') return fail('The backup date is missing.')
 
   const p = b.progress

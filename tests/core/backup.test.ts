@@ -30,7 +30,7 @@ describe('parseBackup', () => {
     const bad = (o: unknown) => parseBackup(typeof o === 'string' ? o : JSON.stringify(o))
     const cases: unknown[] = [
       'not json', '[]', 'null',
-      { ...good, app: 'other' }, { ...good, version: 3 }, { ...good, version: 0 },
+      { ...good, app: 'other' }, { ...good, version: 4 }, { ...good, version: 0 },
       { ...good, lives: { k: { left: 4, revealed: false } } }, { ...good, lives: { k: { left: 1 } } }, { ...good, lives: [] },
       { ...good, sectionSeeds: { 1: ['a'] } }, { ...good, sectionSeeds: [] }, { ...good, last: { kind: 'x' } },
       { ...good, exportedAt: 5 }, { ...good, progress: undefined },

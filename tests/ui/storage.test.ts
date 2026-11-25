@@ -56,7 +56,7 @@ describe('storage', () => {
     await s.saveSettings({ theme: 'light', accent: 'pink', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true })
     s.saveDrawing('views/a', d(1)); s.saveDrawing('endless/3/9', d(2))
     const text = await s.exportBackup()
-    expect(JSON.parse(text)).toMatchObject({ app: 'isocube', version: 2 })
+    expect(JSON.parse(text)).toMatchObject({ app: 'isocube', version: 3 })
     await s.deleteDrawing('views/a'); await s.saveProgress({ solved: [], netsRight: 0, endlessSeeds: {} })
     s.saveDrawing('draw/extra', d(5))
     expect(await s.importBackup(text)).toEqual({ ok: true })
@@ -68,17 +68,17 @@ describe('storage', () => {
 
   it('v2 import restores lives, section seeds and the Continue record, replacing stale lives', async () => {
     const s = await load()
-    await s.saveLives('shadow/2/a', { left: 1, revealed: false })
+    await s.saveLives('nets/2/a', { left: 1, revealed: false })
     await s.saveLast({ kind: 'sections', level: 2, route: '#/sections/2' })
     localStorage.setItem('sections/2', JSON.stringify({ seed: 77, answered: true, pick: 1 }))
     const text = await s.exportBackup()
-    expect(JSON.parse(text)).toMatchObject({ lives: { 'shadow/2/a': { left: 1, revealed: false } }, sectionSeeds: { 2: [77] }, last: { route: '#/sections/2' } })
-    await s.saveLives('shadow/2/a', { left: 3, revealed: false }); await s.saveLives('shadow/2/stale', { left: 0, revealed: true })
+    expect(JSON.parse(text)).toMatchObject({ lives: { 'nets/2/a': { left: 1, revealed: false } }, sectionSeeds: { 2: [77] }, last: { route: '#/sections/2' } })
+    await s.saveLives('nets/2/a', { left: 3, revealed: false }); await s.saveLives('nets/2/stale', { left: 0, revealed: true })
     await s.saveLast({ kind: 'nets', level: 1, route: '#/nets/1' })
     localStorage.setItem('sections/2', JSON.stringify({ seed: 1, answered: false, pick: -1 }))
     expect(await s.importBackup(text)).toEqual({ ok: true })
-    expect(await s.loadLives('shadow/2/a')).toEqual({ left: 1, revealed: false })
-    expect(await s.loadLives('shadow/2/stale')).toEqual({ left: 3, revealed: false }) // START: stale entry removed
+    expect(await s.loadLives('nets/2/a')).toEqual({ left: 1, revealed: false })
+    expect(await s.loadLives('nets/2/stale')).toEqual({ left: 3, revealed: false }) // START: stale entry removed
     expect((await s.loadLast())?.route).toBe('#/sections/2')
     expect(JSON.parse(localStorage.getItem('sections/2')!).seed).toBe(77)
   })
@@ -96,11 +96,11 @@ describe('storage', () => {
 
   it('v1 import keeps lives, Continue and section seeds', async () => {
     const s = await load()
-    await s.saveLives('shadow/2/a', { left: 1, revealed: false })
+    await s.saveLives('nets/2/a', { left: 1, revealed: false })
     await s.saveLast({ kind: 'nets', level: 1, route: '#/nets/1' })
     const { lives: _l, sectionSeeds: _s, last: _t, ...v1 } = JSON.parse(await s.exportBackup())
     expect(await s.importBackup(JSON.stringify({ ...v1, version: 1 }))).toEqual({ ok: true })
-    expect(await s.loadLives('shadow/2/a')).toEqual({ left: 1, revealed: false })
+    expect(await s.loadLives('nets/2/a')).toEqual({ left: 1, revealed: false })
     expect((await s.loadLast())?.route).toBe('#/nets/1')
   })
 
@@ -109,7 +109,7 @@ describe('storage', () => {
     await s.saveProgress({ solved: ['keep'], netsRight: 0, endlessSeeds: {} })
     s.saveDrawing('draw/k', d(1))
     const good = JSON.parse(await s.exportBackup())
-    for (const bad of ['{nope', JSON.stringify({ ...good, app: 'x' }), JSON.stringify({ ...good, version: 3 }), JSON.stringify({ ...good, settings: undefined })]) {
+    for (const bad of ['{nope', JSON.stringify({ ...good, app: 'x' }), JSON.stringify({ ...good, version: 4 }), JSON.stringify({ ...good, settings: undefined })]) {
       const r = await s.importBackup(bad)
       expect(r.ok).toBe(false)
       expect(r.error).toBeTruthy()
@@ -164,5 +164,56 @@ describe('storage', () => {
     const p = await s.loadProgress() // idb-keyval keeps its store across tests, so check only these two changes
     expect(p.solved).toContain('a')
     expect(p.endlessSeeds[2]).toEqual([7])
+  })
+})
+
+describe('purgeOldPuzzles', () => {
+  const seed = async (s: Awaited<ReturnType<typeof load>>) => {
+    await s.saveProgress({ solved: ['L1-001', 'R-RL2-004', 'S1-L1-003', 'C-007', 'R-C-002', 'E1-55', 'R-E2-9', 'X1-3'], netsRight: 2, endlessSeeds: {} })
+    s.saveDrawing('views/L1-001', d(1)); s.saveDrawing('reverse/RL1-002', d(2)); s.saveDrawing('shadow/1/L1-001', d(3)); s.saveDrawing('draw/abc', d(4)); s.saveDrawing('endless/1/55', d(5))
+    await s.flush()
+    await s.saveLives('views/L1-001', { left: 2, revealed: true }); await s.saveLives('nets/1/5', { left: 1, revealed: false })
+    await s.saveLast({ kind: 'views', level: 1, n: 1, route: '#/views/L1-001' })
+  }
+  it('deletes old puzzle data and keeps the rest', async () => {
+    const s = await load()
+    await seed(s)
+    await s.purgeOldPuzzles()
+    expect((await s.loadProgress()).solved).toEqual(['E1-55', 'R-E2-9', 'X1-3'])
+    expect((await s.loadProgress()).netsRight).toBe(2)
+    for (const k of ['views/L1-001', 'reverse/RL1-002', 'shadow/1/L1-001']) expect(await s.loadDrawing(k), k).toBeUndefined()
+    expect(await s.loadDrawing('draw/abc')).toEqual(d(4))
+    expect(await s.loadDrawing('endless/1/55')).toEqual(d(5))
+    expect(await s.loadLives('views/L1-001')).toEqual({ left: 3, revealed: false })
+    expect(await s.loadLives('nets/1/5')).toEqual({ left: 1, revealed: false })
+    expect(await s.loadLast()).toBeUndefined()
+  })
+  it('runs only once', async () => {
+    const s = await load()
+    await s.purgeOldPuzzles()
+    await s.saveProgress({ solved: ['L1-001'], netsRight: 0, endlessSeeds: {} })
+    await s.purgeOldPuzzles()
+    expect((await s.loadProgress()).solved).toEqual(['L1-001'])
+  })
+  it('an imported old backup is purged too', async () => {
+    const s = await load()
+    await seed(s)
+    const text = JSON.stringify({ ...JSON.parse(await s.exportBackup()), version: 2 }) // made before round 3
+    await s.purgeOldPuzzles()
+    expect((await s.importBackup(text)).ok).toBe(true)
+    expect((await s.loadProgress()).solved).toEqual(['E1-55', 'R-E2-9', 'X1-3'])
+    expect(await s.loadDrawing('views/L1-001')).toBeUndefined()
+    expect(await s.loadLast()).toBeUndefined()
+  })
+  it('a backup made after round 3 keeps its puzzle data', async () => {
+    const s = await load()
+    await s.purgeOldPuzzles()
+    await s.saveProgress({ solved: ['L1-001'], netsRight: 0, endlessSeeds: {} })
+    s.saveDrawing('views/L1-001', d(1))
+    const text = await s.exportBackup()
+    expect(JSON.parse(text).version).toBe(3)
+    expect((await s.importBackup(text)).ok).toBe(true)
+    expect((await s.loadProgress()).solved).toEqual(['L1-001'])
+    expect(await s.loadDrawing('views/L1-001')).toEqual(d(1))
   })
 })

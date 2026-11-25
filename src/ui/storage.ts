@@ -111,7 +111,7 @@ export async function exportBackup(): Promise<string> {
   const sectionSeeds: Record<number, number[]> = {}
   for (const l of SECTION_LEVELS) { const sd = readSectionSeed(l); if (sd !== undefined) sectionSeeds[l] = [sd] }
   const last = await loadLast()
-  const b: Backup = { app: 'isocube', version: 2, exportedAt: new Date().toISOString(), progress: await loadProgress(), settings: await loadSettings(), drawings, lives, sectionSeeds, ...(last ? { last } : {}) }
+  const b: Backup = { app: 'isocube', version: 3, exportedAt: new Date().toISOString(), progress: await loadProgress(), settings: await loadSettings(), drawings, lives, sectionSeeds, ...(last ? { last } : {}) }
   return JSON.stringify(b)
 }
 
@@ -137,7 +137,32 @@ export async function importBackup(text: string): Promise<{ ok: boolean; error?:
   await saveSettings(backup.settings)
   if (wasOk && !idbOk) return { ok: false, error: 'Storage failed while importing. The backup was not saved permanently.' }
   for (const k of stale) await rawDel(k)
+  if (backup.version < 3) await deleteOldPuzzleData() // a backup from before round 3 brings old puzzle data back
   return { ok: true }
+}
+
+// Round 3 regenerated every Views/Reverse/Shadows puzzle and dropped Classic: data saved for the old ones is deleted.
+const OLD_ID = /^(R-|S\d-)?(L|RL)\d-\d{3}$|^(R-)?C-\d{3}$/
+const OLD_KEY = ['views/L', 'views/C', 'reverse/RL', 'reverse/C', 'shadow/']
+const OLD_ROUTE = ['#/views/L', '#/views/C', '#/reverse/RL', '#/reverse/C', '#/shadows/']
+const PUZZLE_SET = 3
+
+async function deleteOldPuzzleData() {
+  await flush()
+  await updateProgress(p => ({ ...p, solved: p.solved.filter(id => !OLD_ID.test(id)) }))
+  for (const k of await rawKeys()) {
+    const key = k.startsWith(LIVES) ? k.slice(LIVES.length) : k
+    if (OLD_KEY.some(o => key.startsWith(o))) await rawDel(k)
+  }
+  const last = await rawGet<LastPuzzle>('last')
+  if (last && OLD_ROUTE.some(r => String(last.route).startsWith(r))) await rawDel('last')
+}
+
+/** Once per device: deletes data of the puzzles from before round 3. */
+export async function purgeOldPuzzles(): Promise<void> {
+  if ((await rawGet<number>('puzzleSet')) === PUZZLE_SET) return
+  await deleteOldPuzzleData()
+  await rawSet('puzzleSet', PUZZLE_SET)
 }
 
 if (typeof document !== 'undefined') {
