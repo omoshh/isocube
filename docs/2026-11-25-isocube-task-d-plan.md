@@ -59,3 +59,22 @@ Spec section 6, "Puzzle" and "Nets", plus the closing lines ("Other screens …"
 
 - [ ] Failing tests: views as 4 cards Key/Top/Side/Front and "Hide views" still works; tool bar order Line, Freehand, Fill, Erase, divider, Undo, Redo, selected tool marked; action row Answer + Check; Nets score line and "New shape"; after a wrong pick the pick has the mistake border and "Your pick", the correct net has the check badge, a result bar with "Fold".
 - [ ] Implement → pass; `npm run e2e` passes. Update `docs/design/design-system.md`. Commit `feat: new puzzle and nets layouts`.
+
+---
+
+### Task D5: Adjustable line width
+
+Added by the owner 2026-11-25. Not in `docs/isocube-task-d-themes.md`; this task text is the spec.
+
+**Behaviour:**
+- `Settings.lineWidth: 'thin' | 'normal' | 'thick'`, default `'normal'`. Settings saved before this change and backups without the field load as `'normal'`; a backup with any other value is rejected like other invalid settings.
+- The width applies to the lines the user draws (all puzzle kinds and Draw mode): thin = 1.5px, normal = 2px (the current `--stroke-line`), thick = 3px.
+- Check marks stay wider than the drawn lines: `--stroke-missing` = line + 1.5px, `--stroke-mistake` = line + 2px (normal keeps today's 3.5px and 4px).
+- The grid, answer lines, shape outlines and icons do not change.
+- Exported PNG and SVG images use the chosen width.
+- Settings screen: a "Line width" row with Thin / Normal / Thick buttons, same button pattern as Style and Theme, below Theme. It applies at once, without reload.
+
+**Files:** `src/core/unlocks.ts` (`Settings`), `src/core/backup.ts`, `src/ui/storage.ts` (default), `src/ui/theme.ts` (set the stroke variables), `src/ui/screens/settings.ts`, `src/ui/strings.ts`, `src/ui/exportImage.ts`, tests in `tests/core/backup.test.ts`, `tests/ui/settings.test.ts`, `tests/ui/theme.test.ts`.
+
+- [ ] Failing tests: old settings without `lineWidth` load as `normal`; old backup imports as `normal`; invalid value rejected; choosing Thick sets the drawn-line stroke to 3px and mistake to 5px; export output uses the chosen width; the switch persists.
+- [ ] Implement → pass. Commit `feat: adjustable line width`.
