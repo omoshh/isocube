@@ -77,6 +77,22 @@ describe('home', () => {
     expect(root.querySelector('[data-tile="views"]')!.getAttribute('href')).toBe('#/levels/views')
     s.destroy()
   })
+
+  it('homeShowsNewTiles', async () => {
+    const { home, storage } = await load()
+    await storage.saveProgress({ solved: ['L1-001', 'X1-5', 'X2-1', 'S2-L3-004', 'R-RL1-001'], netsRight: 0, endlessSeeds: {} })
+    const root = sized(), s = await home.mountHome(root)
+    const t = (k: string) => root.querySelector(`[data-tile="${k}"]`)!
+    const count = (k: string) => t(k).querySelector('.tile-big')!.textContent
+    expect([...root.querySelectorAll('[data-tile]')].map(e => e.getAttribute('data-tile'))).toEqual(['views', 'reverse', 'nets', 'sections', 'shadows', 'draw'])
+    expect(t('sections').getAttribute('href')).toBe('#/sections/1')
+    expect(t('shadows').getAttribute('href')).toBe('#/levels/shadows')
+    expect(t('sections').textContent).toContain('Find the cut')
+    expect(t('shadows').textContent).toContain('Draw the shadow')
+    expect([count('views'), count('sections'), count('shadows')]).toEqual(['1', '2', '1'])
+    expect(root.querySelector('.home-total')!.textContent).toBe('5')
+    s.destroy()
+  })
 })
 
 describe('levels cards', () => {

@@ -17,6 +17,11 @@ describe('accentRules', () => {
     expect(nextAccent(24)).toEqual({ id: 'lilac', left: 1 })
     expect(nextAccent(200)).toBeNull()
   })
+  it('newSolvedCount', () => {
+    const base = solvedCount({ solved: [], netsRight: 0, endlessSeeds: {} })
+    expect(solvedCount({ solved: ['X1-5'], netsRight: 0, endlessSeeds: {} })).toBe(base + 1)
+    expect(solvedCount({ solved: ['X1-5', 'S2-L3-004'], netsRight: 0, endlessSeeds: {} })).toBe(base + 2)
+  })
   it('solvedCount', () => {
     expect(solvedCount({ solved: ['a', 'b'], netsRight: 3, endlessSeeds: {} })).toBe(5)
   })

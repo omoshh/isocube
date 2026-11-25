@@ -22,7 +22,7 @@ export const S = {
   unlockAll: 'Unlock all accents', exportProgress: 'Export progress', importProgress: 'Import progress',
   imported: 'Progress imported.', storageWarning: 'Storage is unavailable, so progress is lost when you close the app.',
   solvedLabel: 'puzzles solved', continue: 'Continue',
-  viewsDesc: 'Read 3 views, draw the stack', reverseDesc: 'Draw the views', netsDesc: 'Pick the net', drawDesc: 'Free drawing',
+  viewsDesc: 'Read 3 views, draw the stack', reverseDesc: 'Draw the views', netsDesc: 'Pick the net', drawDesc: 'Free drawing', sectionsDesc: 'Find the cut', shadowsDesc: 'Draw the shadow',
   lastLabel: (kind: string, level: number, tail?: string) => [kind, level ? `level ${level}` : 'Classic', tail].filter(Boolean).join(', '),
   puzzleN: (n: number) => `puzzle ${n}`, endlessLower: 'endless',
   levelsHint: 'Each dot is one puzzle. Filled dots are solved.',

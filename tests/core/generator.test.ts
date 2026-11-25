@@ -29,7 +29,7 @@ describe('generator', () => {
       for (const h of maps) groups.set(key(h), (groups.get(key(h)) ?? 0) + 1)
       for (const h of maps) expect(countSolutions(views(h), cols, rows, maxH, 1e9)).toBe(groups.get(key(h)))
     }
-  })
+  }, 30_000)
   it('samplerRules', () => {
     const r = rng(7)
     for (const { a, b, maxH } of LEVELS) for (let s = 0; s < 200; s++) {

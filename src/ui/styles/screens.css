@@ -189,7 +189,7 @@ button { font: inherit; color: inherit; }
   border: var(--stroke-border) solid var(--line); border-radius: 36px; text-decoration: none; }
 .home-last { font: 600 17px var(--font-ui); }
 .home-play { width: var(--size-touch); height: var(--size-touch); border-radius: 50%; background: var(--ink); color: var(--bg); display: flex; align-items: center; justify-content: center; }
-.home-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: 150px 150px 72px; gap: var(--space-3); }
+.home-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: 150px 150px 150px 72px; gap: var(--space-3); }
 .home-tile { background: var(--surface); color: var(--ink); border: var(--stroke-border) solid var(--line); border-radius: var(--radius-tile); padding: var(--space-4);
   display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; min-width: 0; }
 .home-tile[data-tile="views"] { grid-row: span 2; }

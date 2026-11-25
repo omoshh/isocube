@@ -30,6 +30,15 @@ describe('settings and accents', () => {
     expect((await loadSettings()).accent).toBe('yellow')
   })
 
+  it('livesSwitchPersists', async () => {
+    await mountSettings(root())
+    const sw = root().querySelector<HTMLElement>('[data-lives-switch]')!
+    expect(sw.getAttribute('aria-checked')).toBe('true')
+    sw.click(); await tick()
+    expect((await loadSettings()).lives).toBe(false)
+    expect(sw.getAttribute('aria-checked')).toBe('false')
+  })
+
   it('style row sets and saves the style', async () => {
     await mountSettings(root())
     const btns = [...root().querySelectorAll<HTMLElement>('[data-style-btn]')]

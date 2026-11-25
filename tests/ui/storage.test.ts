@@ -56,7 +56,7 @@ describe('storage', () => {
     await s.saveSettings({ theme: 'light', accent: 'pink', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true })
     s.saveDrawing('views/a', d(1)); s.saveDrawing('endless/3/9', d(2))
     const text = await s.exportBackup()
-    expect(JSON.parse(text)).toMatchObject({ app: 'isocube', version: 1 })
+    expect(JSON.parse(text)).toMatchObject({ app: 'isocube', version: 2 })
     await s.deleteDrawing('views/a'); await s.saveProgress({ solved: [], netsRight: 0, endlessSeeds: {} })
     s.saveDrawing('draw/extra', d(5))
     expect(await s.importBackup(text)).toEqual({ ok: true })
@@ -66,12 +66,39 @@ describe('storage', () => {
     expect(await s.loadDrawing('draw/extra')).toBeUndefined()
   })
 
+  it('v2 import restores lives, section seeds and the Continue record, replacing stale lives', async () => {
+    const s = await load()
+    await s.saveLives('shadow/2/a', { left: 1, revealed: false })
+    await s.saveLast({ kind: 'sections', level: 2, route: '#/sections/2' })
+    localStorage.setItem('sections/2', JSON.stringify({ seed: 77, answered: true, pick: 1 }))
+    const text = await s.exportBackup()
+    expect(JSON.parse(text)).toMatchObject({ lives: { 'shadow/2/a': { left: 1, revealed: false } }, sectionSeeds: { 2: [77] }, last: { route: '#/sections/2' } })
+    await s.saveLives('shadow/2/a', { left: 3, revealed: false }); await s.saveLives('shadow/2/stale', { left: 0, revealed: true })
+    await s.saveLast({ kind: 'nets', level: 1, route: '#/nets/1' })
+    localStorage.setItem('sections/2', JSON.stringify({ seed: 1, answered: false, pick: -1 }))
+    expect(await s.importBackup(text)).toEqual({ ok: true })
+    expect(await s.loadLives('shadow/2/a')).toEqual({ left: 1, revealed: false })
+    expect(await s.loadLives('shadow/2/stale')).toEqual({ left: 3, revealed: false }) // START: stale entry removed
+    expect((await s.loadLast())?.route).toBe('#/sections/2')
+    expect(JSON.parse(localStorage.getItem('sections/2')!).seed).toBe(77)
+  })
+
+  it('v1 import keeps lives, Continue and section seeds', async () => {
+    const s = await load()
+    await s.saveLives('shadow/2/a', { left: 1, revealed: false })
+    await s.saveLast({ kind: 'nets', level: 1, route: '#/nets/1' })
+    const { lives: _l, sectionSeeds: _s, last: _t, ...v1 } = JSON.parse(await s.exportBackup())
+    expect(await s.importBackup(JSON.stringify({ ...v1, version: 1 }))).toEqual({ ok: true })
+    expect(await s.loadLives('shadow/2/a')).toEqual({ left: 1, revealed: false })
+    expect((await s.loadLast())?.route).toBe('#/nets/1')
+  })
+
   it('badBackupRejected leaves data untouched', async () => {
     const s = await load()
     await s.saveProgress({ solved: ['keep'], netsRight: 0, endlessSeeds: {} })
     s.saveDrawing('draw/k', d(1))
     const good = JSON.parse(await s.exportBackup())
-    for (const bad of ['{nope', JSON.stringify({ ...good, app: 'x' }), JSON.stringify({ ...good, version: 2 }), JSON.stringify({ ...good, settings: undefined })]) {
+    for (const bad of ['{nope', JSON.stringify({ ...good, app: 'x' }), JSON.stringify({ ...good, version: 3 }), JSON.stringify({ ...good, settings: undefined })]) {
       const r = await s.importBackup(bad)
       expect(r.ok).toBe(false)
       expect(r.error).toBeTruthy()

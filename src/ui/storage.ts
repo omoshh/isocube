@@ -82,7 +82,7 @@ export async function loadLast(): Promise<LastPuzzle | undefined> {
 export const loadSettings = async (): Promise<Settings> => ({ ...DEFAULT_SETTINGS(), ...(await rawGet<Settings>('settings')) })
 export const saveSettings = (s: Settings) => rawSet('settings', s)
 
-// Own prefix, not in DRAW_PREFIXES: backup import never treats lives as drawings (Task 8 adds them to the backup).
+// Own prefix, not in DRAW_PREFIXES: the backup carries lives in their own field.
 const LIVES = 'lives/'
 export async function loadLives(key: string): Promise<LivesState> {
   const v = await rawGet<LivesState>(LIVES + key)
@@ -97,11 +97,21 @@ export async function storageAvailable(): Promise<boolean> {
 
 const drawingKeys = async () => (await rawKeys()).filter(k => DRAW_PREFIXES.some(p => k.startsWith(p)))
 
+const SECTION_LEVELS = [1, 2, 3]
+const readSectionSeed = (level: number): number | undefined => {
+  try { const r = JSON.parse(localStorage.getItem('sections/' + level) ?? 'null'); return Number.isInteger(r?.seed) ? r.seed : undefined } catch { return undefined }
+}
+
 export async function exportBackup(): Promise<string> {
   await flush()
   const drawings: Record<string, Drawing> = {}
   for (const k of await drawingKeys()) { const d = await rawGet<Drawing>(k); if (d) drawings[k] = d }
-  const b: Backup = { app: 'isocube', version: 1, exportedAt: new Date().toISOString(), progress: await loadProgress(), settings: await loadSettings(), drawings }
+  const lives: Record<string, LivesState> = {}
+  for (const k of (await rawKeys()).filter(k => k.startsWith(LIVES))) { const v = await loadLives(k.slice(LIVES.length)); lives[k.slice(LIVES.length)] = v }
+  const sectionSeeds: Record<number, number[]> = {}
+  for (const l of SECTION_LEVELS) { const sd = readSectionSeed(l); if (sd !== undefined) sectionSeeds[l] = [sd] }
+  const last = await loadLast()
+  const b: Backup = { app: 'isocube', version: 2, exportedAt: new Date().toISOString(), progress: await loadProgress(), settings: await loadSettings(), drawings, lives, sectionSeeds, ...(last ? { last } : {}) }
   return JSON.stringify(b)
 }
 
@@ -112,8 +122,15 @@ export async function importBackup(text: string): Promise<{ ok: boolean; error?:
   await flush()
   const wasOk = idbOk
   const stale = (await drawingKeys()).filter(k => !(k in backup.drawings))
+  // A v1 backup has no lives, so it must not wipe them: only a v2 import replaces them.
+  if (backup.version >= 2) stale.push(...(await rawKeys()).filter(k => k.startsWith(LIVES) && !(k.slice(LIVES.length) in backup.lives)))
   // New data first, stale deletes last: a failure midway never leaves old data deleted.
   for (const [k, d] of Object.entries(backup.drawings)) await rawSet(k, d)
+  for (const [k, v] of Object.entries(backup.lives)) await rawSet(LIVES + k, v)
+  for (const [l, seeds] of Object.entries(backup.sectionSeeds)) if (seeds.length) {
+    try { localStorage.setItem('sections/' + l, JSON.stringify({ seed: seeds[0], answered: false, pick: -1 })) } catch { /* in-memory only */ }
+  }
+  if (backup.last) await saveLast(backup.last as LastPuzzle)
   await updateProgress(() => backup.progress)
   await saveSettings(backup.settings)
   if (wasOk && !idbOk) return { ok: false, error: 'Storage failed while importing. The backup was not saved permanently.' }
