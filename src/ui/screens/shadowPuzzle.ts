@@ -1,10 +1,10 @@
 import { countsAsSolved } from '../../core/lives'
 import { checkDrawing } from '../../core/checker'
 import { DrawingEditor, type Bounds } from '../../core/drawing'
-import { segEnds } from '../../core/geometry'
+import { segEnds, type Line, type Pt } from '../../core/geometry'
 import type { PuzzleFile } from '../../core/generator'
-import { HeightMap, computeEdges } from '../../core/shape'
-import { shadowCells, shadowOutline, shadowPlaneBounds, type Light } from '../../core/shadows'
+import { HeightMap, computeEdges, visibleFaces } from '../../core/shape'
+import { shadowCells, shadowOutline, shadowPlaneBounds, shadowPlaneCorners, type Light } from '../../core/shadows'
 import { createLives } from '../components/lives'
 import { createToolBar } from '../components/toolBar'
 import { createTopBar } from '../components/topBar'
@@ -23,12 +23,13 @@ const readView = (id: string): View | undefined => {
 }
 const writeView = (id: string, v: View) => { try { sessionStorage.setItem('view/' + id, JSON.stringify(v)) } catch { /* view is a convenience */ } }
 
-// Light travel on screen (y down): straight down; +y and +x run up-left / up-right in the iso view; the slant leans down-right.
-const DIR: Record<Light, [number, number]> = { down: [0, 1], front: [-0.87, -0.5], side: [0.87, -0.5], slant: [0.6, 0.8] }
+// Light travel on screen (y down), from proj: down is -z; front travels +y (up-left toward the back wall), side +x (up-right toward the side wall).
+// The slant (1,1,-1) is the view axis and projects to a point, so it gets a caption instead of an arrow.
+const DIR: Partial<Record<Light, [number, number]>> = { down: [0, 1], front: [-0.87, -0.5], side: [0.87, -0.5] }
 
 /** A small sun with an arrow showing which way the light travels. Drawn in the ink token only. */
 function lightBadge(light: Light, label: string) {
-  const [dx, dy] = DIR[light], c = 24, r = 15
+  const dir = DIR[light], [dx, dy] = dir ?? [0, 0], c = 24, r = dir ? 15 : 0
   const sx = c - dx * r, sy = c - dy * r, ex = c + dx * r, ey = c + dy * r, nx = -dy, ny = dx
   const rays = Array.from({ length: 8 }, (_, i) => {
     const a = i * Math.PI / 4
@@ -36,8 +37,8 @@ function lightBadge(light: Light, label: string) {
   }).join('')
   const b = h('span', { class: 'light-badge', role: 'img', 'aria-label': label })
   b.innerHTML = `<svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true" fill="none" style="stroke:var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="${sx}" cy="${sy}" r="4"/>${rays}<path d="M${sx + dx * 11} ${sy + dy * 11}L${ex} ${ey}"/>
-    <path d="M${ex - dx * 6 + nx * 4} ${ey - dy * 6 + ny * 4}L${ex} ${ey}L${ex - dx * 6 - nx * 4} ${ey - dy * 6 - ny * 4}"/></svg>`
+    <circle cx="${sx}" cy="${sy}" r="4"/>${rays}${dir ? `<path d="M${sx + dx * 11} ${sy + dy * 11}L${ex} ${ey}"/>
+    <path d="M${ex - dx * 6 + nx * 4} ${ey - dy * 6 + ny * 4}L${ex} ${ey}L${ex - dx * 6 - nx * 4} ${ey - dy * 6 - ny * 4}"/>` : ''}</svg>`
   return b
 }
 
@@ -46,6 +47,17 @@ function iconBtn(label: string, paths: string, onclick: () => void) {
   b.innerHTML = icon(paths)
   return b
 }
+
+/** An editor that only accepts lines with both ends on the target plane (its boundary counts as inside). */
+class PlaneEditor extends DrawingEditor {
+  constructor(private quad: Pt[], ...a: ConstructorParameters<typeof DrawingEditor>) { super(...a) }
+  private inside(p: Pt) {
+    const q = this.quad, sign = Math.sign(cross(q[0], q[1], q[2]))
+    return q.every((a, i) => cross(a, q[(i + 1) % q.length], p) * sign >= -1e-9)
+  }
+  addLines(ls: Line[]) { super.addLines(ls.filter(l => this.inside(l.a) && this.inside(l.b))) }
+}
+const cross = (a: Pt, b: Pt, c: Pt) => (b.t - a.t) * (c.m - a.m) - (b.m - a.m) * (c.t - a.t)
 
 /** #/shadows/<level>/<id>: draw the outline of the shape's shadow. The caller (router) checks that `id` is a views puzzle of `level`. */
 export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, level: number, id: string) {
@@ -58,10 +70,16 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
 
   const hm = new HeightMap(e.cols, e.rows, e.h)
   const answer = { shape: shadowOutline(shadowCells(hm, light), light, hm), seams: new Set<string>() }
-  const shape = computeEdges(hm).shape
+  const faces = visibleFaces(hm)
+  const shape = {
+    edges: computeEdges(hm).shape,
+    // top lightest, left face (x-side) and right face (y-front) as in the glyph
+    tones: Object.fromEntries([...faces].map(([k, f]) => [k, f.dir === 'top' ? 1 : f.dir === 'side' ? 2 : 3])),
+  }
+  const corners = shadowPlaneCorners(hm, light)
   const plane = shadowPlaneBounds(hm, light)
-  // the grid frames the plane and the shape above it; the editor only accepts lines on the plane
-  const pts = [...shape].flatMap(segEnds)
+  // the grid frames the plane and the shape above it (so the whole plane shows, level 4 included)
+  const pts = [...shape.edges].flatMap(segEnds)
   const bounds: Bounds = {
     t0: Math.min(plane.t0, ...pts.map(p => p.t)), t1: Math.max(plane.t1, ...pts.map(p => p.t)),
     v0: Math.min(plane.v0, ...pts.map(p => p.m + p.t / 2)), v1: Math.max(plane.v1, ...pts.map(p => p.m + p.t / 2)),
@@ -70,7 +88,7 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
   const lv = await createLives(key)
   let checked = false, answerOn = false
 
-  const editor = new DrawingEditor(saved ?? { lines: [], fills: {} }, plane, d => {
+  const editor = new PlaneEditor(corners, saved ?? { lines: [], fills: {} }, plane, d => {
     saveDrawing(key, d)
     bar.setHistory(editor.canUndo, editor.canRedo)
     if (checked) { checked = false; grid.setOverlay(null); counts.textContent = ''; setNext(false) }
@@ -123,7 +141,8 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
   }
 
   const el = h('div', { class: 'screen vp' }, top,
-    h('div', { class: 'vp-body' }, h('div', { class: 'vp-gridwrap' }, gridEl, lightBadge(light, S.lights[level - 1]), zoom)),
+    h('div', { class: 'vp-body' }, h('div', { class: 'vp-gridwrap' }, gridEl, lightBadge(light, light === 'slant' ? `${S.lights[3]}. ${S.slantRule}` : S.lights[level - 1]), zoom)),
+    ...(light === 'slant' ? [h('p', { class: 'light-caption', text: S.slantRule })] : []),
     h('div', { class: 'vp-counts' }, counts, lv.notice),
     bar.el,
     h('div', { class: 'action-row' }, ansBtn, checkBtn))
@@ -133,7 +152,7 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
   bar.setHistory(editor.canUndo, editor.canRedo)
 
   const grid = createIsoGrid(gridEl, {
-    bounds, arrows: false, editor, shape,
+    bounds, arrows: false, editor, shape, plane: corners,
     tool: () => tool, colour: () => 1, penOnly: () => penOnly,
     initialView: readView(key), onViewChange: v => writeView(key, v),
   })

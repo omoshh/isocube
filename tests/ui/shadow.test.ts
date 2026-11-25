@@ -91,9 +91,43 @@ describe('shadow puzzle screen', () => {
     const root = sized()
     const s = await shadow.mountShadowPuzzle(root, file, 3, 'L3-001')
     const layer = root.querySelector<SVGElement>('.g-shape')!
-    expect(layer.style.opacity).toBe('0.6')
+    expect(readFileSync('src/ui/grid/grid.css', 'utf8')).toMatch(/\.g-shape \{ opacity: var\(--opacity-shape\)/)
+    expect(readFileSync('src/ui/styles/tokens.css', 'utf8')).toContain('--opacity-shape: 0.6;')
     expect(layer.querySelectorAll('line').length).toBeGreaterThan(0)
+    expect(layer.querySelectorAll('polygon').length).toBeGreaterThan(0) // shaded faces
+    const fills = new Set([...layer.querySelectorAll('polygon')].map(p => p.getAttribute('style')!.split(';')[0]))
+    expect(fills).toEqual(new Set(['fill:var(--tone-1)', 'fill:var(--tone-2)', 'fill:var(--tone-3)']))
+    const g = [...layer.parentElement!.children].map(c => c.getAttribute('class'))
+    expect(g.indexOf('g-plane')).toBeLessThan(g.indexOf('g-grid')) // plane under the grid lines
+    expect(g.indexOf('g-shape')).toBeLessThan(g.indexOf('g-lines'))
+    expect(g.indexOf('g-shape')).toBeLessThan(g.indexOf('g-ans'))
+    expect(root.querySelector('.g-plane polygon')).toBeTruthy()
     expect(root.querySelector('[aria-label="Light from the side"]')).toBeTruthy()
+    s.destroy()
+  })
+
+  it('level 4 names the slant rule and draws no arrow; level 1 has an arrow', async () => {
+    const { shadow } = await load()
+    const root = sized()
+    const s = await shadow.mountShadowPuzzle(root, file, 4, 'L4-001')
+    const rule = 'For each step down, the light moves +1 in x and +1 in y.'
+    expect(root.querySelector('.light-caption')!.textContent).toBe(rule)
+    expect(root.querySelector('.light-badge')!.getAttribute('aria-label')).toContain(rule)
+    expect(root.querySelectorAll('.light-badge path').length).toBe(8) // sun rays only
+    s.destroy()
+    const s1 = await shadow.mountShadowPuzzle(root, file, 1, 'L1-001')
+    expect(root.querySelectorAll('.light-badge path').length).toBe(10)
+    s1.destroy()
+  })
+
+  it('only the target plane is drawable', async () => {
+    const { shadow } = await load()
+    const root = sized()
+    const s = await shadow.mountShadowPuzzle(root, file, 1, 'L1-004') // floor: t -3..3, m 0..3
+    s.editor.addLines([{ a: { t: 0, m: 5 }, b: { t: 0, m: 6 } }, { a: { t: 0, m: 2 }, b: { t: 0, m: 4 } }, { a: { t: 5, m: 0 }, b: { t: 6, m: 0 } }])
+    expect(s.editor.drawing.lines.length).toBe(0)
+    s.editor.addLines([{ a: { t: 0, m: 1 }, b: { t: 0, m: 2 } }, { a: { t: -3, m: 3 }, b: { t: 0, m: 3 } }]) // inside; boundary
+    expect(s.editor.drawing.lines.length).toBe(4)
     s.destroy()
   })
 

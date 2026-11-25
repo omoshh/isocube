@@ -1,4 +1,4 @@
-import { proj, segKey, type SegKey } from './geometry'
+import { proj, segKey, type Pt, type SegKey } from './geometry'
 import type { HeightMap } from './shape'
 import type { Bounds } from './drawing'
 
@@ -46,11 +46,16 @@ export function shadowOutline(cells: Set<string>, light: Light, h: HeightMap): S
 
 /** Drawable area of the floor or wall: the plane's corners in (t, v) with v = m + t/2. Slant floor extends by the max height. */
 export function shadowPlaneBounds(h: HeightMap, light: Light): Bounds {
+  const ts = shadowPlaneCorners(h, light), vs = ts.map(p => p.m + p.t / 2), t = ts.map(p => p.t)
+  return { t0: Math.min(...t), t1: Math.max(...t), v0: Math.min(...vs), v1: Math.max(...vs) }
+}
+
+/** The plane's four corners projected to (t, m), in order around the quad. */
+export function shadowPlaneCorners(h: HeightMap, light: Light): Pt[] {
   const H = Math.max(0, ...h.h), w = wallPos(h, light)
   const corners: P3[] = light === 'down' ? [[0, 0, 0], [h.cols, 0, 0], [h.cols, h.rows, 0], [0, h.rows, 0]]
     : light === 'slant' ? [[0, 0, 0], [h.cols + H, 0, 0], [h.cols + H, h.rows + H, 0], [0, h.rows + H, 0]]
     : light === 'front' ? [[0, w, 0], [h.cols, w, 0], [h.cols, w, H], [0, w, H]]
     : [[w, 0, 0], [w, h.rows, 0], [w, h.rows, H], [w, 0, H]]
-  const ts = corners.map(c => proj(...c)), vs = ts.map(p => p.m + p.t / 2), t = ts.map(p => p.t)
-  return { t0: Math.min(...t), t1: Math.max(...t), v0: Math.min(...vs), v1: Math.max(...vs) }
+  return corners.map(c => proj(...c))
 }

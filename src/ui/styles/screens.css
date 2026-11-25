@@ -221,3 +221,4 @@ button { font: inherit; color: inherit; }
 .switch[aria-checked="true"] { background: var(--accent); }
 .switch[aria-checked="true"]::after { left: 23px; }
 .light-badge { position: absolute; left: var(--space-2); top: var(--space-2); width: var(--size-touch); height: var(--size-touch); pointer-events: none; }
+.light-caption { flex: none; margin: 0; font: var(--size-secondary) var(--font-ui); color: var(--ink); }

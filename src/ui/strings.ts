@@ -7,6 +7,7 @@ export const S = {
   views: 'Views',
   reverse: 'Reverse',
   shadows: 'Shadows',
+  slantRule: 'For each step down, the light moves +1 in x and +1 in y.',
   lights: ['Light from above', 'Light from the front', 'Light from the side', 'Light slanted'] as const,
   levels: 'Levels',
   level: (n: number) => `Level ${n}`,
