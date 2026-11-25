@@ -66,16 +66,12 @@ describe('shadow puzzle screen', () => {
     s.destroy()
   })
 
-  it('gridUnderShapeDrawable', async () => {
+  it('figure is apart from the drawing field, which stays drawable', async () => {
     const { shadow } = await load()
     const root = sized()
     const s = await shadow.mountShadowPuzzle(root, file, 1, 'L1-003')
-    const layer = root.querySelector<SVGElement>('.g-shape')!
-    expect(layer.style.pointerEvents).toBe('none')
-    // the shape is above the grid layer in the DOM
-    const g = [...layer.parentElement!.children]
-    expect(g.indexOf(layer)).toBeGreaterThan(g.indexOf(root.querySelector('.g-grid')!))
-    // a drag that starts on a grid point under the shape adds a line
+    expect(root.querySelector('.vp-grid .g-shape')).toBeNull() // no figure on the grid
+    expect(root.querySelector('.g-plane polygon')).toBeTruthy()
     const surface = root.querySelector<HTMLElement>('.vp-grid')!
     surface.setPointerCapture = vi.fn(); surface.releasePointerCapture = vi.fn()
     const v = s.grid.getView(), px = (t: number, m: number): [number, number] => [(t * SQ - v.panU) * v.scale, (v.panV - (m + t / 2)) * v.scale]
@@ -86,23 +82,14 @@ describe('shadow puzzle screen', () => {
     s.destroy()
   })
 
-  it('shapeIsTranslucent', async () => {
+  it('figure area shows the shaded figure and the light', async () => {
     const { shadow } = await load()
     const root = sized()
     const s = await shadow.mountShadowPuzzle(root, file, 3, 'L3-001')
-    const layer = root.querySelector<SVGElement>('.g-shape')!
-    expect(readFileSync('src/ui/grid/grid.css', 'utf8')).toMatch(/\.g-shape \{ opacity: var\(--opacity-shape\)/)
-    expect(readFileSync('src/ui/styles/tokens.css', 'utf8')).toContain('--opacity-shape: 0.6;')
-    expect(layer.querySelectorAll('line').length).toBeGreaterThan(0)
-    expect(layer.querySelectorAll('polygon').length).toBeGreaterThan(0) // shaded faces
-    const fills = new Set([...layer.querySelectorAll('polygon')].map(p => p.getAttribute('style')!.split(';')[0]))
-    expect(fills).toEqual(new Set(['fill:var(--tone-1)', 'fill:var(--tone-2)', 'fill:var(--tone-3)']))
-    const g = [...layer.parentElement!.children].map(c => c.getAttribute('class'))
-    expect(g.indexOf('g-plane')).toBeLessThan(g.indexOf('g-grid')) // plane under the grid lines
-    expect(g.indexOf('g-shape')).toBeLessThan(g.indexOf('g-lines'))
-    expect(g.indexOf('g-shape')).toBeLessThan(g.indexOf('g-ans'))
-    expect(root.querySelector('.g-plane polygon')).toBeTruthy()
-    expect(root.querySelector('[aria-label="Light from the side"]')).toBeTruthy()
+    const fig = root.querySelector('.sp-figure')!
+    expect(fig.querySelectorAll('svg.rv-pic polygon').length).toBeGreaterThan(0)
+    expect(fig.querySelector('[aria-label="Light from the side"]')).toBeTruthy()
+    expect(fig.closest('.vp-gridwrap')).toBeNull() // its own area, not inside the drawing field
     s.destroy()
   })
 

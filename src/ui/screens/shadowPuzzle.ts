@@ -1,15 +1,16 @@
 import { countsAsSolved } from '../../core/lives'
 import { checkDrawing } from '../../core/checker'
 import { DrawingEditor, type Bounds } from '../../core/drawing'
-import { segEnds, type Line, type Pt } from '../../core/geometry'
+import type { Line, Pt } from '../../core/geometry'
 import type { PuzzleFile } from '../../core/generator'
-import { HeightMap, computeEdges, visibleFaces } from '../../core/shape'
+import { HeightMap } from '../../core/shape'
 import { shadowCells, shadowOutline, shadowPlaneBounds, shadowPlaneCorners, type Light } from '../../core/shadows'
 import { createLives } from '../components/lives'
 import { createToolBar } from '../components/toolBar'
 import { createTopBar } from '../components/topBar'
 import { h, icon } from '../dom'
 import { createIsoGrid, type Tool } from '../grid/IsoGrid'
+import { shapePicture } from '../shapePicture'
 import type { View } from '../grid/transform'
 import { loadDrawing, saveDrawing, saveLast, updateProgress } from '../storage'
 import { S } from '../strings'
@@ -70,20 +71,8 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
 
   const hm = new HeightMap(e.cols, e.rows, e.h)
   const answer = { shape: shadowOutline(shadowCells(hm, light), light, hm), seams: new Set<string>() }
-  const faces = visibleFaces(hm)
-  const shape = {
-    edges: computeEdges(hm).shape,
-    // top lightest, left face (x-side) and right face (y-front) as in the glyph
-    tones: Object.fromEntries([...faces].map(([k, f]) => [k, f.dir === 'top' ? 1 : f.dir === 'side' ? 2 : 3])),
-  }
   const corners = shadowPlaneCorners(hm, light)
-  const plane = shadowPlaneBounds(hm, light)
-  // the grid frames the plane and the shape above it (so the whole plane shows, level 4 included)
-  const pts = [...shape.edges].flatMap(segEnds)
-  const bounds: Bounds = {
-    t0: Math.min(plane.t0, ...pts.map(p => p.t)), t1: Math.max(plane.t1, ...pts.map(p => p.t)),
-    v0: Math.min(plane.v0, ...pts.map(p => p.m + p.t / 2)), v1: Math.max(plane.v1, ...pts.map(p => p.m + p.t / 2)),
-  }
+  const plane = shadowPlaneBounds(hm, light), bounds: Bounds = plane // the figure has its own area, so the field frames only the plane
   const saved = await loadDrawing(key)
   const lv = await createLives(key)
   let checked = false, answerOn = false
@@ -141,7 +130,9 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
   }
 
   const el = h('div', { class: 'screen vp' }, top,
-    h('div', { class: 'vp-body' }, h('div', { class: 'vp-gridwrap' }, gridEl, lightBadge(light, light === 'slant' ? `${S.lights[3]}. ${S.slantRule}` : S.lights[level - 1]), zoom)),
+    h('div', { class: 'vp-body' },
+      h('figure', { class: 'sp-figure' }, shapePicture(hm), lightBadge(light, light === 'slant' ? `${S.lights[3]}. ${S.slantRule}` : S.lights[level - 1])),
+      h('div', { class: 'vp-gridwrap' }, gridEl, zoom)),
     ...(light === 'slant' ? [h('p', { class: 'light-caption', text: S.slantRule })] : []),
     h('div', { class: 'vp-counts' }, counts, lv.notice),
     bar.el,
@@ -152,7 +143,7 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
   bar.setHistory(editor.canUndo, editor.canRedo)
 
   const grid = createIsoGrid(gridEl, {
-    bounds, arrows: false, editor, shape, plane: corners,
+    bounds, arrows: false, editor, plane: corners,
     tool: () => tool, colour: () => 1, penOnly: () => penOnly,
     initialView: readView(key), onViewChange: v => writeView(key, v),
   })

@@ -34,7 +34,6 @@
   --stroke-static: 2px; /* puzzle pictures and guides; not the user line width */
   --stroke-answer: 1.5px;
   --opacity-answer: 0.55;
-  --opacity-shape: 0.6;
   --stroke-missing: 3.5px;
   --stroke-mistake: 4px;
   --stroke-grid: 1px;

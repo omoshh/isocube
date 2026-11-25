@@ -7,10 +7,7 @@
 .g-guide line { stroke: var(--guide); stroke-width: var(--stroke-static); stroke-linecap: butt; }
 .g-guide polygon.head { fill: var(--guide); stroke: none; }
 .g-guide text { fill: var(--guide); font-family: var(--font-ui); font-weight: 600; }
-.g-shape { opacity: var(--opacity-shape); }
-.g-shape polygon { stroke-width: var(--stroke-grid); stroke-linejoin: round; }
 .g-plane polygon { fill: var(--view-cell); stroke: var(--guide); stroke-width: var(--stroke-static); }
-.g-shape line { stroke: var(--ink); stroke-width: var(--stroke-answer); }
 .g-ans { opacity: var(--opacity-answer); }
 .g-ans line { stroke: var(--ink); stroke-width: var(--stroke-answer); }
 .g-lines line { stroke: var(--ink); stroke-width: var(--stroke-line); }
