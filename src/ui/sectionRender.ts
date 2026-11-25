@@ -25,7 +25,17 @@ export function shapeSvg(shape: [number, number][], angle: number): SVGSVGElemen
 /** The solid with its three points; draw(frame) adds the moving plane and the cut (omit for the puzzle card). */
 export function solidSvg(p: SectionPuzzle, label: string, frames?: SectionFrame[]) {
   const { solid } = p, svg = mk('svg', { role: 'img', 'aria-label': label })
-  const all: [number, number][] = [...solid.vertices.map(scr), ...(frames ?? []).flatMap(f => f.cutPoly3d.map(scr))]
+  const pl = planeThrough(...p.points)!, ctr = [0, 1, 2].map(k => solid.vertices.reduce((t, v) => t + v[k], 0) / solid.vertices.length) as V3
+  const diam = Math.max(...solid.vertices.map(v => Math.hypot(...sub(v, ctr)))) * 1.3
+  const u = cross(pl.n, Math.abs(pl.n[2]) < .9 ? [0, 0, 1] : [1, 0, 0]), ul = Math.hypot(...u)
+  const e1 = u.map(x => x / ul) as V3, e2 = cross(pl.n, e1)
+  const dist = pl.n[0] * ctr[0] + pl.n[1] * ctr[1] + pl.n[2] * ctr[2] - pl.d
+  const quad = (off: number) => {
+    const c = [0, 1, 2].map(k => ctr[k] + pl.n[k] * (off - dist))
+    return ([[-1, -1], [1, -1], [1, 1], [-1, 1]] as const).map(([a, b]) => [0, 1, 2].map(k => c[k] + diam * (a * e1[k] + b * e2[k])) as V3)
+  }
+  // the viewBox is fixed for the whole animation: solid, every cut pose and the plane at its start
+  const all: [number, number][] = [...solid.vertices.map(scr), ...(frames ?? []).flatMap(f => f.cutPoly3d.map(scr)), ...(frames ? quad(frames[0].planeOffset).map(scr) : [])]
   const x0 = Math.min(...all.map(a => a[0])) - .25, x1 = Math.max(...all.map(a => a[0])) + .25
   const y0 = Math.min(...all.map(a => a[1])) - .25, y1 = Math.max(...all.map(a => a[1])) + .25
   svg.setAttribute('viewBox', `${x0} ${y0} ${x1 - x0} ${y1 - y0}`)
@@ -38,19 +48,13 @@ export function solidSvg(p: SectionPuzzle, label: string, frames?: SectionFrame[
   const dyn = mk('g', {}, svg)
   const dots = (g: Element) => { for (const q of p.points) { const [cx, cy] = scr(q); mk('circle', { cx, cy, r: .06, class: 'secpoint' }, g) } }
   if (!frames) dots(svg)
-  const pl = planeThrough(...p.points)!, ctr = [0, 1, 2].map(k => solid.vertices.reduce((t, v) => t + v[k], 0) / solid.vertices.length) as V3
-  const diam = Math.max(...solid.vertices.map(v => Math.hypot(...sub(v, ctr)))) * 1.3
-  const u = cross(pl.n, Math.abs(pl.n[2]) < .9 ? [0, 0, 1] : [1, 0, 0]), ul = Math.hypot(...u)
-  const e1 = u.map(x => x / ul) as V3, e2 = cross(pl.n, e1)
-  const dist = pl.n[0] * ctr[0] + pl.n[1] * ctr[1] + pl.n[2] * ctr[2] - pl.d
   return {
     svg,
     draw(f: SectionFrame) {
       dyn.replaceChildren()
       if (f.cutVisible) mk('polygon', { points: pts(f.cutPoly3d), class: 'seccut' }, dyn)
       else {
-        const c = [0, 1, 2].map(k => ctr[k] + pl.n[k] * (f.planeOffset - dist))
-        const q = ([[-1, -1], [1, -1], [1, 1], [-1, 1]] as const).map(([a, b]) => [0, 1, 2].map(k => c[k] + diam * (a * e1[k] + b * e2[k])) as V3)
+        const q = quad(f.planeOffset)
         mk('polygon', { points: pts(q), class: 'secplane' }, dyn)
       }
       dots(dyn) // points stay on top

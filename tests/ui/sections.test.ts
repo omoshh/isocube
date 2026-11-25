@@ -121,3 +121,20 @@ describe('sections screen', { timeout: 30000 }, () => {
     }
   })
 })
+
+describe('sections plane', { timeout: 30000 }, () => {
+  it('planeVisibleInViewBoxAtT02', async () => {
+    const { sections } = await load()
+    seedAt(1, 5)
+    const root = document.body, p = makeSectionPuzzle(1, 5)
+    await sections.mountSections(root, 1)
+    opts(root)[p.correct].click()
+    const slider = root.querySelector<HTMLInputElement>('input[type=range]')!
+    slider.value = '200'
+    slider.dispatchEvent(new Event('input'))
+    const pl = root.querySelector('.foldbox .secplane')!, vb = root.querySelector('.foldbox svg')!.getAttribute('viewBox')!.split(' ').map(Number)
+    expect(pl).toBeTruthy()
+    const pts = pl.getAttribute('points')!.split(' ').map(s => s.split(',').map(Number))
+    expect(pts.some(([x, y]) => x >= vb[0] && x <= vb[0] + vb[2] && y >= vb[1] && y <= vb[1] + vb[3])).toBe(true)
+  })
+})

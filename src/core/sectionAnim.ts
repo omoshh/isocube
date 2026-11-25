@@ -23,9 +23,9 @@ export class SectionAnimation {
     const pl = planeThrough(...p.points)!
     this.poly = cut(p.solid, pl)!
     this.centroid = [0, 1, 2].map((k) => this.poly.reduce((t, q) => t + q[k], 0) / this.poly.length) as V3
-    // planeOffset: signed distance along n from the cut plane; t = 0 puts the plane 1 below the whole solid
+    // planeOffset: signed distance along n from the cut plane; t = 0 puts the plane half a unit below the whole solid
     const lo = Math.min(...p.solid.vertices.map((v) => dot(pl.n, v)))
-    this.start = lo - 1 - pl.d
+    this.start = lo - 0.5 - pl.d
     // turn the normal (either sign) to the viewer by the smaller angle
     const n: V3 = dot(pl.n, VIEW) < 0 ? [-pl.n[0], -pl.n[1], -pl.n[2]] : pl.n
     const ax = cross(n, VIEW), al = Math.hypot(...ax)
