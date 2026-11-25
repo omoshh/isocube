@@ -10,7 +10,7 @@ import { createToolBar } from '../components/toolBar'
 import { createTopBar } from '../components/topBar'
 import { h, icon } from '../dom'
 import { createIsoGrid, type Tool } from '../grid/IsoGrid'
-import { shapePicture } from '../shapePicture'
+import { turnablePicture } from '../shapePicture'
 import type { View } from '../grid/transform'
 import { loadDrawing, saveDrawing, saveLast, updateProgress } from '../storage'
 import { S } from '../strings'
@@ -129,9 +129,11 @@ export async function mountShadowPuzzle(root: HTMLElement, file: PuzzleFile, lev
     await updateProgress(p => p.solved.includes(solvedId) ? p : { ...p, solved: [...p.solved, solvedId] })
   }
 
+  // seen from the back, sideways light travels the other way on screen; light from above still points down
+  const badge = lightBadge(light, light === 'slant' ? `${S.lights[3]}. ${S.slantRule}` : S.lights[level - 1])
   const el = h('div', { class: 'screen vp' }, top,
     h('div', { class: 'vp-body' },
-      h('figure', { class: 'sp-figure' }, shapePicture(hm), lightBadge(light, light === 'slant' ? `${S.lights[3]}. ${S.slantRule}` : S.lights[level - 1])),
+      h('figure', { class: 'sp-figure' }, ...turnablePicture(hm, back => badge.classList.toggle('turned', back && light !== 'down')), badge),
       h('div', { class: 'vp-gridwrap' }, gridEl, zoom)),
     ...(light === 'slant' ? [h('p', { class: 'light-caption', text: S.slantRule })] : []),
     h('div', { class: 'vp-counts' }, counts, lv.notice),

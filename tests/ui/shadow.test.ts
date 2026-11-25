@@ -82,6 +82,36 @@ describe('shadow puzzle screen', () => {
     s.destroy()
   })
 
+  it('the figure turns to the back and back again', async () => {
+    const { shadow } = await load()
+    const root = sized()
+    const s = await shadow.mountShadowPuzzle(root, file, 1, 'L1-003')
+    const fig = root.querySelector('.sp-figure')!, turn = fig.querySelector<HTMLButtonElement>('.turn-btn')!
+    const pic = () => [...fig.querySelectorAll('.rv-pic polygon')].map(p => p.getAttribute('points')).join(' ')
+    const front = pic()
+    expect(fig.querySelector('.side-label')!.textContent).toBe('Front')
+    turn.click()
+    expect(fig.querySelector('.side-label')!.textContent).toBe('Back')
+    expect(turn.getAttribute('aria-pressed')).toBe('true')
+    expect(pic()).not.toBe(front)
+    fig.querySelector('.rv-pic')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(pic()).toBe(front)
+    s.destroy()
+  })
+
+  it('turning the figure turns a sideways light arrow, not the light from above', async () => {
+    const { shadow } = await load()
+    for (const [level, id, turns] of [[2, 'L2-005', true], [1, 'L1-004', false]] as const) {
+      const root = sized()
+      const s = await shadow.mountShadowPuzzle(root, file, level, id)
+      root.querySelector<HTMLButtonElement>('.sp-figure .turn-btn')!.click()
+      expect(root.querySelector('.light-badge')!.classList.contains('turned'), `level ${level}`).toBe(turns)
+      root.querySelector<HTMLButtonElement>('.sp-figure .turn-btn')!.click()
+      expect(root.querySelector('.light-badge')!.classList.contains('turned')).toBe(false)
+      s.destroy()
+    }
+  })
+
   it('figure area shows the shaded figure and the light', async () => {
     const { shadow } = await load()
     const root = sized()

@@ -138,10 +138,10 @@ button { font: inherit; color: inherit; }
 .rv-pic { flex: 1; min-height: 0; width: 100%; padding: var(--space-2); box-sizing: border-box; }
 .rv-pic polygon { stroke: none; }
 .rv-pic line { stroke: var(--ink); stroke-width: var(--stroke-static); stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.rv-shape .turn-btn { position: absolute; right: var(--space-1); top: var(--space-1); }
-.rv-shape .side-label { position: absolute; right: calc(var(--size-touch) + var(--space-2)); top: var(--space-1); line-height: var(--size-touch);
+.rv-shape .turn-btn, .sp-figure .turn-btn { position: absolute; right: var(--space-1); top: var(--space-1); }
+.rv-shape .side-label, .sp-figure .side-label { position: absolute; right: calc(var(--size-touch) + var(--space-2)); top: var(--space-1); line-height: var(--size-touch);
   font: 500 var(--size-label) var(--font-ui); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.rv-shape .rv-pic { cursor: pointer; }
+.rv-shape .rv-pic, .sp-figure .rv-pic { cursor: pointer; }
 .rv-shape .key-badge { display: block; position: absolute; left: var(--space-1); top: var(--space-1); }
 .rv-view figcaption { display: flex; justify-content: space-between; gap: var(--space-2); flex: none; padding: var(--space-2) var(--space-3) 0;
   font: 500 var(--size-label) var(--font-ui); color: var(--muted); }
@@ -232,6 +232,7 @@ button { font: inherit; color: inherit; }
 .sp-figure { position: relative; flex: 0 0 32%; min-height: 0; margin: 0; display: flex; background: var(--surface); border-radius: var(--radius-tile); overflow: hidden; }
 .vp--side .sp-figure { flex-basis: 38%; }
 .light-badge { position: absolute; left: var(--space-2); top: var(--space-2); width: var(--size-touch); height: var(--size-touch); pointer-events: none; }
+.light-badge.turned svg { transform: rotate(180deg); }
 .light-caption { flex: none; margin: 0; font: var(--size-secondary) var(--font-ui); color: var(--ink); }
 /* sections */
 .netshape.sec svg { height: 220px; }
