@@ -12,7 +12,7 @@ describe('storage', () => {
   it('defaults', async () => {
     const s = await load()
     expect(await s.loadProgress()).toEqual({ solved: [], netsRight: 0, endlessSeeds: {} })
-    expect(await s.loadSettings()).toEqual({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal' })
+    expect(await s.loadSettings()).toEqual({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal', lives: true })
     expect(await s.storageAvailable()).toBe(true)
   })
 
@@ -47,13 +47,13 @@ describe('storage', () => {
   it('old settings without style load as paper', async () => {
     const s = await load()
     await s.saveSettings({ theme: 'dark', accent: 'mint', unlockAll: true } as never)
-    expect(await s.loadSettings()).toEqual({ theme: 'dark', accent: 'mint', unlockAll: true, style: 'paper', lineWidth: 'normal' })
+    expect(await s.loadSettings()).toEqual({ theme: 'dark', accent: 'mint', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true })
   })
 
   it('backupRoundTrip', async () => {
     const s = await load()
     await s.saveProgress({ solved: ['V1-1'], netsRight: 1, endlessSeeds: { 3: [9] } })
-    await s.saveSettings({ theme: 'light', accent: 'pink', unlockAll: true, style: 'paper', lineWidth: 'normal' })
+    await s.saveSettings({ theme: 'light', accent: 'pink', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true })
     s.saveDrawing('views/a', d(1)); s.saveDrawing('endless/3/9', d(2))
     const text = await s.exportBackup()
     expect(JSON.parse(text)).toMatchObject({ app: 'isocube', version: 1 })

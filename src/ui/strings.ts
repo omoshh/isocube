@@ -34,6 +34,7 @@ export const S = {
   clear: 'Clear', penOnly: 'Pen only',
   zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit',
   tone: (n: number) => `Tone ${n}`,
+  lives: 'Lives', livesLabel: (n: number) => `Lives: ${n} of 3`, outOfLives: 'Out of lives — the puzzle starts again',
   answer: 'Answer', check: 'Check', next: 'Next puzzle',
   solved: 'Solved',
   draw: 'Draw', newDrawing: 'New drawing', drawingN: (n: number) => `Drawing ${n}`, rename: 'Rename', del: 'Delete',

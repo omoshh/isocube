@@ -80,7 +80,7 @@ describe('style tokens', () => {
 })
 
 describe('applyTheme', () => {
-  const base = { theme: 'system' as const, accent: 'mint' as const, unlockAll: false, style: 'paper' as const, lineWidth: 'normal' as const }
+  const base = { theme: 'system' as const, accent: 'mint' as const, unlockAll: false, style: 'paper' as const, lineWidth: 'normal' as const, lives: true }
   afterEach(() => vi.unstubAllGlobals())
   it('sets accent vars and explicit theme', () => {
     applyTheme({ ...base, theme: 'dark' })

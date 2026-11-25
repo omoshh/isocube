@@ -1,7 +1,9 @@
+import { countsAsSolved } from '../../core/lives'
 import { checkDrawing } from '../../core/checker'
 import { DrawingEditor, type Bounds } from '../../core/drawing'
 import type { PuzzleFile } from '../../core/generator'
 import { computeEdges, HeightMap } from '../../core/shape'
+import { createLives } from '../components/lives'
 import { createToolBar } from '../components/toolBar'
 import { createTopBar } from '../components/topBar'
 import { createViewsPanel } from '../components/viewsPanel'
@@ -49,6 +51,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   // the guide box (cube origin at 0,0,0) plus margin, as on the reference page
   const bounds: Bounds = { t0: -e.rows - 3, t1: e.cols + 3, v0: -2.6, v1: (e.cols + e.rows) / 2 + e.maxH + 1.5 }
   const saved = await loadDrawing(key)
+  const lv = await createLives(key)
   let checked = false, answerOn = false
 
   const editor = new DrawingEditor(saved ?? { lines: [], fills: {} }, bounds, d => {
@@ -60,7 +63,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const top = createTopBar({
     title: e.title,
     subtitle: e.subtitle,
-    back: '/levels/views',
+    back: '/levels/views', lives: lv.el,
     menu: [
       { label: S.clear, onClick: () => { editor.clear(); grid.render() } },
       { label: S.penOnly, pressed: () => penOnly, onClick: () => { penOnly = !penOnly } },
@@ -84,6 +87,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   })
   const ansBtn = h('button', { class: 'btn btn-outline', 'aria-pressed': 'false', text: S.answer, onclick: () => {
     answerOn = !answerOn; checked = false
+    if (answerOn) lv.reveal()
     counts.textContent = ''
     ansBtn.setAttribute('aria-pressed', String(answerOn))
     grid.setOverlay(answerOn ? { kind: 'answer', edges: answer.shape } : null)
@@ -100,14 +104,18 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
     checked = true; answerOn = false; ansBtn.setAttribute('aria-pressed', 'false')
     grid.setOverlay({ kind: 'check', result })
     counts.textContent = result.correct ? S.solved : S.counts(result.missing.size, result.mistakes.size)
-    if (!result.correct) return
+    if (!result.correct) {
+      if (lv.fail()) { editor.reset(); grid.render(); lv.say(S.outOfLives) }
+      return
+    }
     setNext(true)
+    if (!countsAsSolved(lv.state, lv.on)) return
     await updateProgress(p => p.solved.includes(id) ? p : { ...p, solved: [...p.solved, id] })
   }
 
   const el = h('div', { class: 'screen vp' }, top,
     h('div', { class: 'vp-body' }, createViewsPanel(hm, e.maxH), h('div', { class: 'vp-gridwrap' }, gridEl, zoom)),
-    h('div', { class: 'vp-counts' }, counts, h('span', { class: 'swatches' }, ...swatches)),
+    h('div', { class: 'vp-counts' }, counts, lv.notice, h('span', { class: 'swatches' }, ...swatches)),
     bar.el,
     h('div', { class: 'action-row' }, ansBtn, checkBtn))
   const layout = () => { const r = root.getBoundingClientRect(); el.classList.toggle('vp--side', r.width > r.height) }

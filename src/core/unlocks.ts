@@ -22,7 +22,7 @@ export const shownAccent = (a: Accent, style: Style, mode: 'light' | 'dark'): Ac
 export type Progress = { solved: string[]; netsRight: number; endlessSeeds: Record<number, number[]> }
 export type LineWidth = 'thin' | 'normal' | 'thick'
 export const LINE_WIDTHS: LineWidth[] = ['thin', 'normal', 'thick']
-export type Settings = { theme: 'system' | 'light' | 'dark'; accent: Accent; unlockAll: boolean; style: Style; lineWidth: LineWidth }
+export type Settings = { theme: 'system' | 'light' | 'dark'; accent: Accent; unlockAll: boolean; style: Style; lineWidth: LineWidth; lives: boolean }
 
 export const solvedCount = (p: Progress) => p.solved.length + p.netsRight
 

@@ -20,6 +20,11 @@ button { font: inherit; color: inherit; }
 .top-bar { display: flex; align-items: center; gap: var(--space-2); height: var(--size-top-bar); flex: none; }
 .top-bar { gap: var(--space-3); }
 .top-bar > .icon-btn, .top-bar .more > summary { flex: none; width: var(--size-touch); border-radius: var(--radius-button); border: var(--stroke-border) solid var(--line); background: var(--surface); }
+.lives { flex: none; display: flex; gap: 4px; }
+.life { width: 12px; height: 12px; border-radius: 50%; background: var(--ink); border: var(--stroke-border) solid var(--ink); box-sizing: border-box; }
+.life[data-lost] { background: transparent; }
+.lives-note { margin: 0; text-align: center; font: 400 var(--size-secondary) var(--font-ui); }
+.lives-note:empty { display: none; }
 .top-spacer { flex: none; width: var(--size-touch); }
 .top-titles { flex: 1; min-width: 0; text-align: center; }
 .top-titles h1 { margin: 0; font: 600 var(--size-title)/1.1 var(--font-ui); font-stretch: var(--stretch-display); }

@@ -86,6 +86,11 @@ export class DrawingEditor {
     this.commit({ lines: [], fills: {} })
   }
 
+  /** Empties the drawing and forgets history (a lives restart is not an undo step). */
+  reset() {
+    this.past = []; this.future = []; this.cur = { lines: [], fills: {} }; this.onChange(this.drawing)
+  }
+
   undo() {
     const p = this.past.pop()
     if (!p) return

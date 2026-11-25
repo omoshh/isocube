@@ -12,7 +12,7 @@ const opts = (root: Element) => [...root.querySelectorAll<HTMLElement>('.netopt'
 const seedAt = (level: number, seed: number) => localStorage.setItem('nets/' + level, JSON.stringify({ seed, answered: false, pick: -1 }))
 const right = async (s: Awaited<ReturnType<typeof load>>['storage']) => (await s.updateProgress(p => p)).netsRight
 
-beforeEach(() => { vi.resetModules(); indexedDB = new IDBFactory(); document.body.replaceChildren(); localStorage.clear() })
+beforeEach(async () => { await (await import('idb-keyval')).clear(); vi.resetModules(); indexedDB = new IDBFactory(); document.body.replaceChildren(); localStorage.clear() })
 
 describe('nets screen', () => {
   it('rightFirstChoiceCounts', async () => {
@@ -29,6 +29,7 @@ describe('nets screen', () => {
 
   it('wrongShowsCorrect', async () => {
     const { nets, storage } = await load()
+    await storage.saveSettings({ ...(await storage.loadSettings()), lives: false }) // these tests cover the answer-once behaviour
     seedAt(1, 5)
     const root = document.body, p = makeNetsPuzzle(1, 5), bad = (p.correct + 1) % 4, n0 = await right(storage)
     await nets.mountNets(root, 1)
@@ -51,7 +52,8 @@ describe('nets screen', () => {
   })
 
   it('wrongPickMarkedAndResultBar', async () => {
-    const { nets } = await load()
+    const { nets, storage } = await load()
+    await storage.saveSettings({ ...(await storage.loadSettings()), lives: false }) // these tests cover the answer-once behaviour
     seedAt(1, 5)
     const root = document.body, p = makeNetsPuzzle(1, 5), bad = (p.correct + 1) % 4
     await nets.mountNets(root, 1)

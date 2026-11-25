@@ -3,6 +3,7 @@ import { proj, segEnds, type Pt } from '../../core/geometry'
 import type { PuzzleFile } from '../../core/generator'
 import { computeEdges, HeightMap } from '../../core/shape'
 import { viewLabels, viewLines, type ViewSet } from '../../core/views'
+import { createLives } from '../components/lives'
 import { keyPicture } from '../components/keyPicture'
 import { createTopBar } from '../components/topBar'
 import { h } from '../dom'
@@ -60,6 +61,7 @@ export async function mountReverse(root: HTMLElement, e: Puzzle) {
   const saved = (await loadDrawing(key))?.lines ?? []
   const drawn = Object.fromEntries(VIEWS.map(v => [v, new Set(saved.filter(k => k.startsWith(v + ':')).map(k => k.slice(v.length + 1)))])) as ViewSet
   let checked = false
+  const lv = await createLives(key)
 
   const cell = () => ({ grid: h('div', { class: 'rv-grid' }), count: h('span', { class: 'rv-count', 'aria-live': 'polite' }) })
   const cells = { top: cell(), front: cell(), side: cell() }
@@ -86,7 +88,7 @@ export async function mountReverse(root: HTMLElement, e: Puzzle) {
   const setLines = (v: V, lines: Set<string>) => { drawn[v] = new Set(lines); makeGrid(v); changed() }
 
   const top = createTopBar({
-    title: e.title, subtitle: e.subtitle, back: '/levels/reverse',
+    title: e.title, subtitle: e.subtitle, back: '/levels/reverse', lives: lv.el,
     menu: [
       { label: S.clear, onClick: () => VIEWS.forEach(v => setLines(v, new Set())) },
       { label: S.penOnly, pressed: () => penOnly, onClick: () => { penOnly = !penOnly } },
@@ -105,13 +107,17 @@ export async function mountReverse(root: HTMLElement, e: Puzzle) {
       grids[v].setResult(r[v])
       cells[v].count.textContent = r[v].correct ? S.solved : S.counts(r[v].missing.size, r[v].mistakes.size)
     }
-    if (!r.correct) return
+    if (!r.correct) {
+      if (lv.fail()) { VIEWS.forEach(v => setLines(v, new Set())); lv.say(S.outOfLives) }
+      return
+    }
     setNext(true)
     await updateProgress(p => p.solved.includes(id) ? p : { ...p, solved: [...p.solved, id] })
   }
 
   const label = { top: S.top, front: S.front, side: S.side }
   const el = h('div', { class: 'screen rv' }, top,
+    lv.notice,
     h('main', { class: 'rv-body' },
       h('figure', { class: 'rv-cell rv-shape' }, shapePicture(hm), h('div', { class: 'key-badge' }, keyPicture())),
       ...VIEWS.map(v => h('figure', { class: 'rv-cell rv-view', 'data-view': v },

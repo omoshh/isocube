@@ -6,12 +6,13 @@ export type MenuItem = { label: string; onClick(): void; pressed?: () => boolean
 const BACK = icon('<path d="M15 5l-7 7 7 7"/>')
 const MORE = icon('<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>')
 
-/** 60px bar: back link (to `back`, a route like '/levels/views'), title + subtitle, optional more menu. */
-export function createTopBar(o: { title: string; subtitle?: string; back: string; menu?: MenuItem[] }): HTMLElement {
+/** 60px bar: back link (to `back`, a route like '/levels/views'), title + subtitle, optional lives marks, optional more menu. */
+export function createTopBar(o: { title: string; subtitle?: string; back: string; menu?: MenuItem[]; lives?: HTMLElement }): HTMLElement {
   const back = h('a', { class: 'icon-btn', href: '#' + o.back, 'aria-label': S.back })
   back.innerHTML = BACK
   const bar = h('header', { class: 'top-bar' }, back,
     h('div', { class: 'top-titles' }, h('h1', { text: o.title }), ...(o.subtitle ? [h('p', { text: o.subtitle })] : [])))
+  if (o.lives) bar.append(o.lives)
   if (!o.menu) bar.append(h('span', { class: 'top-spacer', 'aria-hidden': 'true' }))
   else {
     const summary = h('summary', { class: 'icon-btn', 'aria-label': S.more })

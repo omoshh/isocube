@@ -34,6 +34,8 @@ export async function mountSettings(root: HTMLElement) {
       sw.setAttribute('aria-checked', String(unlockAll))
       accentName.textContent = ACCENTS.find(a => a.id === settings.accent)!.name
     } })
+  const livesSw = h('button', { class: 'switch', role: 'switch', 'data-lives-switch': '', 'aria-checked': String(settings.lives),
+    onclick: async () => { await change({ lives: !settings.lives }); livesSw.setAttribute('aria-checked', String(settings.lives)) } })
   const accentName = h('span', { text: ACCENTS.find(a => a.id === settings.accent)!.name })
 
   const msg = h('p', { 'data-msg': '', role: 'status' })
@@ -60,6 +62,7 @@ export async function mountSettings(root: HTMLElement) {
       h('h2', { text: S.lineWidth }), h('div', { class: 'seg' }, ...widthBtns),
       h('a', { class: 'accent-row', href: '#/settings/accent' }, h('span', { class: 'accent-name', text: S.accent }), accentName),
       h('div', { class: 'accent-row' }, h('span', { class: 'accent-name', text: S.unlockAll }), sw),
+      h('div', { class: 'accent-row' }, h('span', { class: 'accent-name', text: S.lives }), livesSw),
       h('button', { class: 'btn btn-outline', text: S.exportProgress, onclick: () => void download() }),
       h('button', { class: 'btn btn-outline', text: S.importProgress, onclick: () => file.click() }), file, msg,
       h('h2', { text: S.about }), h('p', { text: `${APP_NAME}, ${S.version(pkg.version).toLowerCase()}` })))

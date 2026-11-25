@@ -1,5 +1,6 @@
 import { FoldAnimation } from '../../core/fold'
 import { makeNetsPuzzle, type Net, type Polycube } from '../../core/nets'
+import { createLives, type LivesCtl } from '../components/lives'
 import { createTopBar } from '../components/topBar'
 import { h, icon } from '../dom'
 import { mk } from '../grid/gestures'
@@ -8,7 +9,7 @@ import { S } from '../strings'
 
 type Level = 1 | 2 | 3
 // The current puzzle survives a reload as localStorage `nets/<level>` (smaller than a storage.ts field; try/catch for blocked storage).
-type Rec = { seed: number; answered: boolean; pick: number }
+type Rec = { seed: number; answered: boolean; pick: number; wrong?: number[] } // wrong: picks that cost a life (lives on)
 const fresh = (): Rec => ({ seed: Math.floor(Math.random() * 2 ** 32), answered: false, pick: -1 })
 function readRec(level: Level): Rec {
   try {
@@ -66,10 +67,13 @@ export async function mountNets(root: HTMLElement, level: Level) {
   void saveLast({ kind: 'nets', level, route: '#/nets/' + level })
   const main = h('main', { class: 'nets' })
   root.append(main)
+  const livesFor = () => createLives(`nets/${level}/${rec.seed}`)
+  let lv = await livesFor()
   const netsRight = (await loadProgress()).netsRight
   let score = netsRight
 
   function render() {
+    const lives: LivesCtl = lv
     cancelAnimationFrame(raf)
     const p = makeNetsPuzzle(level, rec.seed), fa = new FoldAnimation(p.options[p.correct], p.shape)
     const select = h('nav', { class: 'seg', 'aria-label': S.nets },
@@ -121,6 +125,7 @@ export async function mountNets(root: HTMLElement, level: Level) {
     box.append(fsvg, h('div', { class: 'foldctl' }, slider), h('div', { class: 'netq', text: S.foldNote }))
 
     const mark = () => {
+      for (const i of rec.wrong ?? []) { cards[i].classList.add('wrong'); cards[i].querySelector('.lbl')!.textContent = S.yourPick }
       if (!rec.answered) return
       cards[p.correct].classList.add('right')
       cards[p.correct].append(h('span', { class: 'badge' }))
@@ -130,18 +135,25 @@ export async function mountNets(root: HTMLElement, level: Level) {
       msg.textContent = rec.pick === p.correct ? S.netRight : S.netWrong
     }
     function answer(i: number) {
-      if (rec.answered) return
+      if (rec.answered || rec.wrong?.includes(i)) return
+      if (lives.on && i !== p.correct) { // a wrong pick costs a life; the correct net stays hidden
+        if (lives.fail()) { rec = { ...rec, wrong: [] }; writeRec(level, rec); render(); lives.say(S.outOfLives); return }
+        rec = { ...rec, wrong: [...(rec.wrong ?? []), i] }
+        writeRec(level, rec); mark(); return
+      }
+      const first = !rec.wrong?.length
       rec = { ...rec, answered: true, pick: i }
       writeRec(level, rec)
-      if (i === p.correct) { score++; setScore(); void updateProgress(pr => ({ ...pr, netsRight: pr.netsRight + 1 })) }
+      if (i === p.correct && first) { score++; setScore(); void updateProgress(pr => ({ ...pr, netsRight: pr.netsRight + 1 })) }
       mark(); box.hidden = result.hidden = false
     }
     mark()
 
     main.replaceChildren(
-      createTopBar({ title: S.nets, subtitle: `${S.netLevelNames[level - 1]}, ${S.netLevels[level - 1]}`, back: '/' }),
+      createTopBar({ title: S.nets, subtitle: `${S.netLevelNames[level - 1]}, ${S.netLevels[level - 1]}`, back: '/', lives: lives.el }),
+      lives.notice,
       select,
-      h('div', { class: 'netbar' }, scoreEl, h('button', { class: 'btn btn-outline', text: S.newShape, onclick: () => { rec = fresh(); writeRec(level, rec); render() } })),
+      h('div', { class: 'netbar' }, scoreEl, h('button', { class: 'btn btn-outline', text: S.newShape, onclick: async () => { rec = fresh(); writeRec(level, rec); lv = await livesFor(); render() } })),
       h('div', { class: 'netshape' }, shapeSvg(p.shape)),
       h('div', { class: 'netq', text: S.netQ }),
       h('div', { class: 'netopts' }, ...cards), result, box,

@@ -29,6 +29,8 @@ export function parseBackup(text: string): { ok: true; backup: Backup } | { ok: 
   if (!STYLES.includes(s.style as never)) return fail('The style setting is invalid.')
   if (s.lineWidth === undefined) s.lineWidth = 'normal' // backups from before line width
   if (!LINE_WIDTHS.includes(s.lineWidth as never)) return fail('The line width setting is invalid.')
+  if (s.lives === undefined) s.lives = true // backups from before lives
+  if (typeof s.lives !== 'boolean') return fail('The lives setting is invalid.')
   if (typeof s.unlockAll !== 'boolean') return fail('The unlock-all setting is invalid.')
 
   if (!isObj(b.drawings)) return fail('The drawings are missing.')

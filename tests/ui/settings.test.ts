@@ -18,7 +18,7 @@ beforeEach(async () => {
   document.body.innerHTML = '<div id="root"></div>'
   document.documentElement.removeAttribute('style')
   probe.ok = true
-  await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal' })
+  await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal', lives: true })
   await updateProgress(() => ({ solved: [], netsRight: 0, endlessSeeds: {} }))
 })
 
@@ -54,7 +54,7 @@ describe('settings and accents', () => {
   })
 
   it('accent picker hides red in Blueprint dark; saved red survives', async () => {
-    await saveSettings({ theme: 'dark', accent: 'red', unlockAll: true, style: 'blueprint', lineWidth: 'normal' })
+    await saveSettings({ theme: 'dark', accent: 'red', unlockAll: true, style: 'blueprint', lineWidth: 'normal', lives: true })
     document.documentElement.dataset.theme = 'dark' // applyTheme has run at boot
     await mountAccents(root())
     expect(root().querySelector('[data-accent="red"]')).toBeNull()
@@ -75,7 +75,7 @@ describe('settings and accents', () => {
   })
 
   it('accentChangesCheckColour', async () => {
-    await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: true, style: 'paper', lineWidth: 'normal' })
+    await saveSettings({ theme: 'system', accent: 'yellow', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true })
     await mountAccents(root())
     row('mint').click(); await tick()
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('var(--accent-mint)')
@@ -83,7 +83,7 @@ describe('settings and accents', () => {
   })
 
   it('accentFallsBackToYellowWhenRelocked', async () => {
-    await saveSettings({ theme: 'system', accent: 'sand', unlockAll: true, style: 'paper', lineWidth: 'normal' })
+    await saveSettings({ theme: 'system', accent: 'sand', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true })
     await mountSettings(root())
     root().querySelector<HTMLElement>('[role="switch"]')!.click(); await tick()
     expect(await loadSettings()).toMatchObject({ unlockAll: false, accent: 'yellow' })

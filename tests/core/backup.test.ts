@@ -4,7 +4,7 @@ import { parseBackup, type Backup } from '../../src/core/backup'
 const good: Backup = {
   app: 'isocube', version: 1, exportedAt: '2026-11-24T00:00:00.000Z',
   progress: { solved: ['V1-1', 'E2-5'], netsRight: 2, endlessSeeds: { 2: [5, 6] } },
-  settings: { theme: 'dark', accent: 'mint', unlockAll: true, style: 'paper', lineWidth: 'normal' },
+  settings: { theme: 'dark', accent: 'mint', unlockAll: true, style: 'paper', lineWidth: 'normal', lives: true },
   drawings: { 'views/V1-1': { lines: ['a', 'b'], fills: { t1: 2 } } },
 }
 
@@ -47,5 +47,16 @@ describe('parseBackup', () => {
       expect(r.ok, JSON.stringify(c)).toBe(false)
       if (!r.ok) expect(r.error.length).toBeGreaterThan(5)
     }
+  })
+})
+
+describe('lives setting in backups', () => {
+  it('old backup without lives imports as on', () => {
+    const { lives: _l, ...old } = { ...good.settings, lives: false } as typeof good.settings & { lives: boolean }
+    const r = parseBackup(JSON.stringify({ ...good, settings: old }))
+    expect(r.ok && r.backup.settings.lives).toBe(true)
+  })
+  it('rejects a non-boolean lives', () => {
+    expect(parseBackup(JSON.stringify({ ...good, settings: { ...good.settings, lives: 'yes' } })).ok).toBe(false)
   })
 })

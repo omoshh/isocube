@@ -1,5 +1,6 @@
 import { del, get, keys, set } from 'idb-keyval'
 import { parseBackup, type Backup } from '../core/backup'
+import { START, type LivesState } from '../core/lives'
 import type { Drawing } from '../core/drawing'
 import type { Progress, Settings } from '../core/unlocks'
 
@@ -58,7 +59,7 @@ export async function deleteDrawing(key: string): Promise<void> {
 }
 
 const DEFAULT_PROGRESS = (): Progress => ({ solved: [], netsRight: 0, endlessSeeds: {} })
-const DEFAULT_SETTINGS = (): Settings => ({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal' })
+const DEFAULT_SETTINGS = (): Settings => ({ theme: 'system', accent: 'yellow', unlockAll: false, style: 'paper', lineWidth: 'normal', lives: true })
 
 export const loadProgress = async () => (await rawGet<Progress>('progress')) ?? DEFAULT_PROGRESS()
 export const saveProgress = (p: Progress) => rawSet('progress', p)
@@ -80,6 +81,14 @@ export async function loadLast(): Promise<LastPuzzle | undefined> {
 }
 export const loadSettings = async (): Promise<Settings> => ({ ...DEFAULT_SETTINGS(), ...(await rawGet<Settings>('settings')) })
 export const saveSettings = (s: Settings) => rawSet('settings', s)
+
+// Own prefix, not in DRAW_PREFIXES: backup import never treats lives as drawings (Task 8 adds them to the backup).
+const LIVES = 'lives/'
+export async function loadLives(key: string): Promise<LivesState> {
+  const v = await rawGet<LivesState>(LIVES + key)
+  return v && [0, 1, 2, 3].includes(v.left) && typeof v.revealed === 'boolean' ? v : START
+}
+export const saveLives = (key: string, s: LivesState) => rawSet(LIVES + key, s)
 
 export async function storageAvailable(): Promise<boolean> {
   await rawSet('__probe', 1); await rawDel('__probe')
