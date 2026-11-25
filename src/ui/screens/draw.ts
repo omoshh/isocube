@@ -8,6 +8,7 @@ import { deleteDrawing, listDrawings, loadDrawing, saveDrawing } from '../storag
 import { S } from '../strings'
 
 const bounds: Bounds = { t0: -30, t1: 30, v0: -20, v1: 20 }
+const DRAW_SCALE = 40 // px per grid step on open: finger-sized cells (owner checks on the Pixel 7)
 let tool: Tool = 'line', colour = 1, penOnly = false
 
 /** #/draw: saved drawings, New, rename, delete. */
@@ -34,7 +35,7 @@ export async function mountDrawList(root: HTMLElement) {
   }
   await refresh()
   const el = h('div', { class: 'screen' }, createTopBar({ title: S.draw, back: '/' }), list,
-    h('div', { class: 'action-row' }, h('span'), h('button', { class: 'btn btn-accent', 'data-new': true, text: S.newDrawing, onclick: async () => {
+    h('div', { class: 'action-row' }, h('button', { class: 'btn btn-accent btn-full', 'data-new': true, text: S.newDrawing, onclick: async () => {
       const key = 'draw/' + crypto.randomUUID()
       saveDrawing(key, { lines: [], fills: {}, name: S.drawingN((await listDrawings('draw/')).length + 1) })
       location.hash = '#/' + key
@@ -86,5 +87,6 @@ export async function mountDrawing(root: HTMLElement, id: string) {
   const grid = createIsoGrid(gridEl, {
     bounds, arrows: false, editor, tool: () => tool, colour: () => colour, penOnly: () => penOnly,
   })
-  return { destroy() { grid.destroy(); el.remove() } }
+  grid.zoomBy(DRAW_SCALE / grid.getView().scale)
+  return { grid, destroy() { grid.destroy(); el.remove() } }
 }

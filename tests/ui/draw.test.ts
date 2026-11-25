@@ -87,3 +87,21 @@ describe('exportSvg', () => {
     expect(svg).toContain('#333333')
   })
 })
+
+describe('draw screen (round 3)', () => {
+  it('opens closer: at least 40 px per grid step', async () => {
+    const { mountDrawing } = await import('../../src/ui/screens/draw')
+    const r = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 380, height: 520, right: 380, bottom: 520, x: 0, y: 0, toJSON() {} } as DOMRect)
+    saveDrawing('draw/z', { lines: [], fills: {}, name: 'Z' })
+    const s = await mountDrawing(root(), 'z')
+    expect(s.grid.getView().scale).toBeGreaterThanOrEqual(40)
+    s.destroy(); r.mockRestore()
+  })
+  it('New drawing is one full-width button', async () => {
+    const s = await mountDrawList(root())
+    const b = root().querySelector('[data-new]')!
+    expect(b.classList.contains('btn-full')).toBe(true)
+    expect(b.parentElement!.children).toHaveLength(1)
+    s.destroy()
+  })
+})

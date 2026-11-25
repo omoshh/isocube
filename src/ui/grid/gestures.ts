@@ -32,7 +32,8 @@ export function createSurface(el: HTMLElement, o: SurfaceOpts) {
   const world = mk('g', {}, svg)
   let w = 0, h = 0, fitScale = 1, view: View = { scale: 1, panU: 0, panV: 0 }
   const fitNow = () => fitRect(...o.content(), w, h)
-  const lim = (): [number, number] => [fitScale * 0.5, fitScale * 4]
+  // max: 4× the fit, but at least 80 px per step, so a big canvas (Draw) can still zoom to finger-sized cells
+  const lim = (): [number, number] => [fitScale * 0.5, Math.max(fitScale * 4, 80)]
 
   function setView(v: View, notify = true) {
     view = v

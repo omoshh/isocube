@@ -46,6 +46,7 @@ button { font: inherit; color: inherit; }
 .tool-bar .icon-btn:disabled { color: var(--bg); opacity: .4; }
 .tool-bar .divider { width: var(--stroke-border); height: var(--space-5); background: var(--bg); opacity: .4; }
 .action-row { display: grid; grid-template-columns: 1fr 2fr; gap: var(--space-3); flex: none; padding: var(--space-3) 0 var(--space-4); }
+.btn-full { grid-column: 1 / -1; }
 .action-row .btn { border-radius: var(--radius-button); height: 52px; }
 
 /* level list */
