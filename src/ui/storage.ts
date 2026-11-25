@@ -128,7 +128,9 @@ export async function importBackup(text: string): Promise<{ ok: boolean; error?:
   for (const [k, d] of Object.entries(backup.drawings)) await rawSet(k, d)
   for (const [k, v] of Object.entries(backup.lives)) await rawSet(LIVES + k, v)
   for (const [l, seeds] of Object.entries(backup.sectionSeeds)) if (seeds.length) {
-    try { localStorage.setItem('sections/' + l, JSON.stringify({ seed: seeds[0], answered: false, pick: -1 })) } catch { /* in-memory only */ }
+    try {
+      if (JSON.parse(localStorage.getItem('sections/' + l) ?? 'null')?.seed === seeds[0]) continue // same puzzle already here: keep answered/wrong/guessed
+      localStorage.setItem('sections/' + l, JSON.stringify({ seed: seeds[0], answered: false, pick: -1 })) } catch { /* in-memory only */ }
   }
   if (backup.last) await saveLast(backup.last as LastPuzzle)
   await updateProgress(() => backup.progress)

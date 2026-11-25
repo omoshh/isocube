@@ -65,6 +65,31 @@ describe('views puzzle screen', () => {
     s.destroy()
   })
 
+  it('revealedSurvivesRestartAndReload', async () => {
+    let { puzzle, storage } = await load()
+    const e = file.puzzles.find(p => p.id === 'L1-004')!
+    const shape = computeEdges(new HeightMap(e.cols, e.rows, e.h)).shape
+    const solveRight = async () => {
+      const root = sized(412, 915)
+      const s = await puzzle.mountViewsPuzzle(root, file, 'L1-004')
+      s.editor.addLines([...shape].map(k => { const [a, b] = segEnds(k); return { a, b } }))
+      button(root, 'Check').click()
+      await vi.waitFor(() => expect(root.textContent).toContain('Solved'))
+      s.destroy()
+    }
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-004')
+    button(root, 'Answer').click()
+    for (let i = 0; i < 3; i++) button(root, 'Check').click() // empty drawing: three failures, lives restart
+    expect(root.textContent).toContain('Out of lives')
+    s.destroy()
+    await solveRight() // after the restart
+    expect((await storage.loadProgress()).solved).not.toContain('L1-004')
+    vi.resetModules(); ;({ puzzle, storage } = await load()) // reload
+    await solveRight()
+    expect((await storage.loadProgress()).solved).not.toContain('L1-004')
+  })
+
   it('drawingRestoredAfterReload', async () => {
     let { puzzle, storage } = await load()
     let root = sized(412, 915)

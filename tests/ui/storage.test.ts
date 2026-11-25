@@ -83,6 +83,17 @@ describe('storage', () => {
     expect(JSON.parse(localStorage.getItem('sections/2')!).seed).toBe(77)
   })
 
+  it('import keeps the local section record when the seed matches', async () => {
+    const s = await load()
+    localStorage.setItem('sections/2', JSON.stringify({ seed: 77, answered: false, pick: -1, wrong: [1], guessed: true }))
+    const text = await s.exportBackup()
+    expect(await s.importBackup(text)).toEqual({ ok: true })
+    expect(JSON.parse(localStorage.getItem('sections/2')!)).toEqual({ seed: 77, answered: false, pick: -1, wrong: [1], guessed: true })
+    localStorage.setItem('sections/2', JSON.stringify({ seed: 5, answered: true, pick: 0, guessed: true }))
+    expect(await s.importBackup(text)).toEqual({ ok: true })
+    expect(JSON.parse(localStorage.getItem('sections/2')!)).toEqual({ seed: 77, answered: false, pick: -1 })
+  })
+
   it('v1 import keeps lives, Continue and section seeds', async () => {
     const s = await load()
     await s.saveLives('shadow/2/a', { left: 1, revealed: false })

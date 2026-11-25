@@ -27,6 +27,13 @@ describe('makeSectionPuzzle', { timeout: 30000 }, () => {
       for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) expect(similar(p.options[i], p.options[j])).toBe(false)
     }
   })
+  it('no two options are within 10% of each other', () => {
+    for (const l of levels) for (const s of seeds) {
+      const p = makeSectionPuzzle(l, s)
+      expect(p.options.length).toBe(4)
+      for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) expect(similar(p.options[i], p.options[j], 0.1), `level ${l} seed ${s}`).toBe(false)
+    }
+  })
   it('exactly one option is correct', () => {
     for (const l of levels) for (const s of seeds) {
       const p = makeSectionPuzzle(l, s)

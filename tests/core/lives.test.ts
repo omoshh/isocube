@@ -16,3 +16,11 @@ describe('lives', () => {
     expect(countsAsSolved(START, true)).toBe(true)
   })
 })
+
+describe('restart keeps revealed', () => {
+  it('last life lost after Answer stays revealed', () => {
+    const r = loseLife({ left: 1, revealed: true })
+    expect(r).toEqual({ state: { left: 3, revealed: true }, restart: true })
+    expect(loseLife({ left: 1, revealed: false }).state).toEqual(START)
+  })
+})

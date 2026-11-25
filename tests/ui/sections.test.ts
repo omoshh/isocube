@@ -109,6 +109,21 @@ describe('sections screen', { timeout: 30000 }, () => {
     expect(root.querySelector('.foldbox .seccut')).toBeTruthy()
   })
 
+  it('newShapeShowsPreparingAndDisablesButton', async () => {
+    const { sections } = await load()
+    seedAt(1, 5)
+    const root = document.body
+    await sections.mountSections(root, 1)
+    const btn = [...root.querySelectorAll('button')].find(b => b.textContent === 'New shape') as HTMLButtonElement
+    btn.click()
+    expect(btn.disabled).toBe(true)
+    expect(root.textContent).toContain('Preparing…')
+    btn.click() // ignored
+    await vi.waitFor(() => expect(JSON.parse(localStorage.getItem('sections/1')!).seed).not.toBe(5))
+    await vi.waitFor(() => expect(root.textContent).not.toContain('Preparing…'))
+    expect([...root.querySelectorAll('button')].find(b => b.textContent === 'New shape')!.hasAttribute('disabled')).toBe(false)
+  })
+
   it('routeRejectsLevelsOutsideOneToThree', async () => {
     const { startRouter } = await import('../../src/ui/router')
     for (const lv of ['0', '4']) {

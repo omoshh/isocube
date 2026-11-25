@@ -28,8 +28,8 @@ export async function mountSections(root: HTMLElement, level: Level) {
   const main = h('main', { class: 'nets' })
   main.append(h('p', { class: 'hint', role: 'status', text: S.secPreparing }))
   root.append(main)
-  const livesFor = () => createLives(`sections/${level}/${rec.seed}`)
-  let lv = await livesFor()
+  const livesFor = (seed: number) => createLives(`sections/${level}/${seed}`)
+  let lv = await livesFor(rec.seed)
   const done = (await loadProgress()).solved.filter(s => s.startsWith('X')).length
   let score = done
   // The first puzzle per solid builds a ~1-2 s cache: show "Preparing…" and generate after a tick instead of in a worker (simpler, UI paints first).
@@ -103,11 +103,23 @@ export async function mountSections(root: HTMLElement, level: Level) {
     }
     mark()
 
+    const newBtn = h('button', { class: 'btn btn-outline', text: S.newShape, onclick: async () => {
+      if (newBtn.disabled) return
+      newBtn.disabled = true
+      main.prepend(h('p', { class: 'hint', role: 'status', text: S.secPreparing }))
+      // paint "Preparing…" before a cold cache build blocks the thread
+      await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)))
+      if (dead) return
+      const next = fresh(), nl = await livesFor(next.seed) // controller first: a tap can never charge the old key
+      if (dead) return
+      rec = next; lv = nl; writeRec(level, rec); render()
+    } })
+
     main.replaceChildren(
       createTopBar({ title: S.sections, subtitle: S.netLevelNames[level - 1], back: '/', lives: lives.el }),
       lives.notice,
       select,
-      h('div', { class: 'netbar' }, scoreEl, h('button', { class: 'btn btn-outline', text: S.newShape, onclick: async () => { rec = fresh(); writeRec(level, rec); lv = await livesFor(); render() } })),
+      h('div', { class: 'netbar' }, scoreEl, newBtn),
       h('div', { class: 'netshape sec' }, card.svg),
       h('div', { class: 'netq', text: S.secQ }),
       h('div', { class: 'netopts' }, ...cards), result, box,

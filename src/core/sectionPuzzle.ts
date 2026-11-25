@@ -12,6 +12,8 @@ const SOLIDS: Record<1 | 2 | 3, SolidId[]> = {
 }
 
 const MAX_PLANES = 3000
+const APART = 0.1 // distractors must differ from every other option by more than this (relative)
+const near = (a: Shape, b: Shape) => similar(a, b, APART)
 type Shape = [number, number][]
 type Cls = { shape: Shape; triples: [V3, V3, V3][] }
 
@@ -64,10 +66,10 @@ export function makeSectionPuzzle(level: 1 | 2 | 3, seed: number): SectionPuzzle
     const { solid, classes } = classesOf(ids[(first + s) % ids.length], level)
     if (classes.length < 4) continue
     const ans = pickOf(classes)
-    const others = classes.filter((c) => c !== ans && !similar(c.shape, ans.shape))
+    const others = classes.filter((c) => c !== ans && !near(c.shape, ans.shape))
     const dis: Cls[] = []
     const take = (pool: Cls[]) => {
-      const ok = pool.filter((c) => !dis.includes(c) && dis.every((d) => !similar(d.shape, c.shape)))
+      const ok = pool.filter((c) => !dis.includes(c) && dis.every((d) => !near(d.shape, c.shape)))
       if (ok.length) dis.push(pickOf(ok))
     }
     if (level >= 2) take(others.filter((c) => c.shape.length === ans.shape.length))

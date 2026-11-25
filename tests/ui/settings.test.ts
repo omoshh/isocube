@@ -30,6 +30,11 @@ describe('settings and accents', () => {
     expect((await loadSettings()).accent).toBe('yellow')
   })
 
+  it('switchesHaveAccessibleNames', async () => {
+    await mountSettings(root())
+    expect([...root().querySelectorAll('[role=switch]')].map(b => b.getAttribute('aria-label'))).toEqual(['Unlock all accents', 'Lives'])
+  })
+
   it('livesSwitchPersists', async () => {
     await mountSettings(root())
     const sw = root().querySelector<HTMLElement>('[data-lives-switch]')!

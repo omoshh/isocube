@@ -25,7 +25,7 @@ export async function mountSettings(root: HTMLElement) {
   const widthBtns = LINE_WIDTHS.map((w, i) => h('button', { class: 'btn btn-outline', 'data-width-btn': w, 'aria-pressed': String(settings.lineWidth === w), text: S.lineWidths[i],
     onclick: async () => { await change({ lineWidth: w }); widthBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))) } }))
 
-  const sw = h('button', { class: 'switch', role: 'switch', 'aria-checked': String(settings.unlockAll),
+  const sw = h('button', { class: 'switch', role: 'switch', 'aria-label': S.unlockAll, 'aria-checked': String(settings.unlockAll),
     onclick: async () => {
       const unlockAll = !settings.unlockAll
       // A selected accent that becomes locked falls back to yellow.
@@ -34,7 +34,7 @@ export async function mountSettings(root: HTMLElement) {
       sw.setAttribute('aria-checked', String(unlockAll))
       accentName.textContent = ACCENTS.find(a => a.id === settings.accent)!.name
     } })
-  const livesSw = h('button', { class: 'switch', role: 'switch', 'data-lives-switch': '', 'aria-checked': String(settings.lives),
+  const livesSw = h('button', { class: 'switch', role: 'switch', 'aria-label': S.lives, 'data-lives-switch': '', 'aria-checked': String(settings.lives),
     onclick: async () => { await change({ lives: !settings.lives }); livesSw.setAttribute('aria-checked', String(settings.lives)) } })
   const accentName = h('span', { text: ACCENTS.find(a => a.id === settings.accent)!.name })
 

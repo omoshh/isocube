@@ -94,10 +94,11 @@ function signature(p: [number, number][]) {
   return { sides: sides.map((x) => x / per), angles };
 }
 
-export function similar(p: [number, number][], q: [number, number][]): boolean {
+/** Same shape up to rotation, mirror and scale, within a relative tolerance (2% groups cuts; ~10% means "easy to tell apart"). */
+export function similar(p: [number, number][], q: [number, number][], tol = 0.02): boolean {
   const n = p.length;
   if (n !== q.length || n < 3) return false;
-  const close = (a: number, b: number) => Math.abs(a - b) <= 0.02 * Math.max(Math.abs(a), Math.abs(b));
+  const close = (a: number, b: number) => Math.abs(a - b) <= tol * Math.max(Math.abs(a), Math.abs(b));
   const sp = signature(p);
   for (const cand of [q, [...q].reverse()]) {
     const sq = signature(cand);
