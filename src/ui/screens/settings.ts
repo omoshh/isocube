@@ -65,7 +65,7 @@ export async function mountSettings(root: HTMLElement) {
       h('div', { class: 'accent-row' }, h('span', { class: 'accent-name', text: S.lives }), livesSw),
       h('button', { class: 'btn btn-outline', text: S.exportProgress, onclick: () => void download() }),
       h('button', { class: 'btn btn-outline', text: S.importProgress, onclick: () => file.click() }), file, msg,
-      h('h2', { text: S.about }), h('p', { text: `${APP_NAME}, ${S.version(pkg.version).toLowerCase()}` })))
+      h('h2', { text: S.about }), h('p', { text: `${APP_NAME}, ${S.version(pkg.version.split('.').slice(0, 2).join('.')).toLowerCase()} · ${__BUILD__}` })))
   root.append(el)
   return { destroy: () => el.remove() }
 }

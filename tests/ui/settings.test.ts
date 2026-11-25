@@ -90,6 +90,11 @@ describe('settings and accents', () => {
     expect(css).toMatch(/\.accent-row\[aria-pressed="true"\] \{ box-shadow: inset 0 0 0 var\(--stroke-selected\) var\(--ink\); \}/)
   })
 
+  it('About shows the real version, build date and commit', async () => {
+    await mountSettings(root())
+    expect(root().textContent).toMatch(/Isocube, version 3\.0 · \d{1,2} [A-Z][a-z]{2} \d{4} · (\w{7}|dev)/)
+  })
+
   it('unlockAllUnlocks', async () => {
     await mountSettings(root())
     const sw = root().querySelector<HTMLElement>('[role="switch"]')!
