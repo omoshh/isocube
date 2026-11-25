@@ -41,12 +41,12 @@ beforeEach(() => {
 afterEach(() => { el.remove() })
 
 const bounds = { t0: -6, t1: 6, v0: -2.6, v1: 6.5 }
-function mount(o: { tool?: Tool; pen?: boolean } = {}) {
-  const editor = new DrawingEditor({ lines: [], fills: {} }, bounds, () => {})
+function mount(o: { tool?: Tool; pen?: boolean; diagonals?: boolean; lines?: string[] } = {}) {
+  const editor = new DrawingEditor({ lines: o.lines ?? [], fills: {} }, bounds, () => {})
   const state = { tool: o.tool ?? 'line' as Tool, pen: o.pen ?? false }
   const grid = createIsoGrid(el, {
     bounds, guide: { cols: 3, rows: 3, maxH: 2 }, arrows: true, editor,
-    tool: () => state.tool, colour: () => 1, penOnly: () => state.pen,
+    tool: () => state.tool, colour: () => 1, penOnly: () => state.pen, diagonals: o.diagonals,
   })
   return { editor, grid, state }
 }
@@ -218,6 +218,22 @@ describe('iso grid', () => {
     drag(el, [toPx(v, { t: 0.3, m: 0.3 })])
     expect(Object.values(m.editor.drawing.fills)).toEqual([1])
     expect(el.querySelector('.g-fills polygon')?.getAttribute('style')).toContain('var(--tone-1)')
+  })
+  it('draws a diagonal only with diagonals on, and erases it', () => {
+    const m = mount({ diagonals: true }), v = m.grid.getView()
+    drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 1, m: 1 })])
+    expect(m.editor.drawing.lines).toEqual(['0:0|1:1'])
+    m.state.tool = 'erase'
+    drag(el, [toPx(v, { t: 0.5, m: 0.5 })])
+    expect(m.editor.drawing.lines).toEqual([])
+    el.replaceChildren()
+    const off = mount(), w = off.grid.getView()
+    drag(el, [toPx(w, { t: 0, m: 0 }), toPx(w, { t: 1, m: 1 })])
+    expect(off.editor.drawing.lines).not.toContain('0:0|1:1')
+  })
+  it('a saved diagonal renders', () => {
+    mount({ lines: ['0:0|1:1'] })
+    expect(el.querySelectorAll('.g-lines line')).toHaveLength(1)
   })
   describe('eraser takes only the line under the finger', () => {
     const two = (a: [Pt, Pt], b: [Pt, Pt]) => {

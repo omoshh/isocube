@@ -37,6 +37,7 @@ export class DrawingEditor {
     this.commit({ lines: this.cur.lines.filter(x => x !== s), fills: { ...this.cur.fills } })
   }
 
+  // shortcut: fill does not stop at diagonals (they cross triangles); upgrade if the owner fills diagonal shapes
   fill(start: TriKey, colour: number) {
     const blocked = new Set(this.cur.lines)
     const inside = (k: TriKey) => {

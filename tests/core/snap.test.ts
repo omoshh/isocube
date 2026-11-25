@@ -13,6 +13,12 @@ describe('snap', () => {
     const r = snapDragIso({ u: 0.02, v: -0.03 }, { u: a, v: b + 0.05 })
     expect(r).toEqual({ a: { t: 0, m: 0 }, b: { t: 3, m: 0 } })
   })
+  it('diagonal across cells only when allowed', () => {
+    const end = { u: 2 * S + 0.05, v: 3 - 0.04 } // (t 2, m 2): two long diagonals at 60°
+    expect(snapDragIso({ u: 0, v: 0 }, end, true)).toEqual({ a: { t: 0, m: 0 }, b: { t: 2, m: 2 } })
+    expect(snapDragIso({ u: 0, v: 0 }, end)).not.toEqual({ a: { t: 0, m: 0 }, b: { t: 2, m: 2 } })
+    expect(snapDragIso({ u: 0, v: 0 }, { u: 2 * S, v: 0.03 }, true)).toEqual({ a: { t: 0, m: 0 }, b: { t: 2, m: -1 } }) // 0°
+  })
   it('tapNothing', () => expect(snapDragIso({ u: 1, v: 1 }, { u: 1, v: 1 })).toBeNull())
   it('tinyNothing', () => expect(snapDragIso({ u: 0, v: 0 }, { u: 0.3, v: 0 })).toBeNull())
   it('lShapeTwoLines', () => {

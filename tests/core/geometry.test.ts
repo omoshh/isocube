@@ -6,7 +6,7 @@ test('segKey is undirected', () => { const p={t:0,m:0}, q={t:1,m:0}; expect(segK
 test('segKey rejects non-unit', () => { expect(() => segKey({t:0,m:0},{t:2,m:0})).toThrow() })
 test('unitSegments splits', () => { expect(unitSegments({a:{t:0,m:0},b:{t:0,m:3}})).toHaveLength(3) })
 test('unitSegments ignores non-iso and zero', () => {
-  expect(unitSegments({a:{t:0,m:0},b:{t:1,m:1}})).toEqual([])
+  expect(unitSegments({a:{t:0,m:0},b:{t:1,m:2}})).toEqual([])
   expect(unitSegments({a:{t:0,m:0},b:{t:0,m:0}})).toEqual([])
 })
 test('segEnds round-trips', () => { const p={t:-1,m:2}, q={t:0,m:2}; expect(new Set(segEnds(segKey(p,q)).map(x=>x.t+':'+x.m))).toEqual(new Set(['-1:2','0:2'])) })

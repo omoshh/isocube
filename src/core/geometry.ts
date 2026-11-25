@@ -7,14 +7,16 @@ export type GPt = { x: number; y: number }
 
 const S = Math.sqrt(3) / 2
 export const ISO_DIRS: readonly Pt[] = [{ t: 0, m: 1 }, { t: 1, m: 0 }, { t: 1, m: -1 }]
+/** Long diagonals of one rhombus cell (screen 60°, 0°, -60°): Draw mode only. */
+export const DIAG_DIRS: readonly Pt[] = [{ t: 1, m: 1 }, { t: 2, m: -1 }, { t: 1, m: -2 }]
 
 export const proj = (x: number, y: number, z: number): Pt => ({ t: x - y, m: y + z })
 
 const ptKey = (p: Pt) => p.t + ':' + p.m
-const isDir = (dt: number, dm: number) => ISO_DIRS.some(d => (d.t === dt && d.m === dm) || (d.t === -dt && d.m === -dm))
+const isDir = (dt: number, dm: number, dirs = ISO_DIRS) => dirs.some(d => (d.t === dt && d.m === dm) || (d.t === -dt && d.m === -dm))
 
 export function segKey(p: Pt, q: Pt): SegKey {
-  if (!isDir(q.t - p.t, q.m - p.m)) throw new Error('not a unit isometric segment')
+  if (!isDir(q.t - p.t, q.m - p.m) && !isDir(q.t - p.t, q.m - p.m, DIAG_DIRS)) throw new Error('not a unit isometric segment')
   const A = ptKey(p), B = ptKey(q)
   return A < B ? A + '|' + B : B + '|' + A
 }
@@ -25,6 +27,11 @@ export const segEnds = (k: SegKey): [Pt, Pt] => { const [a, b] = k.split('|'); r
 export function unitSegments({ a, b }: Line): SegKey[] {
   const dt = b.t - a.t, dm = b.m - a.m, n = Math.max(Math.abs(dt), Math.abs(dm))
   if (!n) return []
+  for (const d of DIAG_DIRS) for (const sg of [1, -1]) { // a diagonal: k whole cells along one long diagonal
+    const k = dt / (d.t * sg)
+    if (Number.isInteger(k) && k > 0 && dm === k * d.m * sg)
+      return Array.from({ length: k }, (_, i) => segKey({ t: a.t + d.t * sg * i, m: a.m + d.m * sg * i }, { t: a.t + d.t * sg * (i + 1), m: a.m + d.m * sg * (i + 1) }))
+  }
   const st = dt / n, sm = dm / n
   if (!isDir(st, sm)) return []
   return Array.from({ length: n }, (_, i) =>
