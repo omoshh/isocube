@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { gridSegKey, segKey, type Pt } from '../../src/core/geometry'
+import { gridSegKey, segKey, toUV, type Pt } from '../../src/core/geometry'
+import { eighthPoint } from '../../src/core/arcs'
 import { DrawingEditor } from '../../src/core/drawing'
 import { fitView, guideBounds, zoomAt, type View } from '../../src/ui/grid/transform'
 import { createIsoGrid, type Tool } from '../../src/ui/grid/IsoGrid'
@@ -41,12 +42,12 @@ beforeEach(() => {
 afterEach(() => { el.remove() })
 
 const bounds = { t0: -6, t1: 6, v0: -2.6, v1: 6.5 }
-function mount(o: { tool?: Tool; pen?: boolean; diagonals?: boolean; lines?: string[] } = {}) {
-  const editor = new DrawingEditor({ lines: o.lines ?? [], fills: {} }, bounds, () => {})
+function mount(o: { tool?: Tool; pen?: boolean; free?: { half: boolean }; lines?: string[]; arcs?: string[] } = {}) {
+  const editor = new DrawingEditor({ lines: o.lines ?? [], arcs: o.arcs ?? [], fills: {} }, bounds, () => {})
   const state = { tool: o.tool ?? 'line' as Tool, pen: o.pen ?? false }
   const grid = createIsoGrid(el, {
     bounds, guide: { cols: 3, rows: 3, maxH: 2 }, arrows: true, editor,
-    tool: () => state.tool, colour: () => 1, penOnly: () => state.pen, diagonals: o.diagonals,
+    tool: () => state.tool, colour: () => 1, penOnly: () => state.pen, free: o.free,
   })
   return { editor, grid, state }
 }
@@ -225,6 +226,71 @@ describe('iso grid', () => {
     expect(el.querySelectorAll('.g-lines polyline')).toHaveLength(1)
     grid.setOverlay({ kind: 'check', result: { missing: new Set(), mistakes: new Set(['Az|0:0|1|0']), correct: false } })
     expect(el.querySelectorAll('.g-check polyline.g-mistake')).toHaveLength(1)
+  })
+  describe('free tools', () => {
+    const uvPx = (v: View, [u, w]: [number, number]): [number, number] => [(u - v.panU) * v.scale, (v.panV - w) * v.scale]
+    const dotPx = (v: View) => { const c = el.querySelector('.g-handle circle')!; return uvPx(v, [+c.getAttribute('cx')!, +c.getAttribute('cy')!]) }
+    it('free line joins any two dots; with half off it still gives unit keys', () => {
+      const m = mount({ free: { half: false } }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 0.05, m: 2.04 })])
+      expect(m.editor.drawing.lines).toEqual(['0:0|0:1', '0:1|0:2'])
+      drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 3, m: 1 })])
+      expect(m.editor.drawing.lines).toContain('0:0|3:1')
+    })
+    it('half points snap only with half on', () => {
+      const m = mount({ free: { half: true } }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 0.5, m: 0 })])
+      expect(m.editor.drawing.lines).toEqual(['0.5:0|0:0'])
+      el.replaceChildren()
+      const n = mount({ free: { half: false } }), w = n.grid.getView()
+      drag(el, [toPx(w, { t: 0, m: 0 }), toPx(w, { t: 0.5, m: 0 })])
+      expect(n.editor.drawing.lines).not.toContain('0.5:0|0:0')
+    })
+    it('arc: two taps add the first candidate; dot drag replaces it; undo restores', () => {
+      const m = mount({ free: { half: true }, tool: 'arc' }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 1, m: 0 })]); drag(el, [toPx(v, { t: -1, m: 1 })])
+      expect(m.editor.drawing.arcs).toEqual(['Az|0:1|1|4', 'Az|0:1|1|5']) // lower quarter ranks first (arcs test)
+      drag(el, [dotPx(v), uvPx(v, toUV(eighthPoint('z', { t: 0, m: 0 }, 1, 5)))]) // to the far side of the circle round 0:0
+      expect(m.editor.drawing.arcs).toEqual(['Az|0:0|1|2', 'Az|0:0|1|3', 'Az|0:0|1|4', 'Az|0:0|1|5', 'Az|0:0|1|6', 'Az|0:0|1|7'])
+      m.editor.undo(); m.grid.render()
+      expect(m.editor.drawing.arcs).toEqual(['Az|0:1|1|4', 'Az|0:1|1|5'])
+      m.editor.undo(); m.grid.render()
+      expect(m.editor.drawing.arcs).toEqual([])
+      expect(el.querySelector('.g-handle circle')).toBeNull()
+    })
+    it('arc: two taps with no valid arc add nothing; the second tap becomes the first', () => {
+      const m = mount({ free: { half: true }, tool: 'arc' }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0, m: 0 })]); drag(el, [toPx(v, { t: 5, m: 0 })])
+      expect(m.editor.drawing.arcs).toEqual([])
+      drag(el, [toPx(v, { t: 3, m: 1 })]) // same offset as 1:0 → -1:1, moved by t 4
+      expect(m.editor.drawing.arcs).toEqual(['Az|4:1|1|4', 'Az|4:1|1|5'])
+    })
+    it('a second finger drops the first arc point', () => {
+      const m = mount({ free: { half: true }, tool: 'arc' }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 1, m: 0 })])
+      fire(el, 'pointerdown', ...toPx(v, { t: 0, m: 0 }), 1); fire(el, 'pointerdown', ...toPx(v, { t: 2, m: 2 }), 2)
+      fire(el, 'pointerup', ...toPx(v, { t: 0, m: 0 }), 1); fire(el, 'pointerup', ...toPx(v, { t: 2, m: 2 }), 2)
+      drag(el, [toPx(v, { t: -1, m: 1 })])
+      expect(m.editor.drawing.arcs).toEqual([])
+    })
+    it('eraser takes the nearer of an arc and a line', () => {
+      const m = mount({ free: { half: true }, tool: 'erase', arcs: ['Az|0:0|1|0'], lines: ['1:0|1:1'] }), v = m.grid.getView()
+      const mid = toUV({ t: 0, m: 0 }) // the arc's middle, at 22.5°
+      const c = Math.cos(Math.PI / 8), sn = Math.sin(Math.PI / 8), x = toUV({ t: 1, m: 0 }), y = toUV({ t: -1, m: 1 })
+      drag(el, [uvPx(v, [mid[0] + c * x[0] + sn * y[0], mid[1] + c * x[1] + sn * y[1]])])
+      expect(m.editor.drawing.arcs).toEqual([]); expect(m.editor.drawing.lines).toEqual(['1:0|1:1'])
+    })
+    it('snap dots show only for line and arc tools', () => {
+      const m = mount({ free: { half: true } })
+      expect(el.querySelectorAll('.g-snap circle').length).toBeGreaterThan(0)
+      m.state.tool = 'fill'; m.grid.render()
+      expect(el.querySelectorAll('.g-snap circle')).toHaveLength(0)
+    })
+    it('without free the line tool keeps the 3-direction snap', () => {
+      const m = mount(), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 3, m: 1 })])
+      expect(m.editor.drawing.lines).not.toContain('0:0|3:1')
+    })
   })
   it('a saved diagonal renders', () => {
     mount({ lines: ['0:0|1:1'] })

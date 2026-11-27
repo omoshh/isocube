@@ -4,6 +4,7 @@ import { S } from '../strings'
 
 const ICONS: Record<Tool | 'undo' | 'redo', string> = {
   line: icon('<path d="M5 19L19 5"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="5" r="1.5"/>'),
+  arc: icon('<path d="M5 19A14 14 0 0 1 19 5"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="5" r="1.5"/>'),
   freehand: icon('<path d="M4 17c3-6 5 2 8-4s5 2 8-4"/>'),
   fill: icon('<path d="M5 11l7-7 7 7-7 7z"/><path d="M19 15c1 2 1.5 3 0 4s-2-1 0-4"/>'),
   erase: icon('<path d="M9 19h11"/><path d="M4 15l9-9 5 5-8 8H8z"/>'),

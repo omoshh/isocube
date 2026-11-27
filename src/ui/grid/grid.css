@@ -14,5 +14,8 @@
 .g-check .g-missing { stroke: var(--mark-missing); stroke-width: var(--stroke-missing); stroke-linecap: butt;
   stroke-dasharray: calc(var(--stroke-missing) * 3) calc(var(--stroke-missing) * 2); }
 .g-check .g-mistake { stroke: var(--mark-mistake); stroke-width: var(--stroke-mistake); }
+.g-snap circle { fill: var(--ink-muted, var(--ink)); opacity: 0.45; stroke: none; }
+.g-handle circle { fill: var(--accent); stroke: none; }
+.g-handle circle.first { fill: var(--ink); }
 .g-prev { opacity: var(--opacity-answer); }
 .g-prev line, .g-prev polyline { stroke: var(--ink); stroke-width: var(--stroke-line); stroke-linejoin: round; }

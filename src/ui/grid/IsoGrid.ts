@@ -1,17 +1,17 @@
 import { proj, segEnds, toUV, triAt, triEdges, type Pt, type SegKey } from '../../core/geometry'
-import { arcPolyline, isArcKey } from '../../core/arcs'
-import { snapDragIso, snapFreehandIso } from '../../core/snap'
+import { arcMid, arcPieces, arcPolyline, arcSnapPoints, arcsThrough, isArcKey, type Arc, type ArcKey } from '../../core/arcs'
+import { snapDragIso, snapFree, snapFreehandIso, snapPoint, type SnapOpts } from '../../core/snap'
 import type { Bounds, DrawingEditor } from '../../core/drawing'
 import type { CheckResult } from '../../core/checker'
 import { guideBounds, type View } from './transform'
 import { S as STR } from '../strings'
 import { createSurface, mk, type UV } from './gestures'
 
-export type Tool = 'line' | 'freehand' | 'fill' | 'erase'
+export type Tool = 'line' | 'arc' | 'freehand' | 'fill' | 'erase'
 export type Overlay = { kind: 'answer'; edges: Set<SegKey> } | { kind: 'check'; result: CheckResult } | null
 export type IsoGridOpts = {
-  /** Line tool may snap to the long diagonal of a cell (Draw mode). */
-  diagonals?: boolean
+  /** Free line tool (any snap point to any snap point) and the arc tool; `half` adds edge midpoints as snap points. Unset: 3-direction lines (Shadows). */
+  free?: { half: boolean }
   bounds: Bounds
   guide?: { cols: number; rows: number; maxH: number }
   arrows: boolean
@@ -27,22 +27,33 @@ export type IsoGridOpts = {
 
 const S = Math.sqrt(3) / 2
 const ERASE_DIST = 0.4 // grid steps
+const HANDLE_DIST = 0.4 // grid steps: a stroke starting this near the arc dot drags it
 const uv = toUV
 /** Fill colour index → CSS colour: 1–3 are the shading tones, 4+ the draw-mode palette (tokens defined by Task 17). */
 export const fillColour = (n: number) => (n <= 3 ? `var(--tone-${n})` : `var(--palette-${n})`)
 
-function segDist(k: SegKey, q: UV) {
-  const [[au, av], [bu, bv]] = segEnds(k).map(uv), du = bu - au, dv = bv - av
+function distTo([au, av]: number[], [bu, bv]: number[], q: UV) {
+  const du = bu - au, dv = bv - av
   const f = Math.max(0, Math.min(1, ((q.u - au) * du + (q.v - av) * dv) / (du * du + dv * dv)))
   return Math.hypot(q.u - au - f * du, q.v - av - f * dv)
 }
+const keyDist = (k: string, q: UV) => {
+  const ps = isArcKey(k) ? arcPolyline(k) : segEnds(k).map(uv)
+  return Math.min(...ps.slice(1).map((b, i) => distTo(ps[i], b, q)))
+}
+const sameArc = (a: Arc, b: Arc) => arcPieces(a).join() === arcPieces(b).join()
 
 export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   const { editor } = o
   let surf: ReturnType<typeof createSurface> | undefined
   let overlay: Overlay = null
-  let stroke: { tool: Tool; start: UV; pts: UV[] } | null = null
-  let pending = new Set<SegKey>() // erased during the current stroke; committed on end so a pinch can cancel it
+  let stroke: { tool: Tool; start: UV; pts: UV[]; dot?: boolean } | null = null
+  let pending = new Set<string>() // erased during the current stroke; committed on end so a pinch can cancel it
+  let arcFirst: Pt | null = null // arc tool: the first tapped point
+  let lastArc: { p: Pt; q: Pt; arc: Arc; added: ArcKey[] } | null = null // the arc whose dot shows
+
+  const snapOpts = (): SnapOpts => ({ half: !!o.free?.half, extra: arcSnapPoints(editor.drawing.arcs!) })
+  const showSnap = () => !!o.free && (o.tool() === 'line' || o.tool() === 'arc')
 
   /** A line for a SegKey, a polyline for an ArcKey. */
   const drawKey = (k: string, parent: Element, cls?: string) => {
@@ -50,6 +61,25 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
     if (isArcKey(k)) { mk('polyline', { points: arcPolyline(k).join(' '), ...c }, parent); return }
     const [[x1, y1], [x2, y2]] = segEnds(k).map(uv)
     mk('line', { x1, y1, x2, y2, ...c }, parent)
+  }
+  const dot = (p: [number, number], r: number, parent: Element) => mk('circle', { cx: p[0], cy: p[1], r }, parent)
+
+  function drawSnap() {
+    gSnap.replaceChildren()
+    if (!showSnap()) return
+    if (o.free!.half) {
+      const [u0, u1, v0, v1] = surf!.visible()
+      for (let T = Math.floor(2 * u0 / S); T <= Math.ceil(2 * u1 / S); T++)
+        for (let M = Math.floor(2 * v0 - T / 2); M <= Math.ceil(2 * v1 - T / 2); M++)
+          if (T % 2 || M % 2) dot(uv({ t: T / 2, m: M / 2 }), 0.05, gSnap)
+    }
+    for (const p of arcSnapPoints(editor.drawing.arcs!)) dot(uv(p), 0.05, gSnap)
+  }
+
+  function drawHandle() {
+    gHandle.replaceChildren()
+    if (lastArc) dot(arcMid(lastArc.arc), 0.12, gHandle)
+    if (arcFirst) dot(uv(arcFirst), 0.08, gHandle).setAttribute('class', 'first')
   }
 
   function drawGrid() {
@@ -60,6 +90,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
     for (let k = Math.floor(ta); k <= Math.ceil(tb); k++) line(k * S, v0, k * S, v1)
     for (let c = Math.floor(v0 - tb / 2); c <= Math.ceil(v1 - ta / 2); c++) line(u0, c + ta / 2, u1, c + tb / 2) // v = c + t/2
     for (let c = Math.floor(v0 + ta / 2); c <= Math.ceil(v1 + tb / 2); c++) line(u0, c - ta / 2, u1, c - tb / 2) // v = c - t/2
+    drawSnap()
   }
 
   function render() {
@@ -71,6 +102,10 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       mk('polygon', { points: [...vs.values()].join(' '), style: `fill:${col};stroke:${col}` }, gFills)
     }
     for (const k of [...d.lines, ...d.arcs!]) if (!pending.has(k)) drawKey(k, gLines)
+    // the dot goes with the tool and with the arc (undo, redo, clear can take the arc away)
+    if (o.tool() !== 'arc') arcFirst = lastArc = null
+    if (lastArc && !arcPieces(lastArc.arc).every(k => d.arcs!.includes(k))) lastArc = null
+    drawSnap(); drawHandle()
   }
 
   function drawOverlay() {
@@ -83,27 +118,50 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   }
 
   function eraseAt(p: UV) {
-    let best: SegKey | null = null, bd = ERASE_DIST
-    for (const k of editor.drawing.lines) { const d = segDist(k, p); if (d <= bd) { bd = d; best = k } }
+    const d = editor.drawing
+    let best: string | null = null, bd = ERASE_DIST
+    for (const k of [...d.lines, ...d.arcs!]) { const x = keyDist(k, p); if (x <= bd) { bd = x; best = k } }
     // the nearest line already taken in this stroke blocks the next one: one tap (start + end) erases one line
     if (best && !pending.has(best)) { pending.add(best); render() }
+  }
+
+  const lineFor = (start: UV, p: UV) => (o.free ? snapFree(start, p, snapOpts()) : snapDragIso(start, p))
+  /** The arc through the last arc's ends whose middle is nearest the finger. */
+  const arcNear = (p: UV) => {
+    const best = (a: Arc) => { const [u, v] = arcMid(a); return Math.hypot(u - p.u, v - p.v) }
+    return arcsThrough(lastArc!.p, lastArc!.q).reduce((a, b) => (best(b) < best(a) ? b : a))
   }
 
   function preview(s: NonNullable<typeof stroke>, p: UV) {
     gPrev.replaceChildren()
     if (s.tool === 'line') {
-      const l = snapDragIso(s.start, p)
+      const l = lineFor(s.start, p)
       if (l) { const [[x1, y1], [x2, y2]] = [uv(l.a), uv(l.b)]; mk('line', { x1, y1, x2, y2 }, gPrev) }
-    } else mk('polyline', { points: s.pts.map(q => q.u + ',' + q.v).join(' ') }, gPrev)
+    } else if (s.tool === 'arc') { if (s.dot) for (const k of arcPieces(arcNear(p))) drawKey(k, gPrev) }
+    else mk('polyline', { points: s.pts.map(q => q.u + ',' + q.v).join(' ') }, gPrev)
   }
 
-  const cancel = () => {
+  function tapArc(p: UV) {
+    const q = snapPoint(p, snapOpts())
+    if (!arcFirst) { arcFirst = q; return }
+    const cands = arcsThrough(arcFirst, q)
+    if (!cands.length) { arcFirst = q; return } // no valid arc: start again from here
+    lastArc = { p: arcFirst, q, arc: cands[0], added: editor.addArc(cands[0]) }
+    arcFirst = null
+  }
+
+  const endStroke = () => {
     stroke = null; gPrev.replaceChildren()
     if (pending.size) { pending = new Set(); render() }
   }
   const draw = {
     start(p: UV) {
       stroke = { tool: o.tool(), start: p, pts: [p] }
+      if (stroke.tool === 'arc' && lastArc) {
+        const [u, v] = arcMid(lastArc.arc)
+        if (Math.hypot(u - p.u, v - p.v) <= HANDLE_DIST) stroke.dot = true
+        else lastArc = null
+      } else lastArc = null
       if (stroke.tool === 'erase') eraseAt(p)
     },
     move(p: UV) {
@@ -118,16 +176,21 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       if (s?.tool === 'erase') eraseAt(p)
       const erased = pending
       pending = new Set()
-      cancel()
+      endStroke()
       if (!s) return
-      if (s.tool === 'line') { const l = snapDragIso(s.start, p); if (l) editor.addLines([l]) }
+      if (s.tool === 'line') { const l = lineFor(s.start, p); if (l) editor.addLines([l]) }
+      else if (s.tool === 'arc') {
+        if (!o.free) return
+        if (!s.dot) tapArc(p)
+        else { const a = arcNear(p); if (!sameArc(a, lastArc!.arc)) lastArc = { ...lastArc!, arc: a, added: editor.replaceArc(lastArc!.added, a) } }
+      }
       else if (s.tool === 'freehand') editor.addLines(snapFreehandIso([...s.pts, p]))
       else if (s.tool === 'fill') editor.fill(triAt(p.u, p.v), o.colour())
       else if (erased.size) for (const k of erased) editor.erase(k)
       else editor.unfill(triAt(p.u, p.v)) // no line near: the eraser clears the colour under the finger
       render()
     },
-    cancel,
+    cancel() { endStroke(); arcFirst = null; if (surf) drawHandle() },
   }
 
   const content = (): [number, number, number, number] => {
@@ -140,7 +203,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   surf = createSurface(el, { content, penOnly: o.penOnly, draw, onView: drawGrid, initialView: o.initialView, onViewChange: o.onViewChange })
   const layer = (cls: string) => mk('g', { class: cls }, surf!.world)
   const gPlane = layer('g-plane'), gGrid = layer('g-grid'), gFills = layer('g-fills'), gGuide = layer('g-guide'), gAns = layer('g-ans')
-  const gLines = layer('g-lines'), gCheck = layer('g-check'), gPrev = layer('g-prev')
+  const gLines = layer('g-lines'), gCheck = layer('g-check'), gSnap = layer('g-snap'), gHandle = layer('g-handle'), gPrev = layer('g-prev')
 
   if (o.plane) mk('polygon', { points: o.plane.map(p => uv(p).join(',')).join(' ') }, gPlane)
 

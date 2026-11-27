@@ -32,7 +32,7 @@ export const S = {
   notFound: 'Puzzle not found.',
   top: 'Top', front: 'Front', side: 'Side', key: 'Key',
   hideViews: 'Hide views', showViews: 'Show views',
-  line: 'Line', freehand: 'Freehand', fill: 'Fill', erase: 'Erase', undo: 'Undo', redo: 'Redo',
+  line: 'Line', arc: 'Arc', freehand: 'Freehand', fill: 'Fill', erase: 'Erase', undo: 'Undo', redo: 'Redo',
   clear: 'Clear', penOnly: 'Pen only',
   turn: 'Turn', frontSide: 'Front', backSide: 'Back',
   zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit', fitHint: 'Show the whole grid', fitAll: 'Show all grids',
