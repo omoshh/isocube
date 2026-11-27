@@ -49,10 +49,12 @@ function axisPlane(n: P3, p: P3): string {
   return (n[0] < 0 ? 'side' : 'rside') + p[0]
 }
 
-/** Plane key of a ramp's slanted face: ramps with the same slope, low edge and base share one plane. */
+/** Plane key of a ramp's slanted face, from the plane itself: z = b + (u − low)/len rising along +u (E, N) or
+ *  z = b + (low − u)/len along −u (W, S); so ramps end to end on one slope share a key. */
 export function slopePlane(r: Ramp, b: number): string {
   const low = r.dir === 'E' ? r.x : r.dir === 'W' ? r.x + 1 : r.dir === 'N' ? r.y : r.y + 1
-  return `s:${r.dir}:${r.len}:${low}:${b}`
+  const up = r.dir === 'E' || r.dir === 'N'
+  return `s:${r.dir === 'E' || r.dir === 'W' ? 'x' : 'y'}${up ? '+' : '-'}:${r.len}:${up ? b * r.len - low : b * r.len + low}`
 }
 
 function rampFaces(r: Ramp, i: number, b: number): { pts: P3[]; plane: string; owner: string; n: P3 }[] {

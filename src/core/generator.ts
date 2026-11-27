@@ -184,10 +184,16 @@ export function stairShape(cols: number, rows: number, maxH: number, r: Rng): He
 /** A Slopes candidate (3×3 or 3×4, maxH 3, 1–3 ramps): returned only when fair and with one solution among cube-and-ramp shapes. */
 export function makeSlopeCandidate(seed: number): Shape | null {
   const r = rng(seed), [cols, rows] = r() < 0.5 ? [3, 3] : r() < 0.5 ? [3, 4] : [4, 3], hm = stairShape(cols, rows, 3, r)
-  const dirs: Dir[] = ['E', 'W', 'N', 'S'], ramps: Ramp[] = [], want = 1 + pick(r, 3)
-  for (let i = 0; i < 30 && ramps.length < want; i++) {
-    const c: Ramp = { x: pick(r, cols), y: pick(r, rows), len: (1 + pick(r, 3)) as 1 | 2 | 3, dir: dirs[pick(r, 4)] }
-    if (validShape({ hm, ramps: [...ramps, c] }, 3)) ramps.push(c)
+  // every ramp that fits, lengths 2 and 3 weighted ×3 (the owner wants bigger pieces; random spots rarely fit them)
+  const ramps: Ramp[] = [], want = 1 + pick(r, 3)
+  while (ramps.length < want) {
+    const fits: Ramp[] = []
+    for (let x = 0; x < cols; x++) for (let y = 0; y < rows; y++) for (const dir of ['E', 'W', 'N', 'S'] as Dir[]) for (const len of [1, 2, 3] as const) {
+      const c: Ramp = { x, y, len, dir }
+      if (validShape({ hm, ramps: [...ramps, c] }, 3)) for (let w = len > 1 ? 3 : 1; w > 0; w--) fits.push(c)
+    }
+    if (!fits.length) break
+    ramps.push(fits[pick(r, fits.length)])
   }
   const s = { hm, ramps }
   if (!ramps.length || !fairShape(s, 3)) return null

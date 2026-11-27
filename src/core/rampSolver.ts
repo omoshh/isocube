@@ -1,7 +1,8 @@
 // How many shapes of cubes and ramps have the given views? Cells are filled column by column (x outer, y inner,
 // front row first). The top view is checked cell by cell (a line between two cells exactly when their top planes
 // differ); after each column, the front view on every piece only finished columns decide, and the side view on
-// every piece covered on both sides; at a leaf, all 3 views must be equal.
+// per cell, the pieces strictly inside the cell's front slab and side strip (border pieces wait: the final review
+// showed that judging them early misses solutions); at a leaf, all 3 views must be equal.
 import { HeightMap } from './shape'
 import { shapeViews, viewSketch } from './shapeViews'
 import { rampCells, slopePlane, type Dir, type Ramp, type Shape } from './solid'
@@ -57,22 +58,23 @@ export function countShapeSolutions(v: ViewSet, cols: number, rows: number, maxH
     for (let x = 0; x < cols; x++) for (let y = 0; y < rows; y++) if (keep(x, y) || on.has(x + ',' + y)) h[(rows - 1 - y) * cols + x] = hv[x][y]
     return { hm: new HeightMap(cols, rows, h), ramps: rs }
   }
-  /** Pieces covered on both sides inside a strip are final: they must be lines exactly where the target has lines. */
-  const stripOk = (view: 'front' | 'side', s: Shape, inStrip: (a: number, b: number) => boolean) => {
+  /** Pieces strictly inside a strip (not on its 2 border lines, which cells not yet placed can still change) and
+   *  covered on both sides are final: lines exactly where the target has lines. */
+  const stripOk = (view: 'front' | 'side', s: Shape, lo: number) => {
     const k = viewSketch(s, maxH, view), target = v[view]
     for (const [piece, both] of k.covered) {
       if (!both) continue
       const [a, b] = piece.split('|').map(p => +p.split(':')[0])
-      if (!inStrip(a, b)) continue
+      if (a < lo || a > lo + 1 || b < lo || b > lo + 1 || (a === b && (a === lo || a === lo + 1))) continue
       const mine = k.keys.has(piece) ? piece : k.keys.has(piece + '#p') ? piece + '#p' : null
       if (mine ? !target.has(mine) : target.has(piece) || target.has(piece + '#p')) return false
     }
     return true
   }
-  // front slab of column x: cells (x, 0..y); side strip of row y (screen x from rows − y − 1 to rows − y): cells (0..x, y)
+  // front: the slab of column x (cells in front of (x, y) are all placed); side: row y, from every placed cell
   const cellOk = (x: number, y: number) =>
-    stripOk('front', partOf((cx, cy) => cx === x && cy <= y), (a, b) => a >= x && a <= x + 1 && b >= x && b <= x + 1) &&
-    stripOk('side', partOf((cx, cy) => cy === y && cx <= x), (a, b) => a >= rows - y - 1 && a <= rows - y && b >= rows - y - 1 && b <= rows - y)
+    stripOk('front', partOf((cx, cy) => cx === x && cy <= y), x) &&
+    stripOk('side', partOf((cx, cy) => cx < x || (cx === x && cy <= y)), rows - y - 1)
 
   const pieceX = (k: string) => k.replace('#p', '').split('|').map(p => +p.split(':')[0])
   const frontDecided = (k: string, x: number) => { const [a, b] = pieceX(k); return Math.max(a, b) <= x + 1 && !(a === x + 1 && b === x + 1) }
@@ -97,7 +99,7 @@ export function countShapeSolutions(v: ViewSet, cols: number, rows: number, maxH
     if (f >= 0) { // part of a ramp started earlier: its height and ramp are fixed
       hv[x][y] = hv[ramps[f].x][ramps[f].y]; ramp[x][y] = f
       next()
-      hv[x][y] = 0; ramp[x][y] = -1
+      ramp[x][y] = -1 // keep hv: for W and S ramps this cell may be the low end that earlier cells read the base from
       return
     }
     for (let h = 0; h <= capAt(x, y) && count < limit; h++) {

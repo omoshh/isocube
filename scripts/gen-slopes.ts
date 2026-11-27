@@ -16,7 +16,9 @@ if (mode === 'worker') {
   }
   console.log(`worker ${i}: ${found.length} in ${((performance.now() - t0) / 1000).toFixed(0)} s`)
 } else if (mode === 'merge') {
-  const all = args.flatMap(f => JSON.parse(readFileSync(f, 'utf8')) as Found[]).sort((a, b) => a.seed - b.seed)
+  // prefer longer ramps (the owner wants bigger pieces), then seed order
+  const long = (f: Found) => f.ramps.reduce((n, r) => n + r[2] - 1, 0)
+  const all = args.flatMap(f => JSON.parse(readFileSync(f, 'utf8')) as Found[]).sort((a, b) => long(b) - long(a) || a.seed - b.seed)
   const shape = (f: Found): Shape => ({ hm: new HeightMap(f.cols, f.rows, f.h), ramps: fromEntryRamps(f.ramps) })
   const pickd: Found[] = []
   for (const f of all) if (pickd.length < 25 && pickd.every(p => shapeDistance(shape(p), shape(f)) >= 3)) pickd.push(f)
