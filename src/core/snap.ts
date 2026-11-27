@@ -1,4 +1,4 @@
-import { type GPt, type Line, type Pt } from './geometry'
+import { samePt, toUV, type GPt, type Line, type Pt } from './geometry'
 
 const S = Math.sqrt(3) / 2
 type UV = { u: number; v: number }
@@ -23,6 +23,33 @@ function snapFrom(a: Pt, q: UV, dirs: readonly Pt[] = DIRS): Pt {
 export function snapDragIso(start: UV, end: UV): Line | null {
   const a = nearest(start), b = snapFrom(a, end)
   return a.t === b.t && a.m === b.m ? null : { a, b }
+}
+
+/** The lattice dot truly nearest to q (rounding t alone can pick a neighbour near the cell edges). */
+function nearestDot(q: UV): Pt {
+  const t0 = Math.round(q.u / S)
+  let best = nearest(q), bd = Infinity
+  for (let t = t0 - 1; t <= t0 + 1; t++) {
+    const p = { t: t + 0, m: Math.round(q.v - t / 2) + 0 }, d = Math.hypot(t * S - q.u, p.m + t / 2 - q.v)
+    if (d < bd) { bd = d; best = p }
+  }
+  return best
+}
+
+export type SnapOpts = { half: boolean; extra: Pt[] }
+
+/** Nearest snap point: a grid dot, an edge midpoint (when `half`), or one of `extra` (eighth points of drawn arcs). */
+export function snapPoint(q: UV, o: SnapOpts): Pt {
+  const cands = [nearestDot(q), ...o.extra]
+  if (o.half) { const h = nearestDot({ u: 2 * q.u, v: 2 * q.v }); cands.push({ t: h.t / 2 + 0, m: h.m / 2 + 0 }) }
+  let best = cands[0], bd = Infinity
+  for (const p of cands) { const [u, v] = toUV(p), d = Math.hypot(u - q.u, v - q.v); if (d < bd) { bd = d; best = p } }
+  return best
+}
+
+export function snapFree(start: UV, end: UV, o: SnapOpts): Line | null {
+  const a = snapPoint(start, o), b = snapPoint(end, o)
+  return samePt(a, b) ? null : { a, b }
 }
 
 function rdp(pts: UV[], tol: number): UV[] {

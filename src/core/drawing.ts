@@ -1,11 +1,12 @@
+import { arcPieces, isArcKey, type Arc, type ArcKey } from './arcs'
 import { segEnds, triEdges, triNeighbours, linePieces, type Line, type SegKey, type TriKey } from './geometry'
 
-export type Drawing = { lines: SegKey[]; fills: Record<TriKey, number>; name?: string }
+export type Drawing = { lines: SegKey[]; arcs?: ArcKey[]; fills: Record<TriKey, number>; name?: string }
 export type Bounds = { t0: number; t1: number; v0: number; v1: number }
 
 const S = Math.sqrt(3) / 2
 const MAX_REGION = 4000 // same cap as the reference page
-const copy = (d: Drawing): Drawing => ({ lines: [...d.lines], fills: { ...d.fills } })
+const copy = (d: Drawing): Drawing => ({ lines: [...d.lines], arcs: [...(d.arcs ?? [])], fills: { ...d.fills } })
 
 export class DrawingEditor {
   private cur: Drawing
@@ -14,7 +15,7 @@ export class DrawingEditor {
 
   constructor(initial: Drawing, private bounds: Bounds, private onChange: (d: Drawing) => void) {
     this.cur = copy(initial)
-    this.cur.lines.sort()
+    this.cur.lines.sort(); this.cur.arcs!.sort()
   }
 
   get drawing(): Drawing { return copy(this.cur) }
@@ -29,15 +30,30 @@ export class DrawingEditor {
     const set = new Set(this.cur.lines)
     const n = set.size
     for (const l of ls) for (const s of linePieces(l)) set.add(s)
-    if (set.size !== n) this.commit({ lines: [...set].sort(), fills: { ...this.cur.fills } })
+    if (set.size !== n) this.commit({ ...copy(this.cur), lines: [...set].sort() })
   }
 
-  erase(s: SegKey) {
-    if (!this.cur.lines.includes(s)) return
-    this.commit({ lines: this.cur.lines.filter(x => x !== s), fills: { ...this.cur.fills } })
+  /** Adds the arc's pieces in one step; returns the pieces that were not there before. */
+  addArc(a: Arc): ArcKey[] { return this.replaceArc([], a) }
+
+  /** One step: removes `added` (pieces an earlier addArc put in) and adds the arc; returns the newly added pieces. */
+  replaceArc(added: ArcKey[], a: Arc): ArcKey[] {
+    const old = this.cur.arcs ?? [], set = new Set(old)
+    for (const k of added) set.delete(k)
+    const fresh = arcPieces(a).filter(k => !set.has(k))
+    for (const k of fresh) set.add(k)
+    const next = [...set].sort()
+    if (next.join() !== [...old].sort().join()) this.commit({ ...copy(this.cur), arcs: next })
+    return fresh
   }
 
-  // shortcut: fill does not stop at diagonals (they cross triangles); upgrade if the owner fills diagonal shapes
+  erase(s: SegKey | ArcKey) {
+    const arcs = this.cur.arcs ?? []
+    if (isArcKey(s)) { if (arcs.includes(s)) this.commit({ ...copy(this.cur), arcs: arcs.filter(x => x !== s) }) }
+    else if (this.cur.lines.includes(s)) this.commit({ ...copy(this.cur), lines: this.cur.lines.filter(x => x !== s) })
+  }
+
+  // shortcut: fill stops only at grid-edge lines, not at diagonals, free lines or arcs; upgrade if the owner fills such shapes
   fill(start: TriKey, colour: number) {
     const blocked = new Set(this.cur.lines)
     const inside = (k: TriKey) => {
@@ -65,7 +81,7 @@ export class DrawingEditor {
       if (colour) { if (fills[k] !== colour) { fills[k] = colour; changed = true } }
       else if (k in fills) { delete fills[k]; changed = true }
     }
-    if (changed) this.commit({ lines: [...this.cur.lines], fills })
+    if (changed) this.commit({ ...copy(this.cur), fills })
   }
 
   /** Clears the colour of the area around `start`: neighbours of the same colour not across a drawn line. No closed region needed. */
@@ -79,17 +95,17 @@ export class DrawingEditor {
       for (const [j, e] of triEdges(queue[i]).entries())
         if (!blocked.has(e) && fills[ns[j]] === c) { delete fills[ns[j]]; queue.push(ns[j]) }
     }
-    this.commit({ lines: [...this.cur.lines], fills })
+    this.commit({ ...copy(this.cur), fills })
   }
 
   clear() {
-    if (!this.cur.lines.length && !Object.keys(this.cur.fills).length) return
-    this.commit({ lines: [], fills: {} })
+    if (!this.cur.lines.length && !this.cur.arcs?.length && !Object.keys(this.cur.fills).length) return
+    this.commit({ lines: [], arcs: [], fills: {} })
   }
 
   /** Empties the drawing and forgets history (a lives restart is not an undo step). */
   reset() {
-    this.past = []; this.future = []; this.cur = { lines: [], fills: {} }; this.onChange(this.drawing)
+    this.past = []; this.future = []; this.cur = { lines: [], arcs: [], fills: {} }; this.onChange(this.drawing)
   }
 
   undo() {

@@ -73,4 +73,9 @@ describe('backup v2', () => {
   it('v2RoundTrip', () => {
     expect(parseBackup(JSON.stringify(good))).toEqual({ ok: true, backup: good })
   })
+  it('drawings with and without arcs import; bad arcs fail', () => {
+    const drawings = { a: { lines: [], fills: {} }, b: { lines: [], arcs: ['Az|0:0|1|0'], fills: {} } }
+    expect(parseBackup(JSON.stringify({ ...good, drawings }))).toEqual({ ok: true, backup: { ...good, drawings } })
+    expect(parseBackup(JSON.stringify({ ...good, drawings: { b: { lines: [], arcs: [1], fills: {} } } }))).toEqual({ ok: false, error: 'The drawing "b" is invalid.' })
+  })
 })

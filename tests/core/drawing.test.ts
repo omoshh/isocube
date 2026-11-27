@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { DrawingEditor, type Bounds, type Drawing } from '../../src/core/drawing'
+import type { Arc } from '../../src/core/arcs'
 import { triAt, triEdges, triNeighbours, segEnds, type Line } from '../../src/core/geometry'
 
 const B: Bounds = { t0: -10, t1: 10, v0: -10, v1: 10 }
@@ -72,7 +73,7 @@ describe('drawing', () => {
     const e = new DrawingEditor(empty(), B, () => {})
     e.clear(); expect(e.canUndo).toBe(false)
     e.addLines(rhombus); e.fill(start, 1); e.clear()
-    expect(e.drawing).toEqual(empty())
+    expect(e.drawing).toEqual({ ...empty(), arcs: [] })
     e.undo()
     expect(e.drawing.lines).toHaveLength(4)
     expect(Object.keys(e.drawing.fills)).toHaveLength(2)
@@ -91,5 +92,29 @@ describe('drawing', () => {
     e.addLines(rhombus); e.fill(start, 1); e.undo(); e.redo(); e.clear()
     expect(fn).toHaveBeenCalledTimes(5)
   })
+
 })
 
+describe('arcs in the editor', () => {
+  const quarter: Arc = { plane: 'z', c: { t: 0, m: 0 }, r: 1, k0: 0, n: 2 }
+  it('addArc, replaceArc, undo keep earlier pieces', () => {
+    const ed = new DrawingEditor({ lines: [], arcs: ['Az|0:0|1|1'], fills: {} }, B, () => {})
+    const added = ed.addArc(quarter)
+    expect(added).toEqual(['Az|0:0|1|0'])
+    ed.replaceArc(added, { ...quarter, k0: 2 })
+    expect(ed.drawing.arcs!.sort()).toEqual(['Az|0:0|1|1', 'Az|0:0|1|2', 'Az|0:0|1|3'])
+    ed.undo(); expect(ed.drawing.arcs!.sort()).toEqual(['Az|0:0|1|0', 'Az|0:0|1|1'])
+    ed.undo(); expect(ed.drawing.arcs).toEqual(['Az|0:0|1|1'])
+  })
+  it('addArc with nothing new does not commit', () => {
+    const ed = new DrawingEditor({ lines: [], arcs: ['Az|0:0|1|0', 'Az|0:0|1|1'], fills: {} }, B, () => {})
+    expect(ed.addArc(quarter)).toEqual([])
+    expect(ed.canUndo).toBe(false)
+  })
+  it('erase and clear take arcs; old drawings get an empty arc list', () => {
+    const ed = new DrawingEditor({ lines: [], arcs: ['Az|0:0|1|1'], fills: {} }, B, () => {})
+    ed.erase('Az|0:0|1|1'); expect(ed.drawing.arcs).toEqual([])
+    ed.undo(); ed.clear(); expect(ed.drawing.arcs).toEqual([])
+    expect(new DrawingEditor(empty(), B, () => {}).drawing.arcs).toEqual([])
+  })
+})

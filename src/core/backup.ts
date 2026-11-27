@@ -38,7 +38,7 @@ export function parseBackup(text: string): { ok: true; backup: Backup } | { ok: 
 
   if (!isObj(b.drawings)) return fail('The drawings are missing.')
   for (const [k, d] of Object.entries(b.drawings)) {
-    if (!isObj(d) || !strs(d.lines) || !isObj(d.fills) || !Object.values(d.fills).every(v => typeof v === 'number') || (d.name !== undefined && typeof d.name !== 'string'))
+    if (!isObj(d) || !strs(d.lines) || (d.arcs !== undefined && !strs(d.arcs)) || !isObj(d.fills) || !Object.values(d.fills).every(v => typeof v === 'number') || (d.name !== undefined && typeof d.name !== 'string'))
       return fail(`The drawing "${k}" is invalid.`)
   }
 
