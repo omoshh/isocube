@@ -103,6 +103,14 @@ describe('draw screen (round 3)', () => {
     expect(s.grid.getView().scale).toBeGreaterThanOrEqual(40)
     s.destroy(); r.mockRestore()
   })
+  it('Draw has the arc tool, after the line tool', async () => {
+    const { mountDrawing } = await import('../../src/ui/screens/draw')
+    saveDrawing('draw/y', { lines: [], fills: {}, name: 'Y' })
+    const s = await mountDrawing(root(), 'y')
+    const labels = [...root().querySelectorAll('.tool-bar button')].map(b => b.getAttribute('aria-label'))
+    expect(labels.slice(0, 5)).toEqual(['Line', 'Arc', 'Freehand', 'Fill', 'Erase'])
+    s.destroy()
+  })
   it('New drawing is one full-width button', async () => {
     const s = await mountDrawList(root())
     const b = root().querySelector('[data-new]')!

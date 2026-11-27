@@ -1,5 +1,5 @@
 import { DrawingEditor, type Bounds } from '../../core/drawing'
-import { createToolBar } from '../components/toolBar'
+import { createToolBar, FREE_TOOLS } from '../components/toolBar'
 import { createTopBar } from '../components/topBar'
 import { h, icon } from '../dom'
 import { download, exportName, exportPng, exportSvg } from '../exportImage'
@@ -66,10 +66,10 @@ export async function mountDrawing(root: HTMLElement, id: string) {
     h('button', { class: 'icon-btn fit', text: S.fit, 'aria-label': S.fitHint, title: S.fitHint, onclick: () => grid.fit() }))
   const swatches = Array.from({ length: 15 }, (_, i) => i + 1).map(n => h('button', {
     class: 'swatch', 'aria-label': n <= 3 ? S.tone(n) : S.palette(n), style: `--swatch: var(--${n <= 3 ? 'tone-' + n : 'palette-' + n})`,
-    onclick: () => { colour = n; tool = 'fill'; bar.setTool(tool); sync() },
+    onclick: () => { colour = n; tool = 'fill'; bar.setTool(tool); sync(); grid.render() },
   }))
   const sync = () => swatches.forEach((b, i) => b.setAttribute('aria-pressed', String(i + 1 === colour)))
-  const bar = createToolBar({ tool, onTool: t => { tool = t }, onUndo: () => { editor.undo(); grid.render() }, onRedo: () => { editor.redo(); grid.render() } })
+  const bar = createToolBar({ tool, tools: FREE_TOOLS, onTool: t => { tool = t; grid.render() }, onUndo: () => { editor.undo(); grid.render() }, onRedo: () => { editor.redo(); grid.render() } })
   const svg = () => exportSvg(editor.drawing, grid.getView())
   const el = h('div', { class: 'screen vp' },
     createTopBar({ title: name, back: '/draw', menu: [

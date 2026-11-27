@@ -6,7 +6,7 @@ import { computeEdges, HeightMap } from '../../core/shape'
 import { rotate180 } from '../../core/visibility'
 import { turnButton } from '../shapePicture'
 import { createLives } from '../components/lives'
-import { createToolBar } from '../components/toolBar'
+import { createToolBar, FREE_TOOLS } from '../components/toolBar'
 import { createTopBar } from '../components/topBar'
 import { createViewsPanel } from '../components/viewsPanel'
 import { h, icon } from '../dom'
@@ -84,11 +84,11 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const counts = h('span', { class: 'vp-counts-text', 'aria-live': 'polite' })
   const swatches = [1, 2, 3].map(n => h('button', {
     class: 'swatch', 'aria-label': S.tone(n), style: `--swatch: var(--tone-${n})`,
-    onclick: () => { colour = n; tool = 'fill'; bar.setTool(tool); syncSwatches() },
+    onclick: () => { colour = n; tool = 'fill'; bar.setTool(tool); syncSwatches(); grid.render() },
   }))
   const syncSwatches = () => swatches.forEach((b, i) => b.setAttribute('aria-pressed', String(i + 1 === colour)))
   const bar = createToolBar({
-    tool, onTool: t => { tool = t },
+    tool, tools: FREE_TOOLS, onTool: t => { tool = t; grid.render() },
     onUndo: () => { editor.undo(); grid.render() },
     onRedo: () => { editor.redo(); grid.render() },
   })
@@ -108,7 +108,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const goNext = () => { location.hash = e.nextRoute }
 
   async function check() {
-    const result = checkDrawing(new Set(editor.drawing.lines), answer)
+    const d = editor.drawing, result = checkDrawing(new Set([...d.lines, ...d.arcs!]), answer) // an arc is always a mistake here
     checked = true; answerOn = false; ansBtn.setAttribute('aria-pressed', 'false'); answerOff()
     grid.setOverlay({ kind: 'check', result })
     counts.textContent = result.correct ? S.solved : S.counts(result.missing.size, result.mistakes.size)
@@ -133,7 +133,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   bar.setHistory(editor.canUndo, editor.canRedo)
 
   const grid = createIsoGrid(gridEl, {
-    bounds, guide: { cols: e.cols, rows: e.rows, maxH: e.maxH }, arrows: true, editor,
+    bounds, guide: { cols: e.cols, rows: e.rows, maxH: e.maxH }, arrows: true, free: { half: false }, editor,
     tool: () => tool, colour: () => colour, penOnly: () => penOnly,
     initialView: readView(key), onViewChange: v => writeView(key, v),
   })

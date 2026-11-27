@@ -32,6 +32,14 @@ const segs = (s: Set<string>) => [...s].map(k => { const [a, b] = segEnds(k); re
 beforeEach(() => { vi.resetModules(); indexedDB = new IDBFactory(); document.body.replaceChildren(); sessionStorage.clear() })
 
 describe('shadow puzzle screen', () => {
+  it('Shadows has no arc tool', async () => {
+    const { shadow } = await load()
+    const root = sized()
+    const s = await shadow.mountShadowPuzzle(root, file, 1, 'L1-001')
+    expect(root.querySelector('button[aria-label="Arc"]')).toBeNull()
+    expect(root.querySelector('button[aria-label="Line"]')).not.toBeNull()
+    s.destroy()
+  })
   it('exactOutlineSolves', async () => {
     const { shadow, storage } = await load()
     const root = sized()

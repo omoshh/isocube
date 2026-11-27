@@ -12,6 +12,8 @@ const ICONS: Record<Tool | 'undo' | 'redo', string> = {
   redo: icon('<path d="M15 7l5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h2"/>'),
 }
 const TOOLS: Tool[] = ['line', 'freehand', 'fill', 'erase']
+/** Draw and Views: the free tools (round 4). */
+export const FREE_TOOLS: Tool[] = ['line', 'arc', 'freehand', 'fill', 'erase']
 
 function iconBtn(name: keyof typeof ICONS, label: string, onclick: () => void) {
   const b = h('button', { class: 'icon-btn', 'aria-label': label, title: label, onclick })
@@ -19,12 +21,13 @@ function iconBtn(name: keyof typeof ICONS, label: string, onclick: () => void) {
   return b
 }
 
-/** Line, Freehand, Fill, Erase · Undo, Redo. The selected tool has aria-pressed="true". */
-export function createToolBar(o: { tool: Tool; onTool(t: Tool): void; onUndo(): void; onRedo(): void }) {
-  const tools = TOOLS.map(t => iconBtn(t, S[t], () => { setTool(t); o.onTool(t) }))
+/** Line, Freehand, Fill, Erase (or `tools`) · Undo, Redo. The selected tool has aria-pressed="true". */
+export function createToolBar(o: { tool: Tool; tools?: Tool[]; onTool(t: Tool): void; onUndo(): void; onRedo(): void }) {
+  const list = o.tools ?? TOOLS
+  const tools = list.map(t => iconBtn(t, S[t], () => { setTool(t); o.onTool(t) }))
   const undo = iconBtn('undo', S.undo, o.onUndo), redo = iconBtn('redo', S.redo, o.onRedo)
   const el = h('nav', { class: 'tool-bar' }, ...tools, h('span', { class: 'divider' }), undo, redo)
-  function setTool(t: Tool) { tools.forEach((b, i) => b.setAttribute('aria-pressed', String(TOOLS[i] === t))) }
+  function setTool(t: Tool) { tools.forEach((b, i) => b.setAttribute('aria-pressed', String(list[i] === t))) }
   setTool(o.tool)
   return {
     el, setTool,

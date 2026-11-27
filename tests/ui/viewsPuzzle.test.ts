@@ -96,6 +96,26 @@ describe('views puzzle screen', () => {
     s.destroy()
   })
 
+  it('an arc in a Views drawing counts as a mistake', async () => {
+    const { puzzle } = await load()
+    const e = file.puzzles.find(p => p.id === 'L1-005')!
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-005')
+    s.editor.addLines([...computeEdges(new HeightMap(e.cols, e.rows, e.h)).shape].map(k => { const [a, b] = segEnds(k); return { a, b } }))
+    s.editor.addArc({ plane: 'z', c: { t: 20, m: 0 }, r: 1, k0: 0, n: 1 })
+    button(root, 'Check').click()
+    expect(root.querySelector('.vp-counts-text')!.textContent).toBe('1 mistake')
+    s.destroy()
+  })
+
+  it('Views has the arc tool', async () => {
+    const { puzzle } = await load()
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'L1-006')
+    expect(root.querySelector('button[aria-label="Arc"]')).not.toBeNull()
+    s.destroy()
+  })
+
   it('answerClearsStaleCounts', async () => {
     const { puzzle } = await load()
     const root = sized(412, 915)
@@ -173,7 +193,7 @@ describe('puzzle layout', () => {
     expect(root.querySelector('.views-panel')!.classList.contains('folded')).toBe(true)
     expect(toggle.textContent).toBe('Show views')
     const labels = [...root.querySelectorAll('.tool-bar > *')].map(b => b.getAttribute('aria-label') ?? b.className)
-    expect(labels).toEqual(['Line', 'Freehand', 'Fill', 'Erase', 'divider', 'Undo', 'Redo'])
+    expect(labels).toEqual(['Line', 'Arc', 'Freehand', 'Fill', 'Erase', 'divider', 'Undo', 'Redo'])
     expect(root.querySelector('.tool-bar [aria-pressed="true"]')!.getAttribute('aria-label')).toBe('Line')
     expect([...root.querySelectorAll('.action-row button')].map(b => b.textContent)).toEqual(['Answer', 'Check'])
     const bar = root.querySelector('.top-bar')!
