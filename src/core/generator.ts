@@ -1,7 +1,10 @@
 import { HeightMap, visibleFaces } from './shape'
+import { countShapeSolutions } from './rampSolver'
+import { shapeViews } from './shapeViews'
+import { fromEntryRamps, rampCells, validShape, type Dir, type EntryRamp, type Ramp, type Shape } from './solid'
 import { gridSegKey } from './geometry'
 import { sameViews, views, type ViewSet } from './views'
-import { fairPicture } from './visibility'
+import { fairPicture, fairShape } from './visibility'
 
 export type Rng = () => number
 export function rng(seed: number): Rng {
@@ -20,7 +23,9 @@ export const LEVELS = [
   { level: 4, a: 4, b: 5, maxH: 4 }, { level: 5, a: 5, b: 5, maxH: 4 }, { level: 6, a: 5, b: 6, maxH: 5 },
 ] as const
 
-export type PuzzleEntry = { id: string; set: 'level' | 'reverse'; level: number; cols: number; rows: number; maxH: number; h: number[] }
+export type PuzzleEntry = { id: string; set: 'level' | 'reverse' | 'slopes'; level: number; cols: number; rows: number; maxH: number; h: number[]; ramps?: EntryRamp[] }
+
+export const entryShape = (e: PuzzleEntry): Shape => ({ hm: new HeightMap(e.cols, e.rows, e.h), ramps: fromEntryRamps(e.ramps ?? []) })
 export type PuzzleFile = { version: 1; puzzles: PuzzleEntry[] }
 
 const pick = (r: Rng, n: number) => Math.floor(r() * n)
@@ -163,4 +168,42 @@ export function makePuzzle(level: number, seed: number): { seed: number; hm: Hei
 export function difficulty(hm: HeightMap): [number, number] {
   const seen = new Set([...visibleFaces(hm).values()].map(f => `${f.x},${f.y},${f.z}`))
   return [hm.cubeCount - seen.size, hm.cubeCount]
+}
+
+/** Heights that never fall toward the back or the right: every cell shows in the front and the side view, so hidden
+ *  twins (a ramp a cube can stand in for) are rare. Measured: 10 of 17 fair candidates unique, against 1 of 26 for `sampleShape`. */
+export function stairShape(cols: number, rows: number, maxH: number, r: Rng): HeightMap {
+  const H: number[][] = Array.from({ length: cols }, () => new Array<number>(rows).fill(0)), h = new Array<number>(cols * rows).fill(0)
+  for (let x = 0; x < cols; x++) for (let y = 0; y < rows; y++) {
+    H[x][y] = Math.min(maxH, Math.max(x ? H[x - 1][y] : 0, y ? H[x][y - 1] : 0) + (r() < 0.45 ? 1 : 0) + (x + y === 0 ? 1 : 0))
+    h[(rows - 1 - y) * cols + x] = H[x][y]
+  }
+  return new HeightMap(cols, rows, h)
+}
+
+/** A Slopes candidate (3×3 or 3×4, maxH 3, 1–3 ramps): returned only when fair and with one solution among cube-and-ramp shapes. */
+export function makeSlopeCandidate(seed: number): Shape | null {
+  const r = rng(seed), [cols, rows] = r() < 0.5 ? [3, 3] : r() < 0.5 ? [3, 4] : [4, 3], hm = stairShape(cols, rows, 3, r)
+  const dirs: Dir[] = ['E', 'W', 'N', 'S'], ramps: Ramp[] = [], want = 1 + pick(r, 3)
+  for (let i = 0; i < 30 && ramps.length < want; i++) {
+    const c: Ramp = { x: pick(r, cols), y: pick(r, rows), len: (1 + pick(r, 3)) as 1 | 2 | 3, dir: dirs[pick(r, 4)] }
+    if (validShape({ hm, ramps: [...ramps, c] }, 3)) ramps.push(c)
+  }
+  const s = { hm, ramps }
+  if (!ramps.length || !fairShape(s, 3)) return null
+  return countShapeSolutions(shapeViews(s, 3), cols, rows, 3, 2) === 1 ? s : null
+}
+
+/** Cells whose stack height or ramp part differ (shapes of other sizes count as far apart). */
+export function shapeDistance(a: Shape, b: Shape): number {
+  if (a.hm.cols !== b.hm.cols || a.hm.rows !== b.hm.rows) return Infinity
+  const sig = (s: Shape) => {
+    const m = new Map<string, string>()
+    s.ramps.forEach(r => rampCells(r).forEach(([x, y], i) => m.set(x + ',' + y, `${r.dir}${r.len}.${i}`)))
+    return (x: number, y: number) => s.hm.at(x, s.hm.rows - 1 - y) + (m.get(x + ',' + y) ?? '')
+  }
+  const A = sig(a), B = sig(b)
+  let d = 0
+  for (let x = 0; x < a.hm.cols; x++) for (let y = 0; y < a.hm.rows; y++) if (A(x, y) !== B(x, y)) d++
+  return d
 }

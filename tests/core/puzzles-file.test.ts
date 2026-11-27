@@ -2,8 +2,9 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { HeightMap } from '../../src/core/shape'
 import { views } from '../../src/core/views'
-import { LEVELS, countSolutions, type PuzzleFile } from '../../src/core/generator'
-import { fairPicture } from '../../src/core/visibility'
+import { LEVELS, countSolutions, entryShape, shapeDistance, type PuzzleFile } from '../../src/core/generator'
+import { fairPicture, fairShape } from '../../src/core/visibility'
+import { validShape } from '../../src/core/solid'
 
 describe('puzzles.json', () => {
   it('fileValid', () => {
@@ -32,7 +33,7 @@ describe('puzzles.json', () => {
       })
     }
     expect(ps.some(p => (p.set as string) === 'classic')).toBe(false)
-    expect(ps.length).toBe(6 * 50 * 2)
+    expect(ps.filter(p => p.set !== 'slopes').length).toBe(6 * 50 * 2)
     for (const p of ps) {
       expect(p.h.length).toBe(p.cols * p.rows)
       expect(p.h.every(v => v >= 0 && v <= p.maxH)).toBe(true)
@@ -44,4 +45,27 @@ describe('puzzles.json', () => {
     const unfair = file.puzzles.filter(p => !fairPicture(new HeightMap(p.cols, p.rows, p.h))).map(p => p.id)
     expect(unfair).toEqual([])
   })
+})
+
+describe('Slopes set (round 4)', () => {
+  const now: PuzzleFile = JSON.parse(readFileSync('public/puzzles.json', 'utf8'))
+  const before: PuzzleFile = JSON.parse(readFileSync('tests/fixtures/puzzles-r3.json', 'utf8'))
+  const slopes = now.puzzles.filter(p => p.set === 'slopes')
+  it('every older puzzle is unchanged', () => {
+    expect(now.puzzles.filter(p => p.set !== 'slopes')).toEqual(before.puzzles)
+  })
+  it('25 fair, varied puzzles with ramps', () => {
+    expect(slopes.map(p => p.id)).toEqual(Array.from({ length: 25 }, (_, i) => `SL-${String(i + 1).padStart(3, '0')}`))
+    for (const p of slopes) {
+      const s = entryShape(p)
+      expect([[3, 3], [3, 4], [4, 3]], p.id).toContainEqual([p.cols, p.rows])
+      expect(p.maxH, p.id).toBe(3)
+      expect(p.ramps!.length, p.id).toBeGreaterThan(0)
+      expect(validShape(s, 3), p.id).toBe(true)
+      expect(fairShape(s, 3), p.id).toBe(true)
+    }
+    for (let i = 0; i < slopes.length; i++) for (let j = 0; j < i; j++)
+      expect(shapeDistance(entryShape(slopes[i]), entryShape(slopes[j])), slopes[i].id + ' ' + slopes[j].id).toBeGreaterThanOrEqual(3)
+  })
+  it('the file stays small', () => expect(readFileSync('public/puzzles.json').length).toBeLessThan(150_000))
 })
