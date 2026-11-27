@@ -93,11 +93,3 @@ describe('drawing', () => {
   })
 })
 
-describe('diagonals (round 3)', () => {
-  it('unitSegments splits a diagonal into one-cell pieces; other odd steps still fail', async () => {
-    const { unitSegments, segKey } = await import('../../src/core/geometry')
-    expect(unitSegments({ a: { t: 0, m: 0 }, b: { t: 2, m: 2 } })).toEqual(['0:0|1:1', '1:1|2:2'])
-    expect(unitSegments({ a: { t: 0, m: 0 }, b: { t: 2, m: -1 } })).toEqual(['0:0|2:-1'])
-    expect(() => segKey({ t: 0, m: 0 }, { t: 2, m: 0 })).toThrow()
-  })
-})

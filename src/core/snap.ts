@@ -1,4 +1,4 @@
-import { DIAG_DIRS, type GPt, type Line, type Pt } from './geometry'
+import { type GPt, type Line, type Pt } from './geometry'
 
 const S = Math.sqrt(3) / 2
 type UV = { u: number; v: number }
@@ -20,8 +20,8 @@ function snapFrom(a: Pt, q: UV, dirs: readonly Pt[] = DIRS): Pt {
   return best
 }
 
-export function snapDragIso(start: UV, end: UV, diagonals = false): Line | null {
-  const a = nearest(start), b = snapFrom(a, end, diagonals ? [...DIRS, ...DIAG_DIRS] : DIRS)
+export function snapDragIso(start: UV, end: UV): Line | null {
+  const a = nearest(start), b = snapFrom(a, end)
   return a.t === b.t && a.m === b.m ? null : { a, b }
 }
 

@@ -88,7 +88,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   function preview(s: NonNullable<typeof stroke>, p: UV) {
     gPrev.replaceChildren()
     if (s.tool === 'line') {
-      const l = snapDragIso(s.start, p, o.diagonals)
+      const l = snapDragIso(s.start, p)
       if (l) { const [[x1, y1], [x2, y2]] = [uv(l.a), uv(l.b)]; mk('line', { x1, y1, x2, y2 }, gPrev) }
     } else mk('polyline', { points: s.pts.map(q => q.u + ',' + q.v).join(' ') }, gPrev)
   }
@@ -116,7 +116,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       pending = new Set()
       cancel()
       if (!s) return
-      if (s.tool === 'line') { const l = snapDragIso(s.start, p, o.diagonals); if (l) editor.addLines([l]) }
+      if (s.tool === 'line') { const l = snapDragIso(s.start, p); if (l) editor.addLines([l]) }
       else if (s.tool === 'freehand') editor.addLines(snapFreehandIso([...s.pts, p]))
       else if (s.tool === 'fill') editor.fill(triAt(p.u, p.v), o.colour())
       else if (erased.size) for (const k of erased) editor.erase(k)

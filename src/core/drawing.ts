@@ -1,4 +1,4 @@
-import { segEnds, triEdges, triNeighbours, unitSegments, type Line, type SegKey, type TriKey } from './geometry'
+import { segEnds, triEdges, triNeighbours, linePieces, type Line, type SegKey, type TriKey } from './geometry'
 
 export type Drawing = { lines: SegKey[]; fills: Record<TriKey, number>; name?: string }
 export type Bounds = { t0: number; t1: number; v0: number; v1: number }
@@ -28,7 +28,7 @@ export class DrawingEditor {
   addLines(ls: Line[]) {
     const set = new Set(this.cur.lines)
     const n = set.size
-    for (const l of ls) for (const s of unitSegments(l)) set.add(s)
+    for (const l of ls) for (const s of linePieces(l)) set.add(s)
     if (set.size !== n) this.commit({ lines: [...set].sort(), fills: { ...this.cur.fills } })
   }
 

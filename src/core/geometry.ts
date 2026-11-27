@@ -1,5 +1,6 @@
 // Isometric lattice: point (t, m) has screen u = t*S, v = m + t/2 (v up). Ported from reference/index.html.
-export type Pt = { t: number; m: number }
+/** Exact point: the real coordinates are t + rt·√2 and m + rm·√2 (rt, rm only for the 45° points of arcs). */
+export type Pt = { t: number; m: number; rt?: number; rm?: number }
 export type SegKey = string
 export type TriKey = string
 export type Line = { a: Pt; b: Pt }
@@ -7,35 +8,47 @@ export type GPt = { x: number; y: number }
 
 const S = Math.sqrt(3) / 2
 export const ISO_DIRS: readonly Pt[] = [{ t: 0, m: 1 }, { t: 1, m: 0 }, { t: 1, m: -1 }]
-/** Long diagonals of one rhombus cell (screen 60°, 0°, -60°): Draw mode only. */
-export const DIAG_DIRS: readonly Pt[] = [{ t: 1, m: 1 }, { t: 2, m: -1 }, { t: 1, m: -2 }]
 
 export const proj = (x: number, y: number, z: number): Pt => ({ t: x - y, m: y + z })
 
-const ptKey = (p: Pt) => p.t + ':' + p.m
-const isDir = (dt: number, dm: number, dirs = ISO_DIRS) => dirs.some(d => (d.t === dt && d.m === dm) || (d.t === -dt && d.m === -dm))
+const rational = (p: Pt) => !p.rt && !p.rm
+export const ptKey = (p: Pt) => (rational(p) ? p.t + ':' + p.m : `${p.t}~${p.rt ?? 0}:${p.m}~${p.rm ?? 0}`)
+export const samePt = (a: Pt, b: Pt) => ptKey(a) === ptKey(b)
+export function toUV(p: Pt): [number, number] {
+  const t = p.t + (p.rt ?? 0) * Math.SQRT2, m = p.m + (p.rm ?? 0) * Math.SQRT2
+  return [t * S, m + t / 2]
+}
 
 export function segKey(p: Pt, q: Pt): SegKey {
-  if (!isDir(q.t - p.t, q.m - p.m) && !isDir(q.t - p.t, q.m - p.m, DIAG_DIRS)) throw new Error('not a unit isometric segment')
   const A = ptKey(p), B = ptKey(q)
+  if (A === B) throw new Error('a segment needs two different points')
   return A < B ? A + '|' + B : B + '|' + A
 }
 
-const parsePt = (s: string): Pt => { const [t, m] = s.split(':').map(Number); return { t, m } }
+function parsePt(s: string): Pt {
+  const [t, m] = s.split(':')
+  if (!t.includes('~')) return { t: +t, m: +m }
+  const [ta, tb] = t.split('~').map(Number), [ma, mb] = m.split('~').map(Number)
+  return { t: ta, m: ma, rt: tb, rm: mb }
+}
 export const segEnds = (k: SegKey): [Pt, Pt] => { const [a, b] = k.split('|'); return [parsePt(a), parsePt(b)] }
 
-export function unitSegments({ a, b }: Line): SegKey[] {
-  const dt = b.t - a.t, dm = b.m - a.m, n = Math.max(Math.abs(dt), Math.abs(dm))
-  if (!n) return []
-  for (const d of DIAG_DIRS) for (const sg of [1, -1]) { // a diagonal: k whole cells along one long diagonal
-    const k = dt / (d.t * sg)
-    if (Number.isInteger(k) && k > 0 && dm === k * d.m * sg)
-      return Array.from({ length: k }, (_, i) => segKey({ t: a.t + d.t * sg * i, m: a.m + d.m * sg * i }, { t: a.t + d.t * sg * (i + 1), m: a.m + d.m * sg * (i + 1) }))
+const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : Math.abs(a))
+
+/** Drawn line → stored pieces, split at every lattice point on it (so unit and round 3 diagonal keys stay as they were). */
+export function linePieces({ a, b }: Line): SegKey[] {
+  if (samePt(a, b)) return []
+  const half = (p: Pt) => rational(p) && Number.isInteger(2 * p.t) && Number.isInteger(2 * p.m)
+  // shortcut: a line with a √2 end is not split at points it passes through; upgrade if an answer ever needs such a line in two parts
+  if (!half(a) || !half(b)) return [segKey(a, b)]
+  const A = [2 * a.t, 2 * a.m], D = [2 * (b.t - a.t), 2 * (b.m - a.m)], g = gcd(D[0], D[1])
+  const cuts: Pt[] = [a]
+  for (let i = 1; i < g; i++) {
+    const T = A[0] + D[0] / g * i, M = A[1] + D[1] / g * i
+    if (T % 2 === 0 && M % 2 === 0) cuts.push({ t: T / 2 + 0, m: M / 2 + 0 })
   }
-  const st = dt / n, sm = dm / n
-  if (!isDir(st, sm)) return []
-  return Array.from({ length: n }, (_, i) =>
-    segKey({ t: a.t + st * i, m: a.m + sm * i }, { t: a.t + st * (i + 1), m: a.m + sm * (i + 1) }))
+  cuts.push(b)
+  return cuts.slice(1).map((q, i) => segKey(cuts[i], q))
 }
 
 export function triAt(u: number, v: number): TriKey {

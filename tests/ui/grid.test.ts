@@ -219,18 +219,6 @@ describe('iso grid', () => {
     expect(Object.values(m.editor.drawing.fills)).toEqual([1])
     expect(el.querySelector('.g-fills polygon')?.getAttribute('style')).toContain('var(--tone-1)')
   })
-  it('draws a diagonal only with diagonals on, and erases it', () => {
-    const m = mount({ diagonals: true }), v = m.grid.getView()
-    drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 1, m: 1 })])
-    expect(m.editor.drawing.lines).toEqual(['0:0|1:1'])
-    m.state.tool = 'erase'
-    drag(el, [toPx(v, { t: 0.5, m: 0.5 })])
-    expect(m.editor.drawing.lines).toEqual([])
-    el.replaceChildren()
-    const off = mount(), w = off.grid.getView()
-    drag(el, [toPx(w, { t: 0, m: 0 }), toPx(w, { t: 1, m: 1 })])
-    expect(off.editor.drawing.lines).not.toContain('0:0|1:1')
-  })
   it('a saved diagonal renders', () => {
     mount({ lines: ['0:0|1:1'] })
     expect(el.querySelectorAll('.g-lines line')).toHaveLength(1)
