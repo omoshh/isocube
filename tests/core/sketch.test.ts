@@ -37,4 +37,9 @@ describe('sketch: iso edges', () => {
     const e = shapeEdges({ hm: new HeightMap(3, 2, [0, 0, 0, 0, 2, 0]), ramps: [{ x: 0, y: 1, len: 2, dir: 'E' }] })
     expect(e.partial).toBe(true)
   })
+  it('clip: a half-hidden slanted edge is drawn only where it shows', () => {
+    const e = shapeEdges({ hm: new HeightMap(3, 2, [0, 0, 0, 0, 2, 0]), ramps: [{ x: 0, y: 1, len: 2, dir: 'E' }] }, { clip: true })
+    expect(e.shape).not.toContain('-1:1|1:2') // the whole piece
+    expect(e.shape).toContain('-1:1|0:1.5') // up to where the column hides it
+  })
 })

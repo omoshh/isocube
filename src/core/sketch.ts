@@ -2,11 +2,13 @@
 // Every projected face edge is split into lattice pieces; a piece is a line when the nearest faces just left and just
 // right of it differ in plane (or one side shows nothing), a seam when they differ but share a plane.
 import { inPoly, type P2 } from './areas'
-import { linePieces, type SegKey } from './geometry'
+import { linePieces, segKey, type SegKey } from './geometry'
 import type { EdgeSet } from './shape'
 import { ISO, shapeFaces, type Face3, type P3, type Shape } from './solid'
 
-export type Sketch = { lines: Set<string>; seams: Set<string>; partial: boolean; partials: Set<string>; owners: Set<string>; covered: Map<string, boolean> }
+export type Sketch = { lines: Set<string>; seams: Set<string>; partial: boolean; partials: Set<string>; owners: Set<string>; covered: Map<string, boolean>
+  /** For each partly hidden line piece: the parts (from, to as fractions 0–1) where it shows as a line. */
+  runs: Map<string, [number, number][]> }
 
 const FRACTIONS = [0.11, 0.29, 0.47, 0.63, 0.87] // avoid ½, ⅓, ¼: edges of other faces often cross there
 const EPS = 1e-4
@@ -44,10 +46,14 @@ export function sketch(faces: Face3[], to2: (p: P3) => P2, lift: (q: P2) => P3, 
   }
 
   const lines = new Set<string>(), seams = new Set<string>(), owners = new Set<string>(), covered = new Map<string, boolean>()
-  const partials = new Set<string>()
+  const partials = new Set<string>(), runs = new Map<string, [number, number][]>()
   for (const k of pieces) {
     const [a, b] = ends(k), d: P2 = [b[0] - a[0], b[1] - a[1]], len = Math.hypot(d[0], d[1])
     const o: P2 = [-d[1] / len * EPS, d[0] / len * EPS]
+    const isLine = (t: number) => {
+      const c: P2 = [a[0] + d[0] * t, a[1] + d[1] * t], L = nearest([c[0] + o[0], c[1] + o[1]]), R = nearest([c[0] - o[0], c[1] - o[1]])
+      return L !== R && !(L && R && L.plane === R.plane)
+    }
     const kinds = new Set<string>()
     let both = true
     for (const t of FRACTIONS) {
@@ -59,16 +65,39 @@ export function sketch(faces: Face3[], to2: (p: P3) => P2, lift: (q: P2) => P3, 
       kinds.add(!L && !R ? '' : L === R ? '' : L && R && L.plane === R.plane ? 'seam' : 'line')
     }
     covered.set(k, both)
-    if (kinds.size > 1) partials.add(k)
+    if (kinds.size > 1) {
+      partials.add(k)
+      // where the piece shows: 48 samples, each change of state found by bisection
+      const N = 48, at = (i: number) => (i + 0.5) / N, rs: [number, number][] = []
+      let start = isLine(at(0)) ? 0 : -1
+      for (let i = 1; i < N; i++) {
+        const prev = start >= 0, now = isLine(at(i))
+        if (prev === now) continue
+        let lo = at(i - 1), hi = at(i)
+        for (let j = 0; j < 30; j++) { const m = (lo + hi) / 2; if (isLine(m) === prev) lo = m; else hi = m }
+        if (prev) { rs.push([start, (lo + hi) / 2]); start = -1 } else start = (lo + hi) / 2
+      }
+      if (start >= 0) rs.push([start, 1])
+      runs.set(k, rs)
+    }
     if (kinds.has('line')) lines.add(k)
     else if (kinds.has('seam')) seams.add(k)
   }
-  return { lines, seams, partial: partials.size > 0, partials, owners, covered }
+  return { lines, seams, partial: partials.size > 0, partials, owners, covered, runs }
 }
 
-/** The iso picture of a shape (front view of the round), with lattice keys like `computeEdges`. */
-export function shapeEdges(s: Shape): EdgeSet & { partial: boolean; owners: Set<string> } {
+/** The iso picture of a shape (front view of the round), with lattice keys like `computeEdges`. With `clip`, a partly
+ *  hidden line becomes the keys of its visible parts (display only: the back picture; fair front pictures have none). */
+export function shapeEdges(s: Shape, o: { clip?: boolean } = {}): EdgeSet & { partial: boolean; owners: Set<string> } {
   const k = sketch(shapeFaces(s, ISO), ([x, y, z]) => [x - y, y + z], ([t, m]) => [t, 0, m], [1, 1, -1],
     (a, b) => linePieces({ a: { t: a[0], m: a[1] }, b: { t: b[0], m: b[1] } }) as SegKey[])
-  return { shape: k.lines, seams: k.seams, partial: k.partial, owners: k.owners }
+  const shape = new Set(k.lines)
+  if (o.clip) for (const [piece, rs] of k.runs) {
+    shape.delete(piece)
+    // the side samples sit EPS off the line, so the found ends are a hair off: snap to 1/120 (crossings here have small denominators)
+    const [a, b] = ends(piece), r6 = (x: number) => Math.round(x * 120) / 120 + 0
+    const pt = (t: number) => ({ t: r6(a[0] + (b[0] - a[0]) * t), m: r6(a[1] + (b[1] - a[1]) * t) })
+    for (const [f, t] of rs) shape.add(segKey(pt(f), pt(t)))
+  }
+  return { shape, seams: k.seams, partial: k.partial, owners: k.owners }
 }

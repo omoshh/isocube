@@ -54,7 +54,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const hm = new HeightMap(e.cols, e.rows, e.h), shape = { hm, ramps: fromEntryRamps(e.ramps ?? []) }
   // cube-only puzzles keep the original code; shapes with ramps use the general sketch
   const answer = shape.ramps.length ? shapeEdges(shape) : computeEdges(hm)
-  const backEdges = shape.ramps.length ? shapeEdges(rotateShape(shape)).shape : computeEdges(rotate180(hm)).shape
+  const backEdges = shape.ramps.length ? shapeEdges(rotateShape(shape), { clip: true }).shape : computeEdges(rotate180(hm)).shape
   // the guide box (cube origin at 0,0,0) plus margin, as on the reference page
   const bounds: Bounds = { t0: -e.rows - 3, t1: e.cols + 3, v0: -2.6, v1: (e.cols + e.rows) / 2 + e.maxH + 1.5 }
   const saved = await loadDrawing(key)
