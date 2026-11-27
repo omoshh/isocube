@@ -1,4 +1,5 @@
-import { proj, segEnds, triAt, triEdges, type Pt, type SegKey } from '../../core/geometry'
+import { proj, segEnds, toUV, triAt, triEdges, type Pt, type SegKey } from '../../core/geometry'
+import { arcPolyline, isArcKey } from '../../core/arcs'
 import { snapDragIso, snapFreehandIso } from '../../core/snap'
 import type { Bounds, DrawingEditor } from '../../core/drawing'
 import type { CheckResult } from '../../core/checker'
@@ -26,7 +27,7 @@ export type IsoGridOpts = {
 
 const S = Math.sqrt(3) / 2
 const ERASE_DIST = 0.4 // grid steps
-const uv = (p: Pt): [number, number] => [p.t * S, p.m + p.t / 2]
+const uv = toUV
 /** Fill colour index → CSS colour: 1–3 are the shading tones, 4+ the draw-mode palette (tokens defined by Task 17). */
 export const fillColour = (n: number) => (n <= 3 ? `var(--tone-${n})` : `var(--palette-${n})`)
 
@@ -43,9 +44,12 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   let stroke: { tool: Tool; start: UV; pts: UV[] } | null = null
   let pending = new Set<SegKey>() // erased during the current stroke; committed on end so a pinch can cancel it
 
-  const seg = (k: SegKey, parent: Element, cls?: string) => {
+  /** A line for a SegKey, a polyline for an ArcKey. */
+  const drawKey = (k: string, parent: Element, cls?: string) => {
+    const c: Record<string, string> = cls ? { class: cls } : {}
+    if (isArcKey(k)) { mk('polyline', { points: arcPolyline(k).join(' '), ...c }, parent); return }
     const [[x1, y1], [x2, y2]] = segEnds(k).map(uv)
-    mk('line', { x1, y1, x2, y2, ...(cls ? { class: cls } : {}) }, parent)
+    mk('line', { x1, y1, x2, y2, ...c }, parent)
   }
 
   function drawGrid() {
@@ -66,15 +70,15 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       const col = fillColour(c)
       mk('polygon', { points: [...vs.values()].join(' '), style: `fill:${col};stroke:${col}` }, gFills)
     }
-    for (const k of d.lines) if (!pending.has(k)) seg(k, gLines)
+    for (const k of [...d.lines, ...d.arcs!]) if (!pending.has(k)) drawKey(k, gLines)
   }
 
   function drawOverlay() {
     gAns.replaceChildren(); gCheck.replaceChildren()
-    if (overlay?.kind === 'answer') for (const k of overlay.edges) seg(k, gAns)
+    if (overlay?.kind === 'answer') for (const k of overlay.edges) drawKey(k, gAns)
     if (overlay?.kind === 'check') {
-      for (const k of overlay.result.missing) seg(k, gCheck, 'g-missing')
-      for (const k of overlay.result.mistakes) seg(k, gCheck, 'g-mistake')
+      for (const k of overlay.result.missing) drawKey(k, gCheck, 'g-missing')
+      for (const k of overlay.result.mistakes) drawKey(k, gCheck, 'g-mistake')
     }
   }
 

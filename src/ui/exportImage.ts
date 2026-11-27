@@ -1,10 +1,10 @@
-import { segEnds, triEdges, type SegKey } from '../core/geometry'
+import { segEnds, toUV, triEdges, type SegKey } from '../core/geometry'
+import { arcPolyline } from '../core/arcs'
 import type { Drawing } from '../core/drawing'
 import type { View } from './grid/transform'
 import { fillColour } from './grid/IsoGrid'
 
-const S = Math.sqrt(3) / 2
-const uv = (p: { t: number; m: number }): [number, number] => [p.t * S, p.m + p.t / 2]
+const uv = toUV
 
 /** Standalone SVG of the drawing at `view.scale` px per grid unit. Colours are resolved now from the root's computed CSS (R5). */
 export function exportSvg(d: Drawing, view: View): string {
@@ -15,7 +15,8 @@ export function exportSvg(d: Drawing, view: View): string {
     pts: [...new Map(triEdges(k).flatMap(segEnds).map(p => [p.t + ':' + p.m, uv(p)])).values()], col: resolve(fillColour(c)),
   }))
   const segs = d.lines.map((k: SegKey) => segEnds(k).map(uv))
-  const all = [...tris.flatMap(t => t.pts), ...segs.flat()]
+  const arcs = (d.arcs ?? []).map(k => arcPolyline(k))
+  const all = [...tris.flatMap(t => t.pts), ...segs.flat(), ...arcs.flat()]
   const us = all.map(p => p[0]), vs = all.map(p => p[1])
   const u0 = Math.min(0, ...us) - 1, v1 = Math.max(0, ...vs) + 1
   const u1 = us.length ? Math.max(...us) + 1 : 1, v0 = vs.length ? Math.min(...vs) - 1 : -1
@@ -29,6 +30,7 @@ export function exportSvg(d: Drawing, view: View): string {
       const [x1, y1] = f(a).split(','), [x2, y2] = f(b).split(',')
       return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ink}" stroke-width="${sw}" stroke-linecap="round"/>`
     }),
+    ...arcs.map(ps => `<polyline points="${ps.map(f).join(' ')}" fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`),
   ]
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${body.join('')}</svg>`
 }

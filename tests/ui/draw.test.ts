@@ -80,6 +80,12 @@ describe('exportSvg', () => {
     expect(exportSvg(d, view)).toContain('stroke-width="3"')
   })
 
+  it('svg contains arcs, stroked and unfilled', () => {
+    const svg = exportSvg({ lines: [], arcs: ['Az|0:0|1|0'], fills: {} }, view)
+    expect(svg.match(/<polyline /g)).toHaveLength(1)
+    expect(svg).toContain('fill="none"')
+  })
+
   it('svgStandalone', () => {
     const svg = exportSvg(d, view)
     expect(svg).not.toContain('var(')

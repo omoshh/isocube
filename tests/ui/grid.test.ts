@@ -219,6 +219,13 @@ describe('iso grid', () => {
     expect(Object.values(m.editor.drawing.fills)).toEqual([1])
     expect(el.querySelector('.g-fills polygon')?.getAttribute('style')).toContain('var(--tone-1)')
   })
+  it('a saved arc renders as a polyline; a check mark on an arc too', () => {
+    const editor = new DrawingEditor({ lines: [], arcs: ['Az|0:0|1|0'], fills: {} }, bounds, () => {})
+    const grid = createIsoGrid(el, { bounds, arrows: false, editor, tool: () => 'line', colour: () => 1, penOnly: () => false })
+    expect(el.querySelectorAll('.g-lines polyline')).toHaveLength(1)
+    grid.setOverlay({ kind: 'check', result: { missing: new Set(), mistakes: new Set(['Az|0:0|1|0']), correct: false } })
+    expect(el.querySelectorAll('.g-check polyline.g-mistake')).toHaveLength(1)
+  })
   it('a saved diagonal renders', () => {
     mount({ lines: ['0:0|1:1'] })
     expect(el.querySelectorAll('.g-lines line')).toHaveLength(1)
