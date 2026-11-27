@@ -1,7 +1,7 @@
 // Top, front and side views of shapes with ramps, in the screen coordinates `viewLines` uses
 // (top: (x, rows − y); front: (x, Z − z); side: (rows − y, Z − z)). Cube-only shapes give exactly `views(hm)`.
 import type { P2 } from './areas'
-import { sketch } from './sketch'
+import { sketch, type Sketch } from './sketch'
 import { FRONT, SIDE, TOP, shapeFaces, type P3, type Shape } from './solid'
 import type { ViewSet } from './views'
 
@@ -31,12 +31,18 @@ function projs(s: Shape, Z: number): Record<keyof ViewSet, Proj> {
 
 export type ShapeViews = ViewSet & { partial: boolean; covered: Record<keyof ViewSet, Map<string, boolean>> }
 
+/** One view's sketch; line keys of pieces seen only in part get `#p`. */
+export function viewSketch(s: Shape, Z: number, v: keyof ViewSet): Sketch & { keys: Set<string> } {
+  const p = projs(s, Z)[v], k = sketch(shapeFaces(s, p.view), p.to2, p.lift, p.D, viewKey)
+  return { ...k, keys: new Set([...k.lines].map(x => (k.partials.has(x) ? x + '#p' : x))) }
+}
+
 /** The 3 views; a piece seen only in part is keyed `<piece>#p`. */
 export function shapeViews(s: Shape, Z: number): ShapeViews {
-  const ps = projs(s, Z), out = { partial: false, covered: {} } as ShapeViews
+  const out = { partial: false, covered: {} } as ShapeViews
   for (const v of ['top', 'front', 'side'] as const) {
-    const p = ps[v], k = sketch(shapeFaces(s, p.view), p.to2, p.lift, p.D, viewKey)
-    out[v] = new Set([...k.lines].map(x => (k.partials.has(x) ? x + '#p' : x)))
+    const k = viewSketch(s, Z, v)
+    out[v] = k.keys
     out.covered[v] = k.covered
     if (k.partial) out.partial = true
   }

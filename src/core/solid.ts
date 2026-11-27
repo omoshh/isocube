@@ -1,6 +1,5 @@
 // Shapes made of cube stacks and ramps (round 4), as 3D faces for the general sketch.
 import { HeightMap } from './shape'
-import { rotate180 } from './visibility'
 
 export type Dir = 'N' | 'E' | 'S' | 'W'
 /** (x, y) is the low-end cell (cube coordinates: x = column, y = rows − 1 − row); the ramp covers `len` cells in `dir`. */
@@ -50,15 +49,20 @@ function axisPlane(n: P3, p: P3): string {
   return (n[0] < 0 ? 'side' : 'rside') + p[0]
 }
 
+/** Plane key of a ramp's slanted face: ramps with the same slope, low edge and base share one plane. */
+export function slopePlane(r: Ramp, b: number): string {
+  const low = r.dir === 'E' ? r.x : r.dir === 'W' ? r.x + 1 : r.dir === 'N' ? r.y : r.y + 1
+  return `s:${r.dir}:${r.len}:${low}:${b}`
+}
+
 function rampFaces(r: Ramp, i: number, b: number): { pts: P3[]; plane: string; owner: string; n: P3 }[] {
   // (a, w, z): a = distance up the slope from the low edge, w = across it
   const L = r.len
   const at = ([a, w, z]: P3): P3 => r.dir === 'E' ? [r.x + a, r.y + w, z] : r.dir === 'W' ? [r.x + 1 - a, r.y + w, z]
     : r.dir === 'N' ? [r.x + w, r.y + a, z] : [r.x + w, r.y + 1 - a, z]
-  const low = r.dir === 'E' ? r.x : r.dir === 'W' ? r.x + 1 : r.dir === 'N' ? r.y : r.y + 1
   const centre = at([L * 2 / 3, 0.5, b + 1 / 3])
   const raw: [P3[], string | null][] = [
-    [[[0, 0, b], [0, 1, b], [L, 1, b + 1], [L, 0, b + 1]], `s:${r.dir}:${L}:${low}:${b}`],
+    [[[0, 0, b], [0, 1, b], [L, 1, b + 1], [L, 0, b + 1]], slopePlane(r, b)],
     [[[0, 0, b], [L, 0, b], [L, 0, b + 1]], null],
     [[[0, 1, b], [L, 1, b], [L, 1, b + 1]], null],
     [[[L, 0, b], [L, 1, b], [L, 1, b + 1], [L, 0, b + 1]], null],
@@ -96,7 +100,7 @@ export function shapeFaces(s: Shape, view: P3): Face3[] {
 export function rotateShape(s: Shape): Shape {
   const { cols, rows } = s.hm
   return {
-    hm: rotate180(s.hm),
+    hm: new HeightMap(cols, rows, [...s.hm.h].reverse()), // as rotate180 (kept here: visibility imports this file)
     ramps: s.ramps.map(r => ({ x: cols - 1 - r.x, y: rows - 1 - r.y, len: r.len, dir: FLIP[r.dir] })),
   }
 }
