@@ -85,7 +85,7 @@ export async function mountDrawing(root: HTMLElement, id: string) {
   root.append(el)
   sync(); bar.setHistory(editor.canUndo, editor.canRedo)
   const grid = createIsoGrid(gridEl, {
-    bounds, arrows: false, free: { half: false }, editor, tool: () => tool, colour: () => colour, penOnly: () => penOnly,
+    bounds, arrows: false, free: { half: false, mids: true }, editor, tool: () => tool, colour: () => colour, penOnly: () => penOnly,
   })
   grid.zoomBy(DRAW_SCALE / grid.getView().scale)
   return { grid, destroy() { grid.destroy(); el.remove() } }

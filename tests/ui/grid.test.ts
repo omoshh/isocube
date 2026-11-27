@@ -42,7 +42,7 @@ beforeEach(() => {
 afterEach(() => { el.remove() })
 
 const bounds = { t0: -6, t1: 6, v0: -2.6, v1: 6.5 }
-function mount(o: { tool?: Tool; pen?: boolean; free?: { half: boolean }; lines?: string[]; arcs?: string[] } = {}) {
+function mount(o: { tool?: Tool; pen?: boolean; free?: { half: boolean; mids?: boolean }; lines?: string[]; arcs?: string[] } = {}) {
   const editor = new DrawingEditor({ lines: o.lines ?? [], arcs: o.arcs ?? [], fills: {} }, bounds, () => {})
   const state = { tool: o.tool ?? 'line' as Tool, pen: o.pen ?? false }
   const grid = createIsoGrid(el, {
@@ -317,8 +317,18 @@ describe('iso grid', () => {
       expect(m.editor.drawing.areas).toEqual([])
       expect(m.editor.drawing.lines).toHaveLength(8)
     })
-    it('a drawn line gets a snap dot in its middle', () => {
+    it('Views-style grid (no mids): no snap dot in the middle of a drawn line', () => {
       const m = mount({ free: { half: false } }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 0, m: 1 })])
+      expect(el.querySelectorAll('.g-snap circle')).toHaveLength(0)
+    })
+    it('a tap on a circle centre with a little jitter is still a tap', () => {
+      const m = mount({ free: { half: false }, tool: 'arc', arcs: ['Az|0:0|1|0'] }), v = m.grid.getView()
+      drag(el, [uvPx(v, [0, 0]), uvPx(v, [0.15, 0.1])])
+      expect(el.querySelectorAll('.g-handle circle.first')).toHaveLength(1)
+    })
+    it('a drawn line gets a snap dot in its middle', () => {
+      const m = mount({ free: { half: false, mids: true } }), v = m.grid.getView()
       drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 0, m: 1 })])
       expect(el.querySelectorAll('.g-snap circle')).toHaveLength(1)
       drag(el, [toPx(v, { t: 1, m: 0 }), toPx(v, { t: 0.05, m: 0.45 })])

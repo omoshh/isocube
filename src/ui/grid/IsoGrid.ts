@@ -10,8 +10,9 @@ import { createSurface, mk, type UV } from './gestures'
 export type Tool = 'line' | 'arc' | 'freehand' | 'fill' | 'erase'
 export type Overlay = { kind: 'answer'; edges: Set<SegKey> } | { kind: 'check'; result: CheckResult } | null
 export type IsoGridOpts = {
-  /** Free line tool (any snap point to any snap point) and the arc tool; `half` adds edge midpoints as snap points. Unset: 3-direction lines (Shadows). */
-  free?: { half: boolean }
+  /** Free line tool (any snap point to any snap point) and the arc tool; `half` adds edge midpoints as snap points,
+   *  `mids` the middles of drawn lines (Draw only: in Views a half point is always a mistake). Unset: 3-direction lines (Shadows). */
+  free?: { half: boolean; mids?: boolean }
   bounds: Bounds
   guide?: { cols: number; rows: number; maxH: number }
   arrows: boolean
@@ -53,7 +54,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   let arcFirst: Pt | null = null // arc tool: the first tapped point
   let lastArc: { p: Pt; q: Pt; arc: Arc; added: ArcKey[] } | null = null // the arc whose dot shows
 
-  const extraPoints = () => { const d = editor.drawing; return [...arcSnapPoints(d.arcs!), ...lineMidpoints(d.lines)] }
+  const extraPoints = () => { const d = editor.drawing; return [...arcSnapPoints(d.arcs!), ...(o.free?.mids ? lineMidpoints(d.lines) : [])] }
   const snapOpts = (): SnapOpts => ({ half: !!o.free?.half, extra: extraPoints() })
   const showSnap = () => !!o.free && (o.tool() === 'line' || o.tool() === 'arc')
 
@@ -202,7 +203,8 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
         if (!o.free) return
         // a dot or centre stroke that does not move is a tap (both often sit on a snap point)
         const still = Math.hypot(p.u - s.start.u, p.v - s.start.v) < 0.1
-        if (s.ext && !still) { const x = extrusion(s, p); if (x) editor.add(x.lines, x.arcs) }
+        const x = s.ext && !still && extrusion(s, p) // a centre stroke too short for a whole cell is a tap
+        if (x) editor.add(x.lines, x.arcs)
         else if (s.dot && still) { lastArc = null; tapArc(p) }
         else if (!s.dot) tapArc(p)
         else { const a = arcNear(p); if (!sameArc(a, lastArc!.arc)) lastArc = { ...lastArc!, arc: a, added: editor.replaceArc(lastArc!.added, a) } }
