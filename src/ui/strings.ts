@@ -12,6 +12,7 @@ export const S = {
   levels: 'Levels',
   level: (n: number) => `Level ${n}`,
   endless: 'Endless',
+  slopes: 'Slopes', slopesSize: '3×3–3×4',
   endlessSub: (cols: number, rows: number, h: number) => `Endless, ${cols}×${rows}×${h}`,
   generating: 'Generating…', generateFailed: 'Could not generate puzzles.', importFailed: 'Could not read the file.', cancel: 'Cancel',
   puzzle: (n: number, total: number, cols: number, rows: number, h: number) =>

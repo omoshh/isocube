@@ -4,6 +4,8 @@ import { DrawingEditor, type Bounds } from '../../core/drawing'
 import type { PuzzleFile } from '../../core/generator'
 import { computeEdges, HeightMap } from '../../core/shape'
 import { rotate180 } from '../../core/visibility'
+import { shapeEdges } from '../../core/sketch'
+import { fromEntryRamps, rotateShape, type EntryRamp } from '../../core/solid'
 import { turnButton } from '../shapePicture'
 import { createLives } from '../components/lives'
 import { createToolBar, FREE_TOOLS } from '../components/toolBar'
@@ -30,7 +32,7 @@ function iconBtn(label: string, paths: string, onclick: () => void) {
 }
 
 /** What the puzzle screen needs. `id` is the solved id, `key` the drawing key (also keys the saved zoom/pan). */
-export type Puzzle = { id: string; key: string; cols: number; rows: number; maxH: number; h: number[]; title: string; subtitle: string; nextRoute: string }
+export type Puzzle = { id: string; key: string; cols: number; rows: number; maxH: number; h: number[]; ramps?: EntryRamp[]; title: string; subtitle: string; nextRoute: string }
 
 /** #/views/<id>. `id` must exist in the file (the router checks). */
 export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string) {
@@ -39,8 +41,8 @@ export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string
   const idx = list.indexOf(e), next = list[idx + 1]
   void saveLast({ kind: 'views', level: e.level, n: idx + 1, route: '#/views/' + id })
   return mountPuzzle(root, {
-    id, key: 'views/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h,
-    title: S.level(e.level),
+    id, key: 'views/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h, ramps: e.ramps,
+    title: e.set === 'slopes' ? S.slopes : S.level(e.level),
     subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows, e.maxH),
     nextRoute: next ? '#/views/' + next.id : '#/levels/views',
   })
@@ -49,7 +51,10 @@ export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string
 /** The views puzzle screen for any puzzle: level sets and endless. */
 export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   const { id, key } = e
-  const hm = new HeightMap(e.cols, e.rows, e.h), answer = computeEdges(hm), backEdges = computeEdges(rotate180(hm)).shape
+  const hm = new HeightMap(e.cols, e.rows, e.h), shape = { hm, ramps: fromEntryRamps(e.ramps ?? []) }
+  // cube-only puzzles keep the original code; shapes with ramps use the general sketch
+  const answer = shape.ramps.length ? shapeEdges(shape) : computeEdges(hm)
+  const backEdges = shape.ramps.length ? shapeEdges(rotateShape(shape)).shape : computeEdges(rotate180(hm)).shape
   // the guide box (cube origin at 0,0,0) plus margin, as on the reference page
   const bounds: Bounds = { t0: -e.rows - 3, t1: e.cols + 3, v0: -2.6, v1: (e.cols + e.rows) / 2 + e.maxH + 1.5 }
   const saved = await loadDrawing(key)
@@ -122,7 +127,7 @@ export async function mountPuzzle(root: HTMLElement, e: Puzzle) {
   }
 
   const el = h('div', { class: 'screen vp' }, top,
-    h('div', { class: 'vp-body' }, createViewsPanel(hm, e.maxH), h('div', { class: 'vp-gridwrap' }, gridEl, zoom)),
+    h('div', { class: 'vp-body' }, createViewsPanel(hm, e.maxH, shape.ramps), h('div', { class: 'vp-gridwrap' }, gridEl, zoom)),
     h('div', { class: 'vp-counts' }, counts, lv.notice, h('span', { class: 'swatches' }, ...swatches)),
     bar.el,
     h('div', { class: 'action-row' }, ansBtn, checkBtn))

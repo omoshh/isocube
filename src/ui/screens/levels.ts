@@ -10,6 +10,7 @@ export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'vi
   const solved = new Set(progress.solved)
   const sid = (p: PuzzleEntry) => mode === 'reverse' ? 'R-' + p.id : mode === 'shadows' ? `S${p.level}-${p.id}` : p.id
   const lastLevel = last?.kind === mode ? last.level : undefined
+  const slopes = file.puzzles.filter(p => p.set === 'slopes')
   const tile = (data: Record<string, string>, name: string, size: string, list: PuzzleEntry[], level: number, endless?: string) => {
     const n = list.filter(p => solved.has(sid(p))).length
     const bar = h('span', { class: 'bar', 'aria-hidden': 'true' }, h('span', { style: `width:${Math.round((100 * n) / list.length)}%` }))
@@ -26,8 +27,10 @@ export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'vi
     createTopBar({ title: mode === 'reverse' ? S.reverse : mode === 'shadows' ? S.shadows : S.views, back: '/' }),
     h('p', { class: 'levels-hint', text: S.levelsHint }),
     h('main', { class: 'tiles' },
-      ...LEVELS.filter(L => mode !== 'shadows' || L.level <= 4).map(L => tile({ 'data-level': String(L.level) }, S.level(L.level), mode === 'shadows' ? S.lights[L.level - 1] : `${L.a}×${L.b}×${L.maxH}`,
-        file.puzzles.filter(p => p.set === (mode === 'reverse' ? 'reverse' : 'level') && p.level === L.level), L.level, mode === 'shadows' ? undefined : mode === 'reverse' ? `#/reverse/E${L.level}-new` : `#/endless/${L.level}/new`))))
+      ...LEVELS.filter(L => mode !== 'shadows' || L.level <= 4).flatMap(L => [tile({ 'data-level': String(L.level) }, S.level(L.level), mode === 'shadows' ? S.lights[L.level - 1] : `${L.a}×${L.b}×${L.maxH}`,
+        file.puzzles.filter(p => p.set === (mode === 'reverse' ? 'reverse' : 'level') && p.level === L.level), L.level, mode === 'shadows' ? undefined : mode === 'reverse' ? `#/reverse/E${L.level}-new` : `#/endless/${L.level}/new`),
+        // round 4: the Slopes set follows level 2 in Views (level 0 in the file and in "last played")
+        ...(mode === 'views' && L.level === 2 && slopes.length ? [tile({ 'data-set': 'slopes' }, S.slopes, S.slopesSize, slopes, 0)] : [])])))
   root.append(el)
   return { destroy: () => el.remove() }
 }

@@ -224,11 +224,40 @@ describe('router', () => {
     const stop = startRouter(root, file)
     await vi.waitFor(() => expect(root.textContent).toContain('not built yet'))
     navigate('/levels/views')
-    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(6))
+    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(7)) // 6 levels and Slopes
     expect(root.children.length).toBe(1)
     navigate('/views/nope')
     await vi.waitFor(() => expect(root.textContent).toContain('Puzzle not found'))
     stop()
     expect(root.children.length).toBe(0)
+  })
+})
+
+describe('Slopes set (round 4)', () => {
+  it('levels: a Slopes row after level 2 with 25 numbers', async () => {
+    const { levels } = await load()
+    const root = sized(412, 915)
+    await levels.mountLevels(root, file)
+    const tiles = [...root.querySelectorAll('.tile')]
+    const i = tiles.findIndex(t => t.getAttribute('data-set') === 'slopes')
+    expect(tiles[i - 1].getAttribute('data-level')).toBe('2')
+    expect(tiles[i].querySelectorAll('.nums a')).toHaveLength(25)
+    expect(tiles[i].textContent).toContain('Slopes')
+    expect(tiles[i].querySelector('.btn')).toBeNull() // no Endless on this row yet
+  })
+  it('SL-001: title, a slanted view line, and the drawn answer solves it', async () => {
+    const { puzzle, storage } = await load()
+    const { entryShape } = await import('../../src/core/generator')
+    const { shapeEdges } = await import('../../src/core/sketch')
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, file, 'SL-001')
+    expect(root.textContent).toContain('Slopes')
+    const slanted = [...root.querySelectorAll('.views .vline')].some(l => l.getAttribute('x1') !== l.getAttribute('x2') && l.getAttribute('y1') !== l.getAttribute('y2'))
+    expect(slanted).toBe(true)
+    const answer = shapeEdges(entryShape(file.puzzles.find(p => p.id === 'SL-001')!)).shape
+    s.editor.addLines([...answer].map(k => { const [a, b] = segEnds(k); return { a, b } }))
+    button(root, 'Check').click()
+    await vi.waitFor(async () => expect((await storage.loadProgress()).solved).toContain('SL-001'))
+    s.destroy()
   })
 })
