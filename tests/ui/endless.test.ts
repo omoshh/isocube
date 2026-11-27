@@ -233,6 +233,29 @@ describe('endless size specs (round 4)', () => {
     } finally { vi.useRealTimers() }
   })
 
+  it('givesUpAfterTimeLimit', async () => {
+    const { endless } = await load()
+    const f = fakeWorkers()
+    const root = sized()
+    location.hash = '#/endless/6x6x6/new'
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      const s = await endless.mountEndless(root, '6x6x6', 'new', f.make)
+      vi.advanceTimersByTime(endless.GIVE_UP_MS)
+      expect(f.all[0].terminated).toBe(true) // no more work on the phone
+      expect(root.textContent).toContain('No puzzle found at this size.')
+      expect(root.querySelector('a[href="#/levels/views"]')).toBeTruthy()
+      location.hash = '#/levels/views'
+      s.destroy()
+    } finally { vi.useRealTimers() }
+    // a fresh visit starts a new worker
+    location.hash = '#/endless/6x6x6/new'
+    const s2 = await endless.mountEndless(root, '6x6x6', 'new', f.make)
+    expect(f.all.length).toBe(2)
+    location.hash = '#/levels/views'
+    s2.destroy()
+  })
+
   it('oldLevelRouteNeverServesUsedSeed', async () => {
     const seeds = [41, 42, 43, 44, 45]
     vi.spyOn(crypto, 'getRandomValues').mockImplementation(a => { (a as Uint32Array)[0] = seeds.shift()!; return a })

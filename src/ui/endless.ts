@@ -111,6 +111,8 @@ const queues = new Map<string, EndlessQueue>()
 const made = new Map<string, Result>()
 /** After this long on "Generating…", suggest a smaller size (generation goes on). */
 export const SLOW_MS = 10_000
+/** After this long, stop the worker and say no puzzle was found (6×6×6 never finds one; the phone must not run hot forever). */
+export const GIVE_UP_MS = 60_000
 
 /**
  * #/endless/<job>/new (wait for the queue, record the seed, open it) and #/endless/<job>/<seed>, where job is a level
@@ -133,10 +135,15 @@ export async function mountEndless(root: HTMLElement, job: string, seed: string,
     msg.textContent = S.slowHint
     wait.append(h('a', { class: 'btn btn-outline', href: '#/levels/views', text: S.smaller }))
   }, SLOW_MS)
-  const failed = () => { clearTimeout(slow); if (!dead) msg.textContent = S.generateFailed }
+  const giveUp = setTimeout(() => {
+    if (dead || !wait.isConnected) return
+    q.dispose(); queues.delete(job) // the next visit starts a fresh worker
+    msg.textContent = S.noPuzzle
+  }, GIVE_UP_MS)
+  const failed = () => { clearTimeout(slow); clearTimeout(giveUp); if (!dead) msg.textContent = S.generateFailed }
 
   const open = async (r: Result) => {
-    clearTimeout(slow)
+    clearTimeout(slow); clearTimeout(giveUp)
     wait.remove()
     void saveLast({ kind: rev ? 'reverse' : 'views', level, route: prefix + seed })
     const { hm } = r
@@ -163,7 +170,7 @@ export async function mountEndless(root: HTMLElement, job: string, seed: string,
   return {
     destroy() {
       dead = true
-      clearTimeout(slow)
+      clearTimeout(slow); clearTimeout(giveUp)
       wait.remove(); inner?.destroy()
       // the router has already moved location.hash: leaving this job's endless mode stops its worker
       if (!location.hash.startsWith(prefix)) { q.dispose(); queues.delete(job) }
