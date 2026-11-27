@@ -14,6 +14,7 @@ export function exportSvg(d: Drawing, view: View): string {
   const tris = Object.entries(d.fills).map(([k, c]) => ({
     pts: [...new Map(triEdges(k).flatMap(segEnds).map(p => [p.t + ':' + p.m, uv(p)])).values()], col: resolve(fillColour(c)),
   }))
+  for (const a of d.areas ?? []) tris.push({ pts: a.pts, col: resolve(fillColour(a.c)) }) // drawn after the triangles, as on screen
   const segs = d.lines.map((k: SegKey) => segEnds(k).map(uv))
   const arcs = (d.arcs ?? []).map(k => arcPolyline(k))
   const all = [...tris.flatMap(t => t.pts), ...segs.flat(), ...arcs.flat()]

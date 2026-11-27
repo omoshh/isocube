@@ -300,6 +300,23 @@ describe('iso grid', () => {
       drag(el, [toPx(v, { t: 1, m: 1 })]) // eighth 0 of the same circle
       expect(m.editor.drawing.arcs!.length).toBeGreaterThan(2)
     })
+    it('fill stops at a free line', () => {
+      const m = mount({ free: { half: false }, lines: ['0:0|1:0', '1:0|1:1', '0:1|1:1', '0:0|0:1', '0:0|1:1'] }), v = m.grid.getView()
+      m.state.tool = 'fill'
+      drag(el, [uvPx(v, toUV({ t: 2 / 3, m: 1 / 3 }))])
+      expect(m.editor.drawing.areas).toHaveLength(1)
+      expect(m.editor.drawing.fills).toEqual({})
+      expect(el.querySelectorAll('.g-fills polygon')).toHaveLength(1)
+    })
+    it('an eraser tap far from lines takes the area under it', () => {
+      const big = ['0:0|1:0', '1:0|2:0', '2:0|2:1', '2:1|2:2', '1:2|2:2', '0:2|1:2', '0:1|0:2', '0:0|0:1'] // 2×2 rhombus
+      const m = mount({ free: { half: false }, lines: big }), v = m.grid.getView()
+      m.state.tool = 'fill'; drag(el, [uvPx(v, toUV({ t: 1, m: 1 }))])
+      expect(m.editor.drawing.areas).toHaveLength(1)
+      m.state.tool = 'erase'; drag(el, [uvPx(v, toUV({ t: 1, m: 1 }))])
+      expect(m.editor.drawing.areas).toEqual([])
+      expect(m.editor.drawing.lines).toHaveLength(8)
+    })
     it('without free the line tool keeps the 3-direction snap', () => {
       const m = mount(), v = m.grid.getView()
       drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 3, m: 1 })])

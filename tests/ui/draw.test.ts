@@ -86,6 +86,12 @@ describe('exportSvg', () => {
     expect(svg).toContain('fill="none"')
   })
 
+  it('svg contains area fills', () => {
+    const svg = exportSvg({ lines: [], fills: {}, areas: [{ pts: [[0, 0], [1, 0], [0, 1]], c: 4 }] }, view)
+    expect(svg).toContain('<polygon points=')
+    expect(svg).toContain('fill="#333333"')
+  })
+
   it('svgStandalone', () => {
     const svg = exportSvg(d, view)
     expect(svg).not.toContain('var(')

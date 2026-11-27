@@ -102,6 +102,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       const col = fillColour(c)
       mk('polygon', { points: [...vs.values()].join(' '), style: `fill:${col};stroke:${col}` }, gFills)
     }
+    for (const a of d.areas!) { const col = fillColour(a.c); mk('polygon', { points: a.pts.join(' '), style: `fill:${col};stroke:${col}` }, gFills) }
     for (const k of [...d.lines, ...d.arcs!]) if (!pending.has(k)) drawKey(k, gLines)
     // the dot goes with the tool and with the arc (undo, redo, clear can take the arc away)
     if (o.tool() !== 'arc') arcFirst = lastArc = null
@@ -188,9 +189,9 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
         else { const a = arcNear(p); if (!sameArc(a, lastArc!.arc)) lastArc = { ...lastArc!, arc: a, added: editor.replaceArc(lastArc!.added, a) } }
       }
       else if (s.tool === 'freehand') editor.addLines(snapFreehandIso([...s.pts, p]))
-      else if (s.tool === 'fill') editor.fill(triAt(p.u, p.v), o.colour())
+      else if (s.tool === 'fill') { if (o.free) editor.fillArea(p, o.colour()); else editor.fill(triAt(p.u, p.v), o.colour()) }
       else if (erased.size) for (const k of erased) editor.erase(k)
-      else editor.unfill(triAt(p.u, p.v)) // no line near: the eraser clears the colour under the finger
+      else if (!(o.free && editor.unfillArea(p))) editor.unfill(triAt(p.u, p.v)) // no line near: the eraser clears the colour under the finger
       render()
     },
     cancel() { endStroke(); arcFirst = null; if (surf) drawHandle() },
