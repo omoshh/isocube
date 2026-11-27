@@ -1,5 +1,6 @@
 import { LEVELS } from '../core/generator'
 import { HeightMap } from '../core/shape'
+import type { EntryRamp } from '../core/solid'
 import { h } from './dom'
 import type { Screen } from './router'
 import { mountReverse } from './screens/reversePuzzle'
@@ -7,16 +8,16 @@ import { mountPuzzle } from './screens/viewsPuzzle'
 import { loadProgress, saveLast, updateProgress } from './storage'
 import { S } from './strings'
 
-type Result = { seed: number; hm: HeightMap }
-type Reply = { id: number; level: number; seed: number; cols: number; rows: number; h: number[] }
+type Result = { seed: number; hm: HeightMap; ramps: EntryRamp[] }
+type Reply = { id: number; job: string; seed: number; cols: number; rows: number; h: number[]; ramps: EntryRamp[] }
 
 const AHEAD = 2
 let ids = 0 // global, so ids never repeat across queues or after cancel()
 
 /**
- * Makes endless puzzles for one level in a worker, keeping AHEAD ready.
+ * Makes endless puzzles for one job (a level '1'–'6' or a spec key like '3x3x2s') in a worker, keeping AHEAD ready.
  * Seeds: random 32-bit (crypto.getRandomValues), skipping `used` and every seed this queue asked for.
- * Replies for another level or for an id no longer in flight (cancelled, disposed) are dropped.
+ * Replies for another job or for an id no longer in flight (cancelled, disposed) are dropped.
  * cancel(): terminates the worker, rejects pending next()/make() with Error('cancelled'), starts a fresh worker
  * and refills; ready puzzles are kept. dispose(): the same, but drops the ready puzzles and starts nothing.
  */
@@ -29,7 +30,7 @@ export class EndlessQueue {
   private filling = 0
   private used: Set<number>
 
-  constructor(readonly level: number, private makeWorker: () => Worker, used: Iterable<number> = []) {
+  constructor(readonly job: string, private makeWorker: () => Worker, used: Iterable<number> = []) {
     this.used = new Set(used)
     this.start()
   }
@@ -53,10 +54,10 @@ export class EndlessQueue {
     this.worker = this.makeWorker()
     this.worker.onerror = this.worker.onmessageerror = () => this.fail(new Error('worker'))
     this.worker.onmessage = (e: MessageEvent<Reply>) => {
-      const { id, level, seed, cols, rows, h } = e.data, job = this.jobs.get(id)
-      if (level !== this.level || !job) return
+      const { id, job, seed, cols, rows, h, ramps } = e.data, done = this.jobs.get(id)
+      if (job !== this.job || !done) return
       this.jobs.delete(id)
-      job({ seed, hm: new HeightMap(cols, rows, h) })
+      done({ seed, hm: new HeightMap(cols, rows, h), ramps })
     }
     this.fill()
   }
@@ -84,7 +85,7 @@ export class EndlessQueue {
   private post(seed: number, job: (r: Result) => void) {
     const id = ++ids
     this.jobs.set(id, job)
-    this.worker.postMessage({ id, level: this.level, seed })
+    this.worker.postMessage({ id, job: this.job, seed })
   }
 
   private fill() {
@@ -118,7 +119,7 @@ export async function mountEndless(root: HTMLElement, level: number, seed: strin
   const rev = mode === 'reverse', prefix = rev ? `#/reverse/E${level}-` : `#/endless/${level}/`
   const used = (await loadProgress()).endlessSeeds[level] ?? []
   let q = queues.get(level)
-  if (!q) queues.set(level, q = new EndlessQueue(level, makeWorker, used))
+  if (!q) queues.set(level, q = new EndlessQueue(String(level), makeWorker, used))
   let dead = false, inner: Screen | undefined
   const wait = h('main', { class: 'placeholder' }, h('p', { text: S.generating }),
     h('button', { class: 'btn btn-outline', text: S.cancel, onclick: () => { location.hash = `#/levels/${mode}` } }))

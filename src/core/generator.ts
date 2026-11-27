@@ -235,6 +235,14 @@ export function makeEndless(s: EndlessSpec, seed: number): Shape {
   }
 }
 
+/** An endless job: one digit is a level (`makePuzzle`, cube-only), anything else a spec key. */
+export function makeJob(job: string, seed: number): Shape {
+  if (/^[1-6]$/.test(job)) return { hm: makePuzzle(+job, seed).hm, ramps: [] }
+  const s = parseSpec(job)
+  if (!s) throw new Error('bad endless job ' + job)
+  return makeEndless(s, seed)
+}
+
 /** Cells whose stack height or ramp part differ (shapes of other sizes count as far apart). */
 export function shapeDistance(a: Shape, b: Shape): number {
   if (a.hm.cols !== b.hm.cols || a.hm.rows !== b.hm.rows) return Infinity

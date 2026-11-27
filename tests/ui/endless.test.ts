@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { makePuzzle } from '../../src/core/generator'
+import { makeJob, makePuzzle } from '../../src/core/generator'
+import { toEntryRamps } from '../../src/core/solid'
 
-type Msg = { id: number; level: number; seed: number }
+type Msg = { id: number; job: string; seed: number }
 type Fake = { onmessage: ((e: { data: unknown }) => void) | null; inbox: Msg[]; terminated: boolean; postMessage(m: Msg): void; terminate(): void }
 
-const reply = (m: Msg) => { const { hm } = makePuzzle(m.level, m.seed); return { ...m, cols: hm.cols, rows: hm.rows, h: hm.h } }
+const reply = (m: Msg) => { const { hm, ramps } = makeJob(m.job, m.seed); return { ...m, cols: hm.cols, rows: hm.rows, h: hm.h, ramps: toEntryRamps(ramps) } }
 
 // Direct-call stand-in for the worker: requests wait in `inbox` until flush() answers them through makePuzzle.
 function fakeWorkers() {
@@ -36,9 +37,9 @@ describe('EndlessQueue', () => {
     vi.spyOn(crypto, 'getRandomValues').mockImplementation(a => { (a as Uint32Array)[0] = seeds.shift()!; return a })
     const { endless } = await load()
     const f = fakeWorkers()
-    const q = new endless.EndlessQueue(1, f.make, [5]) // 5 is already used
+    const q = new endless.EndlessQueue('1', f.make, [5]) // 5 is already used
     expect(f.all[0].inbox.map(m => m.seed)).toEqual([7, 9])
-    expect(f.all[0].inbox.every(m => m.level === 1)).toBe(true)
+    expect(f.all[0].inbox.every(m => m.job === '1')).toBe(true)
     f.flush()
     const a = await q.next()
     expect(a.seed).toBe(7)
@@ -51,7 +52,7 @@ describe('EndlessQueue', () => {
   it('cancelStopsWorker', async () => {
     const { endless } = await load()
     const f = fakeWorkers()
-    const q = new endless.EndlessQueue(6, f.make)
+    const q = new endless.EndlessQueue('6', f.make)
     const waiting = q.next()
     const old = f.all[0].inbox[0]
     q.cancel()
@@ -74,11 +75,11 @@ describe('EndlessQueue', () => {
   it('noCrossLevelResult', async () => {
     const { endless } = await load()
     const f = fakeWorkers()
-    const q6 = new endless.EndlessQueue(6, f.make)
+    const q6 = new endless.EndlessQueue('6', f.make)
     void q6.next().catch(() => {})
     const late = f.all[0].inbox[0]
     q6.dispose()
-    const q2 = new endless.EndlessQueue(2, f.make)
+    const q2 = new endless.EndlessQueue('2', f.make)
     // a level 6 answer that still arrives (even with a colliding id) must not count for level 2
     for (const m of f.all[1].inbox) f.all[1].onmessage!({ data: { ...late, id: m.id, cols: 5, rows: 6, h: new Array(30).fill(1) } })
     f.flush()
@@ -96,12 +97,31 @@ describe('EndlessQueue', () => {
   it('seedReopens', async () => {
     const { endless } = await load()
     const f = fakeWorkers()
-    const q = new endless.EndlessQueue(3, f.make)
+    const q = new endless.EndlessQueue('3', f.make)
     const a = q.make(12345), b = q.make(12345)
     f.flush()
     expect((await a).hm.h).toEqual((await b).hm.h)
     expect((await a).hm.h).toEqual(makePuzzle(3, 12345).hm.h)
     q.dispose()
+  })
+})
+
+describe('EndlessQueue jobs', () => {
+  it('keepsSpecJob', async () => {
+    const { endless } = await load()
+    const f = fakeWorkers()
+    const q = new endless.EndlessQueue('3x3x2s', f.make)
+    expect(f.all[0].inbox.every(m => m.job === '3x3x2s')).toBe(true)
+    f.flush()
+    const r = await q.next(), want = makeJob('3x3x2s', r.seed)
+    expect(r.ramps.length).toBeGreaterThan(0)
+    expect([r.hm.cols, r.hm.rows, r.hm.h, r.ramps]).toEqual([3, 3, want.hm.h, toEntryRamps(want.ramps)])
+    q.dispose()
+  }, 60_000)
+
+  it('levelJobIsMakePuzzle', () => {
+    expect(makeJob('2', 99).hm.h).toEqual(makePuzzle(2, 99).hm.h)
+    expect(makeJob('2', 99).ramps).toEqual([])
   })
 })
 
