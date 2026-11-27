@@ -6,7 +6,7 @@ import { linePieces, type SegKey } from './geometry'
 import type { EdgeSet } from './shape'
 import { ISO, shapeFaces, type Face3, type P3, type Shape } from './solid'
 
-export type Sketch = { lines: Set<string>; seams: Set<string>; partial: boolean; owners: Set<string>; covered: Map<string, boolean> }
+export type Sketch = { lines: Set<string>; seams: Set<string>; partial: boolean; partials: Set<string>; owners: Set<string>; covered: Map<string, boolean> }
 
 const FRACTIONS = [0.11, 0.29, 0.47, 0.63, 0.87] // avoid ½, ⅓, ¼: edges of other faces often cross there
 const EPS = 1e-4
@@ -44,7 +44,7 @@ export function sketch(faces: Face3[], to2: (p: P3) => P2, lift: (q: P2) => P3, 
   }
 
   const lines = new Set<string>(), seams = new Set<string>(), owners = new Set<string>(), covered = new Map<string, boolean>()
-  let partial = false
+  const partials = new Set<string>()
   for (const k of pieces) {
     const [a, b] = ends(k), d: P2 = [b[0] - a[0], b[1] - a[1]], len = Math.hypot(d[0], d[1])
     const o: P2 = [-d[1] / len * EPS, d[0] / len * EPS]
@@ -59,11 +59,11 @@ export function sketch(faces: Face3[], to2: (p: P3) => P2, lift: (q: P2) => P3, 
       kinds.add(!L && !R ? '' : L === R ? '' : L && R && L.plane === R.plane ? 'seam' : 'line')
     }
     covered.set(k, both)
-    if (kinds.size > 1) partial = true
+    if (kinds.size > 1) partials.add(k)
     if (kinds.has('line')) lines.add(k)
     else if (kinds.has('seam')) seams.add(k)
   }
-  return { lines, seams, partial, owners, covered }
+  return { lines, seams, partial: partials.size > 0, partials, owners, covered }
 }
 
 /** The iso picture of a shape (front view of the round), with lattice keys like `computeEdges`. */
