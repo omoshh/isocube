@@ -15,6 +15,8 @@ export const S = {
   slopes: 'Slopes', slopesSize: '3×3–3×4',
   endlessSub: (cols: number, rows: number, h: number, slopes = false) => `Endless, ${cols}×${rows}×${h}${slopes ? ', slopes' : ''}`,
   slowHint: 'No puzzle yet. A smaller size is faster.', smaller: 'Pick a smaller size',
+  width: 'Width', depth: 'Depth', height: 'Height', start: 'Start',
+  smallerLabel: (n: string) => `${n} smaller`, largerLabel: (n: string) => `${n} larger`,
   generating: 'Generating…', generateFailed: 'Could not generate puzzles.', importFailed: 'Could not read the file.', cancel: 'Cancel',
   puzzle: (n: number, total: number, cols: number, rows: number, h: number) =>
     `Puzzle ${n} of ${total}, ${cols}×${rows}×${h}`,

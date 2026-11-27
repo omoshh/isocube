@@ -128,8 +128,10 @@ describe('levels cards', () => {
     const { levels, storage } = await load()
     const l1 = file.puzzles.filter(p => p.set === 'level' && p.level === 1)
     await storage.saveProgress({ solved: l1.map(p => p.id), netsRight: 0, endlessSeeds: {} })
-    const root = sized(), s = await levels.mountLevels(root, file)
-    expect(root.querySelector('[data-level="1"][data-state="complete"] > a.btn')!.getAttribute('href')).toBe('#/endless/1/new')
+    const r = file.puzzles.filter(p => p.set === 'reverse' && p.level === 1)
+    await storage.saveProgress({ solved: r.map(p => 'R-' + p.id), netsRight: 0, endlessSeeds: {} })
+    const root = sized(), s = await levels.mountLevels(root, file, 'reverse')
+    expect(root.querySelector('[data-level="1"][data-state="complete"] > a.btn')!.getAttribute('href')).toBe('#/reverse/E1-new')
     s.destroy()
   })
 
@@ -142,5 +144,82 @@ describe('levels cards', () => {
     const r2 = sized(), s2 = await levels.mountLevels(r2, file, 'reverse')
     expect(r2.querySelector('[data-level="2"]')!.getAttribute('data-state')).toBe('last')
     s2.destroy()
+  })
+})
+
+describe('endless picker (round 4)', () => {
+  const tile = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-set="endless"]')!
+  const start = (root: HTMLElement) => tile(root).querySelector('a.btn')!.getAttribute('href')
+  const btn = (root: HTMLElement, label: string) => tile(root).querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
+  const value = (root: HTMLElement, name: string) => tile(root).querySelector(`[data-value="${name}"]`)!.textContent
+  // idb-keyval keeps its store across vi.resetModules, so a size saved by one test would reach the next
+  beforeEach(async () => { await (await load()).storage.saveEndlessSpec({ cols: 3, rows: 3, maxH: 2, slopes: false }) })
+
+  it('viewsHasOneEndlessTile', async () => {
+    const { levels } = await load()
+    const root = sized(), s = await levels.mountLevels(root, file)
+    expect(root.querySelector('a[href^="#/endless/"]:not([data-set="endless"] a)')).toBeNull()
+    expect(root.querySelectorAll('[data-set="endless"]').length).toBe(1)
+    expect(start(root)).toBe('#/endless/3x3x2/new')
+    expect(tile(root).textContent).toContain('Endless')
+    s.destroy()
+  })
+
+  it('reverseKeepsLevelEndless', async () => {
+    const { levels } = await load()
+    const root = sized(), s = await levels.mountLevels(root, file, 'reverse')
+    expect([...root.querySelectorAll('a.btn')].map(a => a.getAttribute('href'))).toEqual([1, 2, 3, 4, 5, 6].map(n => `#/reverse/E${n}-new`))
+    expect(root.querySelector('[data-set="endless"]')).toBeNull()
+    s.destroy()
+  })
+
+  it('stepperLimits', async () => {
+    const { levels } = await load()
+    const root = sized(), s = await levels.mountLevels(root, file)
+    while (!btn(root, 'Width larger').disabled) btn(root, 'Width larger').click()
+    expect(value(root, 'cols')).toBe('6')
+    expect(start(root)).toBe('#/endless/6x3x2/new')
+    btn(root, 'Height smaller').click()
+    expect(value(root, 'maxH')).toBe('1')
+    expect(btn(root, 'Height smaller').disabled).toBe(true)
+    expect(start(root)).toBe('#/endless/6x3x1/new')
+    s.destroy()
+  })
+
+  it('slopesClamps', async () => {
+    const { levels } = await load()
+    const root = sized(), s = await levels.mountLevels(root, file)
+    for (let i = 0; i < 2; i++) { btn(root, 'Width larger').click(); btn(root, 'Depth larger').click(); btn(root, 'Height larger').click() }
+    expect(start(root)).toBe('#/endless/5x5x4/new')
+    const sw = tile(root).querySelector<HTMLButtonElement>('button[role="switch"]')!
+    sw.click()
+    expect(sw.getAttribute('aria-checked')).toBe('true')
+    expect([value(root, 'cols'), value(root, 'rows'), value(root, 'maxH')]).toEqual(['3', '3', '2'])
+    expect(start(root)).toBe('#/endless/3x3x2s/new')
+    expect(btn(root, 'Width larger').disabled).toBe(true)
+    expect(btn(root, 'Height larger').disabled && btn(root, 'Height smaller').disabled).toBe(true)
+    s.destroy()
+  })
+
+  it('specRemembered', async () => {
+    const { levels, storage } = await load()
+    let root = sized(), s = await levels.mountLevels(root, file)
+    btn(root, 'Depth larger').click()
+    tile(root).querySelector<HTMLButtonElement>('button[role="switch"]')!.click()
+    await vi.waitFor(async () => expect(await storage.loadEndlessSpec()).toEqual({ cols: 3, rows: 3, maxH: 2, slopes: true }))
+    s.destroy()
+    root = sized(); s = await levels.mountLevels(root, file)
+    expect(start(root)).toBe('#/endless/3x3x2s/new')
+    s.destroy()
+    await storage.saveEndlessSpec({ cols: 9, rows: 'x' } as never)
+    expect(await storage.loadEndlessSpec()).toEqual({ cols: 3, rows: 3, maxH: 2, slopes: false })
+  })
+
+  it('endlessPlayDoesNotMarkSlopesTile', async () => {
+    const { levels, storage } = await load()
+    await storage.saveLast({ kind: 'views', level: 0, route: '#/endless/3x3x2s/5' })
+    const root = sized(), s = await levels.mountLevels(root, file)
+    expect(root.querySelector('[data-set="slopes"]')!.getAttribute('data-state')).toBeNull()
+    s.destroy()
   })
 })

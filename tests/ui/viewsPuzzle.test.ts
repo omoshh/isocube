@@ -211,7 +211,7 @@ describe('level list', () => {
     const s = await levels.mountLevels(root, file)
     expect(root.querySelector('[data-set="classic"]')).toBeNull()
     expect(root.querySelector('[data-level="1"]')!.textContent).toContain('1 / 50')
-    expect(root.querySelectorAll('a[href^="#/endless/"]').length).toBe(6)
+    expect(root.querySelectorAll('a[href^="#/endless/"]').length).toBe(1) // round 4: one Endless tile with a size picker
     s.destroy()
   })
 })
@@ -224,7 +224,7 @@ describe('router', () => {
     const stop = startRouter(root, file)
     await vi.waitFor(() => expect(root.textContent).toContain('not built yet'))
     navigate('/levels/views')
-    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(7)) // 6 levels and Slopes
+    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(8)) // 6 levels, Slopes and Endless
     expect(root.children.length).toBe(1)
     navigate('/views/nope')
     await vi.waitFor(() => expect(root.textContent).toContain('Puzzle not found'))

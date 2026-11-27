@@ -1,5 +1,6 @@
 import { del, get, keys, set } from 'idb-keyval'
 import { parseBackup, type Backup } from '../core/backup'
+import { clampSpec, parseSpec, specKey, type EndlessSpec } from '../core/generator'
 import { START, type LivesState } from '../core/lives'
 import type { Drawing } from '../core/drawing'
 import type { Progress, Settings } from '../core/unlocks'
@@ -70,6 +71,14 @@ export function updateProgress(fn: (p: Progress) => Progress): Promise<Progress>
   progressChain = r.catch(() => {})
   return r
 }
+/** The Endless size picker's last choice (not in the backup: a convenience). Anything odd gives the default. */
+export async function loadEndlessSpec(): Promise<EndlessSpec> {
+  const v = await rawGet<Partial<EndlessSpec>>('endless')
+  const s = v && typeof v === 'object' ? parseSpec(specKey(clampSpec({ cols: Number(v.cols), rows: Number(v.rows), maxH: Number(v.maxH), slopes: v.slopes === true }))) : null
+  return s ?? { cols: 3, rows: 3, maxH: 2, slopes: false }
+}
+export const saveEndlessSpec = (s: EndlessSpec) => rawSet('endless', s)
+
 /** The puzzle screen opened last, for Home's Continue pill. n = number in its list (none for endless and Nets). */
 const KINDS = ['views', 'reverse', 'nets', 'shadows'] as const // Sections removed for now (branch `sections`)
 export type LastPuzzle = { kind: (typeof KINDS)[number]; level: number; n?: number; route: string }
