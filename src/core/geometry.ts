@@ -25,7 +25,7 @@ export function segKey(p: Pt, q: Pt): SegKey {
   return A < B ? A + '|' + B : B + '|' + A
 }
 
-function parsePt(s: string): Pt {
+export function parsePt(s: string): Pt {
   const [t, m] = s.split(':')
   if (!t.includes('~')) return { t: +t, m: +m }
   const [ta, tb] = t.split('~').map(Number), [ma, mb] = m.split('~').map(Number)
