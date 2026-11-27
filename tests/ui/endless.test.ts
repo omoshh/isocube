@@ -195,7 +195,8 @@ describe('endless size specs (round 4)', () => {
     s.destroy()
     const s2 = await endless.mountEndless(root, '3x3x2s', String(seed), f.make)
     await vi.waitFor(() => expect(root.querySelector('.vp')).toBeTruthy())
-    expect(root.textContent).toContain('Endless, 3×3×2, slopes')
+    expect(root.textContent).toContain('3×3×2, slopes')
+    expect(root.textContent).not.toContain('Endless, 3×3×2') // the title already says Endless
     location.hash = '#/levels/views'
     s2.destroy()
   }, 60_000)
@@ -209,7 +210,7 @@ describe('endless size specs (round 4)', () => {
     expect(f.all[0].inbox.some(m => m.job === '4x3x2' && m.seed === 777)).toBe(true)
     f.flush()
     await vi.waitFor(() => expect(root.querySelector('.vp')).toBeTruthy())
-    expect(root.textContent).toContain('Endless, 4×3×2')
+    expect(root.textContent).toContain('4×3×2')
     location.hash = '#/levels/views'
     s.destroy()
   })

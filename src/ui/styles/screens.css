@@ -89,6 +89,7 @@ button { font: inherit; color: inherit; }
 .tile-name::after { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 0 3px 10px;
   border-right: var(--stroke-selected) solid var(--muted); border-bottom: var(--stroke-selected) solid var(--muted); transform: rotate(45deg); }
 .tile details[open] .tile-name::after { transform: rotate(-135deg); margin-bottom: -1px; }
+.endless-picker .tile-name::after { display: none; }
 
 /* puzzle screen */
 .vp-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3); }

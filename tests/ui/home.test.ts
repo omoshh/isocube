@@ -119,6 +119,7 @@ describe('levels cards', () => {
     const css = readFileSync('src/ui/styles/screens.css', 'utf8')
     expect(css).toMatch(/\.tile\[data-state\] > \.btn \{ color: inherit; \}/)
     expect(css).toMatch(/\.tiles \{ display: flex; flex-direction: column;/)
+    expect(css).toMatch(/\.endless-picker \.tile-name::after \{ display: none; \}/) // it does not open or close
     expect(css).toMatch(/\.netbar \.btn \{ height: var\(--size-touch\)/)
     expect(css).toMatch(/\.netresult \.btn \{ min-height: var\(--size-touch\)/)
     expect(css).toMatch(/\.tool-bar \.icon-btn \{[^}]*border-radius: 50%/)
