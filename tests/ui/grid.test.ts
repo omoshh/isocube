@@ -317,6 +317,13 @@ describe('iso grid', () => {
       expect(m.editor.drawing.areas).toEqual([])
       expect(m.editor.drawing.lines).toHaveLength(8)
     })
+    it('a drawn line gets a snap dot in its middle', () => {
+      const m = mount({ free: { half: false } }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 0, m: 1 })])
+      expect(el.querySelectorAll('.g-snap circle')).toHaveLength(1)
+      drag(el, [toPx(v, { t: 1, m: 0 }), toPx(v, { t: 0.05, m: 0.45 })])
+      expect(m.editor.drawing.lines).toContain('0:0.5|1:0')
+    })
     it('without free the line tool keeps the 3-direction snap', () => {
       const m = mount(), v = m.grid.getView()
       drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 3, m: 1 })])

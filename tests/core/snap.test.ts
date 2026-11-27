@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
-import { snapDragIso, snapFreehandIso, snapDragSquare, snapPoint, snapFree } from '../../src/core/snap'
+import { snapDragIso, snapFreehandIso, snapDragSquare, snapPoint, snapFree, lineMidpoints } from '../../src/core/snap'
 
 const S = Math.sqrt(3) / 2
 const dir = 'tests/fixtures/strokes/'
@@ -52,5 +52,9 @@ describe('snap', () => {
   it('snapFree joins any two points; same point gives null', () => {
     expect(snapFree({ u: 0, v: 0 }, { u: 3 * S, v: 2.5 }, { half: false, extra: [] })).toEqual({ a: { t: 0, m: 0 }, b: { t: 3, m: 1 } })
     expect(snapFree({ u: 0, v: 0 }, { u: 0.1, v: 0.1 }, { half: false, extra: [] })).toBeNull()
+  })
+  it('lineMidpoints: exact middle of each drawn piece, once', () => {
+    expect(lineMidpoints(['0:0|0:1', '0:0|1:1', '0:0|0:1'])).toEqual([{ t: 0, m: 0.5 }, { t: 0.5, m: 0.5 }])
+    expect(lineMidpoints(['0~1:0~0|0~1:2~0'])).toEqual([{ t: 0, m: 1, rt: 1, rm: 0 }])
   })
 })

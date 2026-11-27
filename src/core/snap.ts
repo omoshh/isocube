@@ -1,4 +1,4 @@
-import { samePt, toUV, type GPt, type Line, type Pt } from './geometry'
+import { ptKey, samePt, segEnds, toUV, type GPt, type Line, type Pt, type SegKey } from './geometry'
 
 const S = Math.sqrt(3) / 2
 type UV = { u: number; v: number }
@@ -34,6 +34,17 @@ function nearestDot(q: UV): Pt {
     if (d < bd) { bd = d; best = p }
   }
   return best
+}
+
+/** The exact middle of each drawn line piece (snap points for circles that start on drawn lines). */
+export function lineMidpoints(lines: SegKey[]): Pt[] {
+  const out = new Map<string, Pt>()
+  for (const k of lines) {
+    const [a, b] = segEnds(k), rt = ((a.rt ?? 0) + (b.rt ?? 0)) / 2, rm = ((a.rm ?? 0) + (b.rm ?? 0)) / 2
+    const p: Pt = { t: (a.t + b.t) / 2 + 0, m: (a.m + b.m) / 2 + 0, ...(rt || rm ? { rt: rt + 0, rm: rm + 0 } : {}) }
+    out.set(ptKey(p), p)
+  }
+  return [...out.values()]
 }
 
 export type SnapOpts = { half: boolean; extra: Pt[] }

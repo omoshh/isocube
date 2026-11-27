@@ -1,6 +1,6 @@
 import { proj, segEnds, toUV, triAt, triEdges, type Pt, type SegKey } from '../../core/geometry'
 import { arcMid, arcPieces, arcPolyline, arcSnapPoints, arcsThrough, isArcKey, type Arc, type ArcKey } from '../../core/arcs'
-import { snapDragIso, snapFree, snapFreehandIso, snapPoint, type SnapOpts } from '../../core/snap'
+import { lineMidpoints, snapDragIso, snapFree, snapFreehandIso, snapPoint, type SnapOpts } from '../../core/snap'
 import type { Bounds, DrawingEditor } from '../../core/drawing'
 import type { CheckResult } from '../../core/checker'
 import { guideBounds, type View } from './transform'
@@ -53,7 +53,8 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   let arcFirst: Pt | null = null // arc tool: the first tapped point
   let lastArc: { p: Pt; q: Pt; arc: Arc; added: ArcKey[] } | null = null // the arc whose dot shows
 
-  const snapOpts = (): SnapOpts => ({ half: !!o.free?.half, extra: arcSnapPoints(editor.drawing.arcs!) })
+  const extraPoints = () => { const d = editor.drawing; return [...arcSnapPoints(d.arcs!), ...lineMidpoints(d.lines)] }
+  const snapOpts = (): SnapOpts => ({ half: !!o.free?.half, extra: extraPoints() })
   const showSnap = () => !!o.free && (o.tool() === 'line' || o.tool() === 'arc')
 
   /** A line for a SegKey, a polyline for an ArcKey. */
@@ -74,7 +75,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
         for (let M = Math.floor(2 * v0 - T / 2); M <= Math.ceil(2 * v1 - T / 2); M++)
           if (T % 2 || M % 2) dot(uv({ t: T / 2, m: M / 2 }), 0.05, gSnap)
     }
-    for (const p of arcSnapPoints(editor.drawing.arcs!)) dot(uv(p), 0.05, gSnap)
+    for (const p of extraPoints()) dot(uv(p), 0.05, gSnap)
   }
 
   function drawHandle() {
