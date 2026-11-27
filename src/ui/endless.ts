@@ -1,4 +1,4 @@
-import { LEVELS } from '../core/generator'
+import { LEVELS, parseSpec } from '../core/generator'
 import { HeightMap } from '../core/shape'
 import type { EntryRamp } from '../core/solid'
 import { h } from './dom'
@@ -105,56 +105,68 @@ export class EndlessQueue {
 
 const realWorker = () => new Worker(new URL('../worker/endless.worker.ts', import.meta.url), { type: 'module' })
 
-// One queue per level while the user stays in that level's endless routes, so NEXT finds puzzles ready.
-const queues = new Map<number, EndlessQueue>()
-// hm of puzzles this session made, so opening one needs no second generation
-const made = new Map<string, HeightMap>()
+// One queue per job while the user stays in that job's endless routes, so NEXT finds puzzles ready.
+const queues = new Map<string, EndlessQueue>()
+// puzzles this session made, so opening one needs no second generation
+const made = new Map<string, Result>()
+/** After this long on "Generating…", suggest a smaller size (generation goes on). */
+export const SLOW_MS = 10_000
 
 /**
- * #/endless/<level>/new (wait for the queue, record the seed, open it) and #/endless/<level>/<seed>;
- * mode 'reverse': #/reverse/E<level>-new and #/reverse/E<level>-<seed>. Both modes share progress.endlessSeeds,
- * so a seed is never served twice in either mode.
+ * #/endless/<job>/new (wait for the queue, record the seed, open it) and #/endless/<job>/<seed>, where job is a level
+ * '1'–'6' (old routes) or a size spec like '3x3x2s'; mode 'reverse' (levels only): #/reverse/E<level>-new and
+ * #/reverse/E<level>-<seed>. Both modes share progress.endlessSeeds[job], so a seed is never served twice in either mode.
  */
-export async function mountEndless(root: HTMLElement, level: number, seed: string, makeWorker = realWorker, mode: 'views' | 'reverse' = 'views'): Promise<Screen> {
-  const rev = mode === 'reverse', prefix = rev ? `#/reverse/E${level}-` : `#/endless/${level}/`
-  const used = (await loadProgress()).endlessSeeds[level] ?? []
-  let q = queues.get(level)
-  if (!q) queues.set(level, q = new EndlessQueue(String(level), makeWorker, used))
+export async function mountEndless(root: HTMLElement, job: string, seed: string, makeWorker = realWorker, mode: 'views' | 'reverse' = 'views'): Promise<Screen> {
+  const rev = mode === 'reverse', prefix = rev ? `#/reverse/E${job}-` : `#/endless/${job}/`
+  const spec = parseSpec(job), level = spec ? 0 : +job, maxH = spec ? spec.maxH : LEVELS[level - 1].maxH
+  const used = (await loadProgress()).endlessSeeds[job] ?? []
+  let q = queues.get(job)
+  if (!q) queues.set(job, q = new EndlessQueue(job, makeWorker, used))
   let dead = false, inner: Screen | undefined
-  const wait = h('main', { class: 'placeholder' }, h('p', { text: S.generating }),
+  const msg = h('p', { text: S.generating })
+  const wait = h('main', { class: 'placeholder' }, msg,
     h('button', { class: 'btn btn-outline', text: S.cancel, onclick: () => { location.hash = `#/levels/${mode}` } }))
   root.append(wait)
+  const slow = setTimeout(() => {
+    if (dead || !wait.isConnected) return
+    msg.textContent = S.slowHint
+    wait.append(h('a', { class: 'btn btn-outline', href: '#/levels/views', text: S.smaller }))
+  }, SLOW_MS)
+  const failed = () => { clearTimeout(slow); if (!dead) msg.textContent = S.generateFailed }
 
-  const open = async (hm: HeightMap) => {
+  const open = async (r: Result) => {
+    clearTimeout(slow)
     wait.remove()
     void saveLast({ kind: rev ? 'reverse' : 'views', level, route: prefix + seed })
-    const p = { cols: hm.cols, rows: hm.rows, maxH: LEVELS[level - 1].maxH, h: hm.h, subtitle: S.endlessSub(hm.cols, hm.rows, LEVELS[level - 1].maxH), nextRoute: prefix + 'new' }
+    const { hm } = r
+    const p = { cols: hm.cols, rows: hm.rows, maxH, h: hm.h, subtitle: S.endlessSub(hm.cols, hm.rows, maxH, spec?.slopes), nextRoute: prefix + 'new' }
     const s = rev
-      ? await mountReverse(root, { ...p, id: `R-E${level}-${seed}`, key: `reverse/E${level}-${seed}`, title: `${S.reverse}: ${S.level(level).toLowerCase()}` })
-      : await mountPuzzle(root, { ...p, id: `E${level}-${seed}`, key: `endless/${level}/${seed}`, title: S.level(level) })
+      ? await mountReverse(root, { ...p, id: `R-E${job}-${seed}`, key: `reverse/E${job}-${seed}`, title: `${S.reverse}: ${S.level(level).toLowerCase()}` })
+      : await mountPuzzle(root, { ...p, ramps: r.ramps, id: `E${job}-${seed}`, key: `endless/${job}/${seed}`, title: spec ? S.endless : S.level(level) })
     if (dead) s.destroy(); else inner = s
   }
 
   if (seed === 'new') {
-    const failed = () => { if (!dead) wait.querySelector('p')!.textContent = S.generateFailed }
     q.next().then(async r => {
       if (dead) return
-      made.set(`${level}/${r.seed}`, r.hm)
-      await updateProgress(p => ({ ...p, endlessSeeds: { ...p.endlessSeeds, [level]: [...(p.endlessSeeds[level] ?? []), r.seed] } }))
+      made.set(`${job}/${r.seed}`, r)
+      await updateProgress(p => ({ ...p, endlessSeeds: { ...p.endlessSeeds, [job]: [...(p.endlessSeeds[job] ?? []), r.seed] } }))
       if (!dead) location.replace(prefix + r.seed) // Back skips the "Generating…" step
     }, failed) // cancel/dispose reject after this screen is gone (dead)
   } else {
-    const hm = made.get(`${level}/${seed}`)
-    if (hm) await open(hm)
-    else q.make(+seed).then(r => { if (!dead) { made.set(`${level}/${seed}`, r.hm); return open(r.hm) } }, () => { if (!dead) wait.querySelector('p')!.textContent = S.generateFailed })
+    const r = made.get(`${job}/${seed}`)
+    if (r) await open(r)
+    else q.make(+seed).then(r => { if (!dead) { made.set(`${job}/${seed}`, r); return open(r) } }, failed)
   }
 
   return {
     destroy() {
       dead = true
+      clearTimeout(slow)
       wait.remove(); inner?.destroy()
-      // the router has already moved location.hash: leaving this level's endless mode stops its worker
-      if (!location.hash.startsWith(prefix)) { q.dispose(); queues.delete(level) }
+      // the router has already moved location.hash: leaving this job's endless mode stops its worker
+      if (!location.hash.startsWith(prefix)) { q.dispose(); queues.delete(job) }
     },
   }
 }

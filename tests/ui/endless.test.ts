@@ -131,7 +131,7 @@ describe('endless screen', () => {
     const f = fakeWorkers()
     let root = sized()
     location.hash = '#/endless/1/new'
-    let s = await endless.mountEndless(root, 1, 'new', f.make)
+    let s = await endless.mountEndless(root, '1', 'new', f.make)
     expect(root.textContent).toContain('Generating…')
     f.flush()
     await vi.waitFor(() => expect(location.hash).toMatch(/^#\/endless\/1\/\d+$/))
@@ -140,7 +140,7 @@ describe('endless screen', () => {
     s.destroy()
     expect(f.all[0].terminated).toBe(false) // still in endless level 1: the queue stays
     root = sized()
-    s = await endless.mountEndless(root, 1, String(seed), f.make)
+    s = await endless.mountEndless(root, '1', String(seed), f.make)
     await vi.waitFor(() => expect(root.querySelector('.vp')).toBeTruthy()) // from memory, no worker round trip
     expect(root.textContent).toContain('Level 1')
     expect(root.textContent).toContain('Endless')
@@ -154,7 +154,7 @@ describe('endless screen', () => {
     const { endless } = await load()
     const f = fakeWorkers()
     const root = sized()
-    const s = await endless.mountEndless(root, 3, 'new', f.make)
+    const s = await endless.mountEndless(root, '3', 'new', f.make)
     ;(f.all[0] as unknown as { onerror: () => void }).onerror()
     await vi.waitFor(() => expect(root.textContent).toContain('Could not generate'))
     s.destroy()
@@ -165,17 +165,98 @@ describe('endless screen', () => {
     const f = fakeWorkers()
     const root = sized()
     location.hash = '#/endless/6/new'
-    const s6 = await endless.mountEndless(root, 6, 'new', f.make)
+    const s6 = await endless.mountEndless(root, '6', 'new', f.make)
     const cancel = [...root.querySelectorAll('button')].find(b => b.textContent === 'Cancel')!
     cancel.click()
     expect(location.hash).toBe('#/levels/views')
     s6.destroy() // what the router does on hashchange
     expect(f.all[0].terminated).toBe(true)
     location.hash = '#/endless/2/new'
-    const s2 = await endless.mountEndless(root, 2, 'new', f.make)
+    const s2 = await endless.mountEndless(root, '2', 'new', f.make)
     expect(f.all.length).toBe(2)
     f.flush()
     await vi.waitFor(() => expect(location.hash).toMatch(/^#\/endless\/2\/\d+$/))
     s2.destroy()
+  })
+})
+
+describe('endless size specs (round 4)', () => {
+  it('specRouteOpensShape', async () => {
+    const { endless, storage } = await load()
+    const f = fakeWorkers()
+    const root = sized()
+    location.hash = '#/endless/3x3x2s/new'
+    const s = await endless.mountEndless(root, '3x3x2s', 'new', f.make)
+    expect(f.all[0].inbox.every(m => m.job === '3x3x2s')).toBe(true)
+    f.flush()
+    await vi.waitFor(() => expect(location.hash).toMatch(/^#\/endless\/3x3x2s\/\d+$/))
+    const seed = +location.hash.split('/')[3]
+    expect((await storage.loadProgress()).endlessSeeds['3x3x2s']).toEqual([seed])
+    s.destroy()
+    const s2 = await endless.mountEndless(root, '3x3x2s', String(seed), f.make)
+    await vi.waitFor(() => expect(root.querySelector('.vp')).toBeTruthy())
+    expect(root.textContent).toContain('Endless, 3×3×2, slopes')
+    location.hash = '#/levels/views'
+    s2.destroy()
+  }, 60_000)
+
+  it('specColdOpenAsksForThatSeed', async () => {
+    const { endless } = await load()
+    const f = fakeWorkers()
+    const root = sized()
+    location.hash = '#/endless/4x3x2/777'
+    const s = await endless.mountEndless(root, '4x3x2', '777', f.make)
+    expect(f.all[0].inbox.some(m => m.job === '4x3x2' && m.seed === 777)).toBe(true)
+    f.flush()
+    await vi.waitFor(() => expect(root.querySelector('.vp')).toBeTruthy())
+    expect(root.textContent).toContain('Endless, 4×3×2')
+    location.hash = '#/levels/views'
+    s.destroy()
+  })
+
+  it('slowHintAfter10s', async () => {
+    const { endless } = await load()
+    const f = fakeWorkers()
+    const root = sized()
+    location.hash = '#/endless/6x6x6/new'
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      const s = await endless.mountEndless(root, '6x6x6', 'new', f.make)
+      expect(root.textContent).not.toContain('smaller size')
+      vi.advanceTimersByTime(endless.SLOW_MS)
+      expect(root.textContent).toContain('No puzzle yet. A smaller size is faster.')
+      expect(root.querySelector('a[href="#/levels/views"]')?.textContent).toBe('Pick a smaller size')
+      location.hash = '#/levels/views'
+      s.destroy()
+      expect(vi.getTimerCount()).toBe(0)
+    } finally { vi.useRealTimers() }
+  })
+
+  it('oldLevelRouteNeverServesUsedSeed', async () => {
+    const seeds = [41, 42, 43, 44, 45]
+    vi.spyOn(crypto, 'getRandomValues').mockImplementation(a => { (a as Uint32Array)[0] = seeds.shift()!; return a })
+    const { endless, storage } = await load()
+    await storage.saveProgress({ solved: [], netsRight: 0, endlessSeeds: { 2: [41] } })
+    const f = fakeWorkers()
+    const root = sized()
+    location.hash = '#/endless/2/new'
+    const s = await endless.mountEndless(root, '2', 'new', f.make)
+    const asked = f.all[0].inbox.map(m => [m.job, m.seed])
+    expect(asked.length).toBeGreaterThan(0)
+    expect(asked).not.toContainEqual(['2', 41])
+    expect(asked.every(([job]) => job === '2')).toBe(true)
+    location.hash = '#/levels/views'
+    s.destroy()
+  })
+
+  it('routerRefusesBadSpec', async () => {
+    const { startRouter, navigate } = await import('../../src/ui/router')
+    const root = sized()
+    navigate('/endless/9x9x9/new')
+    const stop = startRouter(root, { version: 1, puzzles: [] })
+    await vi.waitFor(() => expect(root.textContent).toContain('not built yet')) // no route matches
+    navigate('/endless/3x3x3s/new')
+    await vi.waitFor(() => expect(root.textContent).toContain('Puzzle not found'))
+    stop()
   })
 })

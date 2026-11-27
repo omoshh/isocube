@@ -1,4 +1,4 @@
-import type { PuzzleFile } from '../core/generator'
+import { parseSpec, type PuzzleFile } from '../core/generator'
 import { h } from './dom'
 import { mountEndless } from './endless'
 import { mountAccents } from './screens/accents'
@@ -30,9 +30,9 @@ const routes: [RegExp, Mount][] = [
   [/^\/levels\/shadows$/, (root, f) => mountLevels(root, f, 'shadows')],
   [/^\/shadows\/([1-4])\/([\w-]+)$/, (root, f, level, id) => f.puzzles.some(p => p.id === id && p.set === 'level' && p.level === +level) ? mountShadowPuzzle(root, f, +level, id) : placeholder(root, S.notFound)],
   [/^\/views\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountViewsPuzzle(root, f, id) : placeholder(root, S.notFound)],
-  [/^\/endless\/([1-6])\/(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed)],
+  [/^\/endless\/([1-6]|[2-6]x[2-6]x[1-6]s?)\/(new|\d{1,10})$/, (root, _f, job, seed) => /^[1-6]$/.test(job) || parseSpec(job) ? mountEndless(root, job, seed) : placeholder(root, S.notFound)],
   [/^\/levels\/reverse$/, (root, f) => mountLevels(root, f, 'reverse')],
-  [/^\/reverse\/E([1-6])-(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, +level, seed, undefined, 'reverse')],
+  [/^\/reverse\/E([1-6])-(new|\d{1,10})$/, (root, _f, level, seed) => mountEndless(root, level, seed, undefined, 'reverse')],
   [/^\/reverse\/([\w-]+)$/, (root, f, id) => f.puzzles.some(p => p.id === id) ? mountReversePuzzle(root, f, id) : placeholder(root, S.notFound)],
   [/^\/nets\/([1-3])$/, (root, _f, level) => mountNets(root, +level as 1 | 2 | 3)],
   [/^\/draw(?:\/([\w-]+))?$/, (root, _f, id) => id ? mountDrawing(root, id) : mountDrawList(root)],

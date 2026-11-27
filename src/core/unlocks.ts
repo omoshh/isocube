@@ -19,7 +19,7 @@ export const hiddenAccents = (style: Style, mode: 'light' | 'dark'): Accent[] =>
 export const shownAccent = (a: Accent, style: Style, mode: 'light' | 'dark'): Accent => hiddenAccents(style, mode).includes(a) ? 'yellow' : a
 
 /** solved: puzzle ids incl. "E{level}-{seed}" and "R-{id}" */
-export type Progress = { solved: string[]; netsRight: number; endlessSeeds: Record<number, number[]> }
+export type Progress = { solved: string[]; netsRight: number; endlessSeeds: Record<string, number[]> } // keys: level '1'–'6' or a size spec like '3x3x2s'
 export type LineWidth = 'thin' | 'normal' | 'thick'
 export const LINE_WIDTHS: LineWidth[] = ['thin', 'normal', 'thick']
 export type Settings = { theme: 'system' | 'light' | 'dark'; accent: Accent; unlockAll: boolean; style: Style; lineWidth: LineWidth; lives: boolean }
