@@ -286,6 +286,20 @@ describe('iso grid', () => {
       m.state.tool = 'fill'; m.grid.render()
       expect(el.querySelectorAll('.g-snap circle')).toHaveLength(0)
     })
+    it('half snap dots hide when zoomed out (no thousands of circles per frame)', () => {
+      const m = mount({ free: { half: true } })
+      expect(el.querySelectorAll('.g-snap circle').length).toBeGreaterThan(0)
+      m.grid.zoomBy(22 / m.grid.getView().scale)
+      expect(el.querySelectorAll('.g-snap circle')).toHaveLength(0)
+    })
+    it('a tap on the arc dot is a tap: it starts the next arc there', () => {
+      const m = mount({ free: { half: true }, tool: 'arc' }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 1, m: 0 })]); drag(el, [toPx(v, { t: -1, m: 1 })])
+      expect(m.editor.drawing.arcs).toHaveLength(2)
+      drag(el, [dotPx(v)]) // the dot sits on eighth 5 of the circle round 0:1, a snap point
+      drag(el, [toPx(v, { t: 1, m: 1 })]) // eighth 0 of the same circle
+      expect(m.editor.drawing.arcs!.length).toBeGreaterThan(2)
+    })
     it('without free the line tool keeps the 3-direction snap', () => {
       const m = mount(), v = m.grid.getView()
       drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 3, m: 1 })])

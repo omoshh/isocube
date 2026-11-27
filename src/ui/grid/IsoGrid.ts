@@ -28,6 +28,7 @@ export type IsoGridOpts = {
 const S = Math.sqrt(3) / 2
 const ERASE_DIST = 0.4 // grid steps
 const HANDLE_DIST = 0.4 // grid steps: a stroke starting this near the arc dot drags it
+const MIN_DOT_SCALE = 24 // px per step: below this, half-point dots are too dense to see or to redraw on every frame
 const uv = toUV
 /** Fill colour index → CSS colour: 1–3 are the shading tones, 4+ the draw-mode palette (tokens defined by Task 17). */
 export const fillColour = (n: number) => (n <= 3 ? `var(--tone-${n})` : `var(--palette-${n})`)
@@ -67,7 +68,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   function drawSnap() {
     gSnap.replaceChildren()
     if (!showSnap()) return
-    if (o.free!.half) {
+    if (o.free!.half && surf!.getView().scale >= MIN_DOT_SCALE) {
       const [u0, u1, v0, v1] = surf!.visible()
       for (let T = Math.floor(2 * u0 / S); T <= Math.ceil(2 * u1 / S); T++)
         for (let M = Math.floor(2 * v0 - T / 2); M <= Math.ceil(2 * v1 - T / 2); M++)
@@ -181,7 +182,9 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       if (s.tool === 'line') { const l = lineFor(s.start, p); if (l) editor.addLines([l]) }
       else if (s.tool === 'arc') {
         if (!o.free) return
-        if (!s.dot) tapArc(p)
+        // a dot stroke that does not move is a tap (the dot often sits on a snap point)
+        if (s.dot && Math.hypot(p.u - s.start.u, p.v - s.start.v) < 0.1) { lastArc = null; tapArc(p) }
+        else if (!s.dot) tapArc(p)
         else { const a = arcNear(p); if (!sameArc(a, lastArc!.arc)) lastArc = { ...lastArc!, arc: a, added: editor.replaceArc(lastArc!.added, a) } }
       }
       else if (s.tool === 'freehand') editor.addLines(snapFreehandIso([...s.pts, p]))
