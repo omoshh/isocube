@@ -78,4 +78,9 @@ describe('backup v2', () => {
     expect(parseBackup(JSON.stringify({ ...good, drawings }))).toEqual({ ok: true, backup: { ...good, drawings } })
     expect(parseBackup(JSON.stringify({ ...good, drawings: { b: { lines: [], arcs: [1], fills: {} } } }))).toEqual({ ok: false, error: 'The drawing "b" is invalid.' })
   })
+  it('drawings with and without areas import; bad areas fail', () => {
+    const drawings = { a: { lines: [], fills: {} }, b: { lines: [], areas: [{ pts: [[0, 0], [1, 0], [0, 1]], c: 4 }], fills: {} } }
+    expect(parseBackup(JSON.stringify({ ...good, drawings }))).toEqual({ ok: true, backup: { ...good, drawings } })
+    expect(parseBackup(JSON.stringify({ ...good, drawings: { b: { lines: [], areas: [{ pts: 'x', c: 1 }], fills: {} } } }))).toEqual({ ok: false, error: 'The drawing "b" is invalid.' })
+  })
 })

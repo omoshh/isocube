@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { DrawingEditor, type Bounds, type Drawing } from '../../src/core/drawing'
 import type { Arc } from '../../src/core/arcs'
-import { triAt, triEdges, triNeighbours, segEnds, type Line } from '../../src/core/geometry'
+import { triAt, triEdges, triNeighbours, segEnds, toUV, type Line, type Pt } from '../../src/core/geometry'
+import { polyArea } from '../../src/core/areas'
 
 const B: Bounds = { t0: -10, t1: 10, v0: -10, v1: 10 }
 const empty = (): Drawing => ({ lines: [], fills: {} })
@@ -73,7 +74,7 @@ describe('drawing', () => {
     const e = new DrawingEditor(empty(), B, () => {})
     e.clear(); expect(e.canUndo).toBe(false)
     e.addLines(rhombus); e.fill(start, 1); e.clear()
-    expect(e.drawing).toEqual({ ...empty(), arcs: [] })
+    expect(e.drawing).toEqual({ ...empty(), arcs: [], areas: [] })
     e.undo()
     expect(e.drawing.lines).toHaveLength(4)
     expect(Object.keys(e.drawing.fills)).toHaveLength(2)
@@ -118,3 +119,45 @@ describe('arcs in the editor', () => {
     expect(new DrawingEditor(empty(), B, () => {}).drawing.arcs).toEqual([])
   })
 })
+
+describe('area fills (round 4)', () => {
+  const S3 = Math.sqrt(3) / 2
+  const at = (p: Pt) => { const [u, v] = toUV(p); return { u, v } }
+  // rhombus 0:0, 1:0, 1:1, 0:1 cut by its long diagonal, a free line
+  const cut = () => { const e = new DrawingEditor(empty(), B, () => {}); e.addLines([L(0, 0, 1, 0), L(1, 0, 1, 1), L(1, 1, 0, 1), L(0, 1, 0, 0), L(0, 0, 1, 1)]); return e }
+  it('a free line splits the fill', () => {
+    const e = cut()
+    e.fillArea(at({ t: 2 / 3, m: 1 / 3 }), 4); e.fillArea(at({ t: 1 / 3, m: 2 / 3 }), 5)
+    expect(e.drawing.areas!.map(a => a.c)).toEqual([4, 5])
+    for (const a of e.drawing.areas!) expect(polyArea(a.pts)).toBeCloseTo(S3 / 2, 3)
+  })
+  it('an open area fills nothing and adds no step', () => {
+    const e = new DrawingEditor(empty(), B, () => {})
+    e.addLines([L(0, 0, 1, 0), L(1, 0, 1, 1)])
+    const before = e.canUndo
+    e.fillArea(at({ t: 0.6, m: 0.2 }), 4)
+    expect(e.drawing.areas).toEqual([])
+    e.undo(); expect(e.drawing.lines).toEqual([]); expect(before).toBe(true)
+  })
+  it('a second fill of the same area recolours it; triangle fills under it go', () => {
+    const e = new DrawingEditor({ lines: [], fills: { [triAt(...toUV({ t: 0.6, m: 0.3 }))]: 2 } }, B, () => {})
+    e.addLines([L(0, 0, 1, 0), L(1, 0, 1, 1), L(1, 1, 0, 1), L(0, 1, 0, 0)])
+    e.fillArea(at({ t: 0.5, m: 0.5 }), 4); e.fillArea(at({ t: 0.5, m: 0.5 }), 5)
+    expect(e.drawing.areas!.map(a => a.c)).toEqual([5])
+    expect(e.drawing.fills).toEqual({})
+  })
+  it('unfillArea takes the top area; undo brings it back', () => {
+    const e = cut()
+    e.fillArea(at({ t: 2 / 3, m: 1 / 3 }), 4)
+    expect(e.unfillArea(at({ t: 1 / 3, m: 2 / 3 }))).toBe(false)
+    expect(e.unfillArea(at({ t: 2 / 3, m: 1 / 3 }))).toBe(true)
+    expect(e.drawing.areas).toEqual([])
+    e.undo(); expect(e.drawing.areas).toHaveLength(1)
+  })
+  it('old drawings get an empty area list; clear empties it', () => {
+    expect(new DrawingEditor(empty(), B, () => {}).drawing.areas).toEqual([])
+    const e = cut(); e.fillArea(at({ t: 2 / 3, m: 1 / 3 }), 4); e.clear()
+    expect(e.drawing.areas).toEqual([])
+  })
+})
+

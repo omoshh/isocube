@@ -1,12 +1,20 @@
-import { arcPieces, isArcKey, type Arc, type ArcKey } from './arcs'
-import { segEnds, triEdges, triNeighbours, linePieces, type Line, type SegKey, type TriKey } from './geometry'
+import { arcPieces, arcPolyline, isArcKey, type Arc, type ArcKey } from './arcs'
+import { areaAt, inPoly, polyArea, type P2 } from './areas'
+import { segEnds, toUV, triEdges, triNeighbours, linePieces, type Line, type SegKey, type TriKey } from './geometry'
 
-export type Drawing = { lines: SegKey[]; arcs?: ArcKey[]; fills: Record<TriKey, number>; name?: string }
+/** A filled closed area (round 4): its outline in screen units, and the colour index. */
+export type Area = { pts: P2[]; c: number }
+export type Drawing = { lines: SegKey[]; arcs?: ArcKey[]; areas?: Area[]; fills: Record<TriKey, number>; name?: string }
 export type Bounds = { t0: number; t1: number; v0: number; v1: number }
 
 const S = Math.sqrt(3) / 2
 const MAX_REGION = 4000 // same cap as the reference page
-const copy = (d: Drawing): Drawing => ({ lines: [...d.lines], arcs: [...(d.arcs ?? [])], fills: { ...d.fills } })
+const copy = (d: Drawing): Drawing => ({ lines: [...d.lines], arcs: [...(d.arcs ?? [])], areas: [...(d.areas ?? [])], fills: { ...d.fills } })
+const triCentre = (k: TriKey): P2 => {
+  const vs = new Map(triEdges(k).flatMap(segEnds).map(p => [p.t + ':' + p.m, toUV(p)]))
+  const ps = [...vs.values()]
+  return [ps.reduce((a, p) => a + p[0], 0) / 3, ps.reduce((a, p) => a + p[1], 0) / 3]
+}
 
 export class DrawingEditor {
   private cur: Drawing
@@ -45,6 +53,29 @@ export class DrawingEditor {
     const next = [...set].sort()
     if (next.join() !== [...old].sort().join()) this.commit({ ...copy(this.cur), arcs: next })
     return fresh
+  }
+
+  /** Fills the closed area around q, bounded by every drawn line and arc; an open area fills nothing. */
+  fillArea(q: { u: number; v: number }, colour: number) {
+    const segs: [P2, P2][] = [
+      ...this.cur.lines.map(k => segEnds(k).map(toUV) as [P2, P2]),
+      ...this.cur.arcs!.flatMap(k => { const ps = arcPolyline(k); return ps.slice(1).map((p, i): [P2, P2] => [ps[i], p]) }),
+    ]
+    const at: P2 = [q.u, q.v], poly = areaAt(segs, at)
+    if (!poly) return
+    const pts = poly.map(([u, v]): P2 => [Math.round(u * 1e4) / 1e4, Math.round(v * 1e4) / 1e4]), size = polyArea(pts)
+    // the same area filled again: recolour it (drop the old one); old triangle fills under it go too
+    const areas = this.cur.areas!.filter(a => !(inPoly(a.pts, at) && Math.abs(Math.abs(polyArea(a.pts)) - size) < 1e-6))
+    const fills = Object.fromEntries(Object.entries(this.cur.fills).filter(([k]) => !inPoly(pts, triCentre(k))))
+    this.commit({ ...copy(this.cur), areas: [...areas, { pts, c: colour }], fills })
+  }
+
+  /** Removes the last-filled area holding q; false when there is none. */
+  unfillArea(q: { u: number; v: number }): boolean {
+    const as = this.cur.areas!, i = as.findLastIndex(a => inPoly(a.pts, [q.u, q.v]))
+    if (i < 0) return false
+    this.commit({ ...copy(this.cur), areas: as.filter((_, j) => j !== i) })
+    return true
   }
 
   erase(s: SegKey | ArcKey) {
@@ -99,13 +130,13 @@ export class DrawingEditor {
   }
 
   clear() {
-    if (!this.cur.lines.length && !this.cur.arcs?.length && !Object.keys(this.cur.fills).length) return
-    this.commit({ lines: [], arcs: [], fills: {} })
+    if (!this.cur.lines.length && !this.cur.arcs?.length && !this.cur.areas?.length && !Object.keys(this.cur.fills).length) return
+    this.commit({ lines: [], arcs: [], areas: [], fills: {} })
   }
 
   /** Empties the drawing and forgets history (a lives restart is not an undo step). */
   reset() {
-    this.past = []; this.future = []; this.cur = { lines: [], arcs: [], fills: {} }; this.onChange(this.drawing)
+    this.past = []; this.future = []; this.cur = { lines: [], arcs: [], areas: [], fills: {} }; this.onChange(this.drawing)
   }
 
   undo() {

@@ -8,6 +8,7 @@ export type Backup = { app: 'isocube'; version: 1 | 2 | 3; exportedAt: string; p
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const strs = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string')
+const areas = (v: unknown) => Array.isArray(v) && v.every(a => isObj(a) && typeof a.c === 'number' && Array.isArray(a.pts) && a.pts.every(p => nums(p) && p.length === 2))
 const nums = (v: unknown): v is number[] => Array.isArray(v) && v.every(x => typeof x === 'number' && Number.isFinite(x))
 
 export function parseBackup(text: string): { ok: true; backup: Backup } | { ok: false; error: string } {
@@ -38,7 +39,7 @@ export function parseBackup(text: string): { ok: true; backup: Backup } | { ok: 
 
   if (!isObj(b.drawings)) return fail('The drawings are missing.')
   for (const [k, d] of Object.entries(b.drawings)) {
-    if (!isObj(d) || !strs(d.lines) || (d.arcs !== undefined && !strs(d.arcs)) || !isObj(d.fills) || !Object.values(d.fills).every(v => typeof v === 'number') || (d.name !== undefined && typeof d.name !== 'string'))
+    if (!isObj(d) || !strs(d.lines) || (d.arcs !== undefined && !strs(d.arcs)) || (d.areas !== undefined && !areas(d.areas)) || !isObj(d.fills) || !Object.values(d.fills).every(v => typeof v === 'number') || (d.name !== undefined && typeof d.name !== 'string'))
       return fail(`The drawing "${k}" is invalid.`)
   }
 
