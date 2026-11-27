@@ -1,11 +1,18 @@
 // Piece types: what a shape is built from (round 4: a cube and a ramp; curved pieces plug in here later).
-import { axisPlane, rampCells, slopePlane, type Dir, type P3 } from './solid'
+import { FRONT, SIDE, TOP, axisPlane, rampCells, slopePlane, type Dir, type P3 } from './solid'
 
 /** A placed piece: (x, y) its first cell (a ramp's low-end cell), z its base; `len` and `dir` mean nothing for a cube. */
 export type Placed = { x: number; y: number; z: number; len: 1 | 2 | 3; dir: Dir }
 /** A face of a piece with its outward normal. */
 export type PieceFace = { pts: P3[]; plane: string; n: P3 }
 export type AxisView = 'top' | 'front' | 'side'
+/**
+ * A piece's outline in one view, in view-plane coordinates: top (x, y), front (x, z), side (y, z).
+ * A segment runs between lattice points with slope 0, ∞, ±1, ±½ or ±⅓ (its crossings then stay on the 1/60 grid).
+ */
+export type Curve = { kind: 'segment'; a: [number, number]; b: [number, number] }
+  // shortcut: arcs (cylinders, roofs, quarter-rounds) arrive in phase 3; the kind is reserved, exactView throws on it
+  | { kind: 'arc'; centre: [number, number]; r: number; from: number; to: number }
 
 export type PieceType = {
   name: string
@@ -13,6 +20,13 @@ export type PieceType = {
   cells(p: Placed): [number, number][]
   /** Its faces that can face a viewer above, in front or at the side, with outward normals; the caller culls covered ones. */
   faces(p: Placed): PieceFace[]
+  /**
+   * The outline of its faces that face viewer `v`, minus faces a neighbour covers (`at` tells what fills a unit cube
+   * of space), relative to the piece's (x, y, z) in view-plane coordinates. These are the sketch's edges: the lines of
+   * the view can only lie on them. The caller must not change the array (piece types share them); `p` is read only
+   * during the call.
+   */
+  outline(p: Placed, v: AxisView, at: (x: number, y: number, z: number) => PieceType | undefined): readonly Curve[]
   /**
    * The plane key of the face seen at one point of cell `i` of the piece, or null when the piece does not cover it there.
    * (u, w) is the point inside the cell scaled by S (0 … S): top (x, y), front (x, z), side (y, z), from the cell's low
@@ -38,7 +52,14 @@ const slopeKey = (r: Placed) => {
 }
 const STEP: Record<Dir, [number, number]> = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] }
 
-const cube: PieceType = {
+const seg = (a: [number, number], b: [number, number]): Curve => ({ kind: 'segment', a, b })
+const SQUARE: readonly Curve[] = [seg([0, 0], [1, 0]), seg([1, 0], [1, 1]), seg([1, 1], [0, 1]), seg([0, 1], [0, 0])], NONE: readonly Curve[] = []
+/** View-plane coordinates of a 3D point. */
+const plane2 = (v: AxisView, p: P3): [number, number] => (v === 'top' ? [p[0], p[1]] : v === 'front' ? [p[0], p[2]] : [p[1], p[2]])
+// a function: solid.ts imports this file, so solid's constants exist only once calls start
+const VIEW_DIR = () => ({ top: TOP, front: FRONT, side: SIDE })
+
+export const CUBE: PieceType = {
   name: 'cube',
   cells: p => [[p.x, p.y]],
   faces: ({ x, y, z }) => [
@@ -46,10 +67,16 @@ const cube: PieceType = {
     { n: [0, -1, 0], pts: [[x, y, z], [x + 1, y, z], [x + 1, y, z + 1], [x, y, z + 1]] },
     { n: [-1, 0, 0], pts: [[x, y, z], [x, y + 1, z], [x, y + 1, z + 1], [x, y, z + 1]] },
   ].map(f => ({ ...f, n: f.n as P3, pts: f.pts as P3[], plane: axisPlane(f.n as P3, f.pts[0] as P3) })),
+  // as shapeFaces: a top face is covered by anything above it, a front or side face only by a cube
+  outline: ({ x, y, z }, v, at) =>
+    (v === 'top' ? !at(x, y, z + 1) : v === 'front' ? at(x, y - 1, z) !== CUBE : at(x - 1, y, z) !== CUBE) ? SQUARE : NONE,
   section: (p, _i, v) => (v === 'top' ? key('top', p.z + 1) : v === 'front' ? key('front', p.y) : key('side', p.x)),
 }
 
-const ramp: PieceType = {
+// a ramp's outline at the origin, per direction, length and view (its faces are not covered by anything)
+const rampOutlines: Curve[][] = []
+
+export const RAMP: PieceType = {
   name: 'ramp',
   cells: p => rampCells(p),
   faces(r) {
@@ -71,6 +98,23 @@ const ramp: PieceType = {
       return { pts, n, plane: plane ?? axisPlane(n, pts[0]) }
     })
   },
+  outline(r, v) {
+    const k = ('EWNS'.indexOf(r.dir) * 4 + r.len) * 3 + (v === 'top' ? 0 : v === 'front' ? 1 : 2)
+    let segs = rampOutlines[k]
+    if (!segs) {
+      segs = []
+      for (const f of RAMP.faces({ x: 0, y: 0, z: 0, len: r.len, dir: r.dir })) {
+        const n = f.n, d = VIEW_DIR()[v]
+        if (n[0] * d[0] + n[1] * d[1] + n[2] * d[2] <= 0) continue
+        for (let j = 0; j < f.pts.length; j++) {
+          const a = plane2(v, f.pts[j]), b = plane2(v, f.pts[(j + 1) % f.pts.length])
+          if (a[0] !== b[0] || a[1] !== b[1]) segs.push(seg(a, b))
+        }
+      }
+      rampOutlines[k] = segs
+    }
+    return segs
+  },
   section(r, i, v, u, w, S) {
     if (v === 'top') return slopeKey(r)
     const c = r.x + STEP[r.dir][0] * i, d = r.y + STEP[r.dir][1] * i, L = r.len, along = r.dir === 'E' || r.dir === 'W'
@@ -86,5 +130,17 @@ const ramp: PieceType = {
   },
 }
 
-/** Index 0 is the cube, 1 the ramp. */
-export const PIECES: PieceType[] = [cube, ramp]
+export const PIECES: PieceType[] = [CUBE, RAMP]
+
+/**
+ * Where lattice piece (px, py) + t·(dx, dy) crosses segment (ex, ey) + s·(fx, fy) inside the piece, as 60·t, or −1.
+ * Whole numbers in, whole number out: segments of the allowed slopes cross on the 1/60 grid (checked).
+ */
+export function segmentCrossing(px: number, py: number, dx: number, dy: number, ex: number, ey: number, fx: number, fy: number): number {
+  const den = dx * fy - dy * fx
+  if (!den) return -1 // parallel: a collinear segment ends on lattice points, never inside a piece
+  const qx = ex - px, qy = ey - py, nt = qx * fy - qy * fx, ns = qx * dy - qy * dx
+  if (den > 0 ? nt <= 0 || nt >= den || ns < 0 || ns > den : nt >= 0 || nt <= den || ns > 0 || ns < den) return -1
+  if ((60 * nt) % den) throw new Error('segmentCrossing: a crossing off the 1/60 grid (a slope beyond ±⅓?)')
+  return (60 * nt) / den
+}

@@ -1,5 +1,5 @@
 // Shapes made of cube stacks and ramps (round 4), as 3D faces for the general sketch.
-import { PIECES } from './pieces'
+import { CUBE, RAMP } from './pieces'
 import { HeightMap } from './shape'
 
 export type Dir = 'N' | 'E' | 'S' | 'W'
@@ -63,16 +63,15 @@ export function shapeFaces(s: Shape, view: P3): Face3[] {
   const { hm } = s, out: Face3[] = []
   const capped = new Set(s.ramps.flatMap(r => rampCells(r).map(([x, y]) => x + ',' + y)))
   const filled = (x: number, y: number, z: number) => z >= 0 && z < H(hm, x, y)
-  const [cube, ramp] = PIECES
   for (const [x, y, z] of hm.cubes()) {
     const owner = `c:${x},${y},${z}`
-    for (const f of cube.faces({ x, y, z, len: 1, dir: 'E' })) {
+    for (const f of CUBE.faces({ x, y, z, len: 1, dir: 'E' })) {
       const show = f.n[2] > 0 ? !filled(x, y, z + 1) && !(z === H(hm, x, y) - 1 && capped.has(x + ',' + y)) : !filled(x + f.n[0], y + f.n[1], z)
       if (show && dot(f.n, view) > 1e-9) out.push({ pts: f.pts, plane: f.plane, owner })
     }
   }
   s.ramps.forEach((r, i) => {
-    for (const f of ramp.faces({ ...r, z: baseZ(s, r) })) if (dot(f.n, view) > 1e-9) out.push({ pts: f.pts, plane: f.plane, owner: 'r:' + i })
+    for (const f of RAMP.faces({ ...r, z: baseZ(s, r) })) if (dot(f.n, view) > 1e-9) out.push({ pts: f.pts, plane: f.plane, owner: 'r:' + i })
   })
   return out
 }
