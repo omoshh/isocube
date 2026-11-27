@@ -111,6 +111,14 @@ describe('draw screen (round 3)', () => {
     expect(labels.slice(0, 5)).toEqual(['Line', 'Arc', 'Freehand', 'Fill', 'Erase'])
     s.destroy()
   })
+  it('Draw snaps only to grid crossings and arc points: no midpoint dots', async () => {
+    const { mountDrawing } = await import('../../src/ui/screens/draw')
+    const r = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 380, height: 520, right: 380, bottom: 520, x: 0, y: 0, toJSON() {} } as DOMRect)
+    saveDrawing('draw/x', { lines: [], fills: {}, name: 'X' })
+    const s = await mountDrawing(root(), 'x')
+    expect(root().querySelectorAll('.g-snap circle')).toHaveLength(0)
+    s.destroy(); r.mockRestore()
+  })
   it('New drawing is one full-width button', async () => {
     const s = await mountDrawList(root())
     const b = root().querySelector('[data-new]')!
