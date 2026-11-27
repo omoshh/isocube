@@ -161,3 +161,13 @@ describe('area fills (round 4)', () => {
   })
 })
 
+describe('add (round 4)', () => {
+  it('adds lines and arcs in one step; nothing new adds no step', () => {
+    const e = new DrawingEditor(empty(), B, () => {})
+    e.add([L(0, 0, 0, 2)], ['Az|0:0|1|0'])
+    expect(e.drawing.lines).toHaveLength(2); expect(e.drawing.arcs).toEqual(['Az|0:0|1|0'])
+    e.add([L(0, 0, 0, 1)], ['Az|0:0|1|0'])
+    e.undo(); expect(e.drawing).toEqual({ ...empty(), arcs: [], areas: [] })
+  })
+})
+

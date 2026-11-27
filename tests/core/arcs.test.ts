@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { arcMid, arcPieces, arcPolyline, arcSnapPoints, arcsThrough, eighthPoint, isArcKey, pieceEnds } from '../../src/core/arcs'
-import { ptKey, toUV } from '../../src/core/geometry'
+import { circlesOf, extrude, arcMid, arcPieces, arcPolyline, arcSnapPoints, arcsThrough, eighthPoint, isArcKey, pieceEnds } from '../../src/core/arcs'
+import { linePieces, ptKey, toUV } from '../../src/core/geometry'
 
 describe('arcs', () => {
   it('eighth points are exact', () => {
@@ -40,4 +40,20 @@ describe('arcs', () => {
     const p = toUV(eighthPoint('z', { t: 0, m: 0 }, 1, 1))
     expect(mid[0]).toBeCloseTo(p[0], 12); expect(mid[1]).toBeCloseTo(p[1], 12)
   })
+  const full = arcPieces({ plane: 'z', c: { t: 0, m: 0 }, r: 1, k0: 0, n: 8 })
+  it('circlesOf lists each drawn circle once', () => {
+    expect(circlesOf([...full, 'Ay|0:0.5|0.5|2'])).toEqual([{ plane: 'z', c: { t: 0, m: 0 }, r: 1 }, { plane: 'y', c: { t: 0, m: 0.5 }, r: 0.5 }])
+  })
+  it('extrude a full top circle 2 cells up: a cylinder', () => {
+    const r = extrude(full, { plane: 'z', c: { t: 0, m: 0 }, r: 1 }, 2)
+    expect(r.arcs).toEqual(arcPieces({ plane: 'z', c: { t: 0, m: 2 }, r: 1, k0: 0, n: 8 }))
+    expect(r.lines.flatMap(linePieces).sort()).toEqual(['0~-1:0~0.5|0~-1:2~0.5', '0~1:0~-0.5|0~1:2~-0.5'])
+  })
+  it('extrude a half circle: side lines only where the arc reaches', () => {
+    const half = arcPieces({ plane: 'z', c: { t: 0, m: 0 }, r: 1, k0: 0, n: 3 }) // eighths 0 to 3
+    const r = extrude([...half, 'Ay|5:5|1|0'], { plane: 'z', c: { t: 0, m: 0 }, r: 1 }, -1)
+    expect(r.arcs).toHaveLength(3)
+    expect(r.lines.flatMap(linePieces)).toEqual(['0~-1:-1~0.5|0~-1:0~0.5'])
+  })
 })
+

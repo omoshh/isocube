@@ -34,11 +34,14 @@ export class DrawingEditor {
     this.past.push(this.cur); this.future = []; this.cur = next; this.onChange(this.drawing)
   }
 
-  addLines(ls: Line[]) {
-    const set = new Set(this.cur.lines)
-    const n = set.size
+  addLines(ls: Line[]) { this.add(ls, []) }
+
+  /** Lines and arc pieces in one step (a cylinder drag); nothing new adds no step. */
+  add(ls: Line[], arcs: ArcKey[]) {
+    const set = new Set(this.cur.lines), as = new Set(this.cur.arcs), n = set.size + as.size
     for (const l of ls) for (const s of linePieces(l)) set.add(s)
-    if (set.size !== n) this.commit({ ...copy(this.cur), lines: [...set].sort() })
+    for (const k of arcs) as.add(k)
+    if (set.size + as.size !== n) this.commit({ ...copy(this.cur), lines: [...set].sort(), arcs: [...as].sort() })
   }
 
   /** Adds the arc's pieces in one step; returns the pieces that were not there before. */

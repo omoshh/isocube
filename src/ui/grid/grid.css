@@ -17,5 +17,6 @@
 .g-snap circle { fill: var(--ink-muted, var(--ink)); opacity: 0.45; stroke: none; }
 .g-handle circle { fill: var(--accent); stroke: none; }
 .g-handle circle.first { fill: var(--ink); }
+.g-handle circle.centre { fill: none; stroke: var(--accent); stroke-width: 2px; vector-effect: non-scaling-stroke; }
 .g-prev { opacity: var(--opacity-answer); }
 .g-prev line, .g-prev polyline { stroke: var(--ink); stroke-width: var(--stroke-line); stroke-linejoin: round; }

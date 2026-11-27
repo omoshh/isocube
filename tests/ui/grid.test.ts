@@ -324,6 +324,22 @@ describe('iso grid', () => {
       drag(el, [toPx(v, { t: 1, m: 0 }), toPx(v, { t: 0.05, m: 0.45 })])
       expect(m.editor.drawing.lines).toContain('0:0.5|1:0')
     })
+    it('drag from a circle centre makes a cylinder in one undo step', () => {
+      const full = ['Az|0:0|1|0', 'Az|0:0|1|1', 'Az|0:0|1|2', 'Az|0:0|1|3', 'Az|0:0|1|4', 'Az|0:0|1|5', 'Az|0:0|1|6', 'Az|0:0|1|7']
+      const m = mount({ free: { half: false }, tool: 'arc', arcs: full }), v = m.grid.getView()
+      expect(el.querySelectorAll('.g-handle circle.centre')).toHaveLength(1)
+      drag(el, [uvPx(v, [0, 0]), uvPx(v, [0.1, 1]), uvPx(v, [0.1, 2.1])])
+      expect(m.editor.drawing.arcs).toHaveLength(16)
+      expect(m.editor.drawing.lines).toEqual(['0~-1:0~0.5|0~-1:2~0.5', '0~1:0~-0.5|0~1:2~-0.5'])
+      m.editor.undo(); m.grid.render()
+      expect(m.editor.drawing.arcs).toHaveLength(8); expect(m.editor.drawing.lines).toEqual([])
+    })
+    it('a tap on a circle centre is a normal arc tap', () => {
+      const m = mount({ free: { half: false }, tool: 'arc', arcs: ['Az|0:0|1|0'] }), v = m.grid.getView()
+      drag(el, [uvPx(v, [0, 0])])
+      expect(el.querySelectorAll('.g-handle circle.first')).toHaveLength(1)
+      expect(m.editor.drawing.arcs).toEqual(['Az|0:0|1|0'])
+    })
     it('without free the line tool keeps the 3-direction snap', () => {
       const m = mount(), v = m.grid.getView()
       drag(el, [toPx(v, { t: 0, m: 0 }), toPx(v, { t: 3, m: 1 })])

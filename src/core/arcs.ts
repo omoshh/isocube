@@ -1,5 +1,5 @@
 // Arcs of circles (radius ½ or 1) in the 3 face planes, kept exact: every end is an eighth point (k·45°).
-import { parsePt, ptKey, samePt, toUV, type Pt } from './geometry'
+import { parsePt, ptKey, samePt, toUV, type Line, type Pt } from './geometry'
 
 /** The plane's normal: z = top, y = front (xz), x = side (yz). */
 export type Plane = 'x' | 'y' | 'z'
@@ -74,4 +74,28 @@ export function arcSnapPoints(keys: ArcKey[]): Pt[] {
   const m = new Map<string, Pt>()
   for (const k of keys) for (const p of pieceEnds(k)) m.set(ptKey(p), p)
   return [...m.values()]
+}
+
+export type Circle = { plane: Plane; c: Pt; r: 0.5 | 1 }
+/** The plane's normal on the lattice: a cylinder grows this way. */
+export const NORMAL: Record<Plane, Pt> = { z: Z, y: Y, x: X }
+
+export function circlesOf(keys: ArcKey[]): Circle[] {
+  const m = new Map<string, Circle>()
+  for (const k of keys) { const a = parse(k); m.set(`${a.plane}|${ptKey(a.c)}|${a.r}`, { plane: a.plane, c: a.c, r: a.r }) }
+  return [...m.values()]
+}
+
+/** The circle's drawn pieces moved n cells along its normal, plus the 2 side lines at the silhouette where the arcs reach. */
+export function extrude(keys: ArcKey[], ci: Circle, n: number): { arcs: ArcKey[]; lines: Line[] } {
+  const N = NORMAL[ci.plane], move = (p: Pt): Pt => ({ ...p, t: p.t + n * N.t + 0, m: p.m + n * N.m + 0 })
+  const mine = keys.filter(k => { const a = parse(k); return a.plane === ci.plane && a.r === ci.r && samePt(a.c, ci.c) })
+  const c2 = ptKey(move(ci.c))
+  const arcs = mine.map(k => { const a = parse(k); return `A${a.plane}|${c2}|${a.r}|${a.k}` })
+  // silhouette: the eighths farthest to each side of the normal's screen direction
+  const d = toUV(N), side = (k: number) => { const [u, v] = toUV(eighthPoint(ci.plane, { t: 0, m: 0 }, ci.r, k)); return d[0] * v - d[1] * u }
+  const ks = [0, 1, 2, 3, 4, 5, 6, 7].sort((a, b) => side(a) - side(b))
+  const ends = new Set(mine.flatMap(k => pieceEnds(k).map(ptKey)))
+  const lines = [ks[0], ks[7]].map(k => eighthPoint(ci.plane, ci.c, ci.r, k)).filter(p => ends.has(ptKey(p))).map(a => ({ a, b: move(a) }))
+  return { arcs, lines }
 }
