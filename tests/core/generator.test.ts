@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { HeightMap } from '../../src/core/shape'
 import { views } from '../../src/core/views'
-import { LEVELS, countSolutions, makePuzzle, rng, sampleShape } from '../../src/core/generator'
+import { LEVELS, clampSpec, countSolutions, makeEndless, makePuzzle, makeSlopeCandidate, parseSpec, rng, sampleShape, specKey } from '../../src/core/generator'
+import { countShapeSolutions } from '../../src/core/rampSolver'
+import { shapeViews } from '../../src/core/shapeViews'
+import { toEntryRamps } from '../../src/core/solid'
+import { fairPicture, fairShape } from '../../src/core/visibility'
+import oldCandidates from '../fixtures/slope-candidates.json'
 
 const key = (h: HeightMap) => { const v = views(h); return [v.top, v.front, v.side].map(s => [...s].sort().join(',')).join('/') }
 const allMaps = (cols: number, rows: number, maxH: number): HeightMap[] => {
@@ -56,4 +61,47 @@ describe('generator', () => {
       expect(countSolutions(views(p.hm), p.hm.cols, p.hm.rows, LEVELS[level - 1].maxH)).toBe(1)
     }
   })
+})
+
+describe('endless spec', () => {
+  it('specKeyRoundTrip', () => {
+    for (const s of [{ cols: 4, rows: 4, maxH: 3, slopes: false }, { cols: 3, rows: 2, maxH: 2, slopes: true }]) expect(parseSpec(specKey(s))).toEqual(s)
+    expect(specKey({ cols: 3, rows: 3, maxH: 2, slopes: true })).toBe('3x3x2s')
+  })
+
+  it('parseSpecRefuses', () => {
+    for (const k of ['9x9x9', '1x3x2', '3x3x0', '4x3x2s', '3x3x4s', '3x3x3s', '3x3x1s', 'abc', '3x3x2S', ' 3x3x2']) expect(parseSpec(k)).toBeNull()
+  })
+
+  it('clampSpec', () => {
+    expect(clampSpec({ cols: 5, rows: 5, maxH: 4, slopes: true })).toEqual({ cols: 3, rows: 3, maxH: 2, slopes: true })
+    expect(clampSpec({ cols: 2, rows: 2, maxH: 1, slopes: true })).toEqual({ cols: 2, rows: 2, maxH: 2, slopes: true }) // no ramp fits at height 1
+    expect(clampSpec({ cols: 9, rows: 1, maxH: 0, slopes: false })).toEqual({ cols: 6, rows: 2, maxH: 1, slopes: false })
+  })
+
+  it('slopeCandidateUnchanged', () => {
+    for (const [seed, want] of Object.entries(oldCandidates)) {
+      const s = makeSlopeCandidate(+seed)
+      expect(s && { h: s.hm.h, ramps: toEntryRamps(s.ramps) }).toEqual(want)
+    }
+  })
+
+  it('makeEndlessCubes', () => {
+    const s = makeEndless({ cols: 4, rows: 3, maxH: 3, slopes: false }, 7)
+    expect([s.hm.cols, s.hm.rows, s.ramps.length]).toEqual([4, 3, 0])
+    expect(Math.max(...s.hm.h)).toBeLessThanOrEqual(3)
+    expect(fairPicture(s.hm)).toBe(true)
+    expect(countSolutions(views(s.hm), 4, 3, 3)).toBe(1)
+    expect(makeEndless({ cols: 4, rows: 3, maxH: 3, slopes: false }, 7).hm.h).toEqual(s.hm.h)
+  })
+
+  it('makeEndlessSlopes', () => {
+    const spec = { cols: 3, rows: 3, maxH: 2, slopes: true }, s = makeEndless(spec, 7)
+    expect([s.hm.cols, s.hm.rows]).toEqual([3, 3])
+    expect(s.ramps.length).toBeGreaterThan(0)
+    expect(fairShape(s, 2)).toBe(true)
+    expect(countShapeSolutions(shapeViews(s, 2), 3, 3, 2, 2)).toBe(1)
+    const t = makeEndless(spec, 7)
+    expect([t.hm.h, t.ramps]).toEqual([s.hm.h, s.ramps])
+  }, 60_000) // two slope solver runs
 })

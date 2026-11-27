@@ -183,21 +183,56 @@ export function stairShape(cols: number, rows: number, maxH: number, r: Rng): He
 
 /** A Slopes candidate (3×3 or 3×4, maxH 3, 1–3 ramps): returned only when fair and with one solution among cube-and-ramp shapes. */
 export function makeSlopeCandidate(seed: number): Shape | null {
-  const r = rng(seed), [cols, rows] = r() < 0.5 ? [3, 3] : r() < 0.5 ? [3, 4] : [4, 3], hm = stairShape(cols, rows, 3, r)
+  const r = rng(seed), [cols, rows] = r() < 0.5 ? [3, 3] : r() < 0.5 ? [3, 4] : [4, 3]
+  return slopeCandidate(cols, rows, 3, r)
+}
+
+/** A stair shape with 1–3 ramps, or null when it is not fair or has more than one solution. */
+export function slopeCandidate(cols: number, rows: number, maxH: number, r: Rng): Shape | null {
+  const hm = stairShape(cols, rows, maxH, r)
   // every ramp that fits, lengths 2 and 3 weighted ×3 (the owner wants bigger pieces; random spots rarely fit them)
   const ramps: Ramp[] = [], want = 1 + pick(r, 3)
   while (ramps.length < want) {
     const fits: Ramp[] = []
     for (let x = 0; x < cols; x++) for (let y = 0; y < rows; y++) for (const dir of ['E', 'W', 'N', 'S'] as Dir[]) for (const len of [1, 2, 3] as const) {
       const c: Ramp = { x, y, len, dir }
-      if (validShape({ hm, ramps: [...ramps, c] }, 3)) for (let w = len > 1 ? 3 : 1; w > 0; w--) fits.push(c)
+      if (validShape({ hm, ramps: [...ramps, c] }, maxH)) for (let w = len > 1 ? 3 : 1; w > 0; w--) fits.push(c)
     }
     if (!fits.length) break
     ramps.push(fits[pick(r, fits.length)])
   }
   const s = { hm, ramps }
-  if (!ramps.length || !fairShape(s, 3)) return null
-  return countShapeSolutions(shapeViews(s, 3), cols, rows, 3, 2) === 1 ? s : null
+  if (!ramps.length || !fairShape(s, maxH)) return null
+  return countShapeSolutions(shapeViews(s, maxH), cols, rows, maxH, 2) === 1 ? s : null
+}
+
+export type EndlessSpec = { cols: number; rows: number; maxH: number; slopes: boolean }
+/** With slopes: width and depth at most SLOPES_MAX, height always SLOPES_H. Measured 2026-11-27 on a PC: height 3
+ *  takes a median 6 s (a phone about 3× that); height 1 never finds one (no ramp fits). Raise with a faster solver. */
+export const SLOPES_MAX = 3, SLOPES_H = 2
+
+export const specKey = (s: EndlessSpec) => `${s.cols}x${s.rows}x${s.maxH}${s.slopes ? 's' : ''}`
+
+export function parseSpec(key: string): EndlessSpec | null {
+  const m = /^([2-6])x([2-6])x([1-6])(s?)$/.exec(key)
+  if (!m) return null
+  const s = { cols: +m[1], rows: +m[2], maxH: +m[3], slopes: m[4] === 's' }
+  return s.slopes && (Math.max(s.cols, s.rows) > SLOPES_MAX || s.maxH !== SLOPES_H) ? null : s
+}
+
+export function clampSpec(s: EndlessSpec): EndlessSpec {
+  const top = s.slopes ? SLOPES_MAX : 6, c = (v: number, lo: number) => Math.max(lo, Math.min(top, Math.round(v)))
+  return { cols: c(s.cols, 2), rows: c(s.rows, 2), maxH: s.slopes ? SLOPES_H : c(s.maxH, 1), slopes: s.slopes }
+}
+
+/** The endless puzzle for a spec and seed (the same every time); loops until it finds one. */
+export function makeEndless(s: EndlessSpec, seed: number): Shape {
+  const r = rng(seed)
+  for (;;) {
+    if (s.slopes) { const c = slopeCandidate(s.cols, s.rows, s.maxH, r); if (c) return c; continue }
+    const hm = sampleShape(s.cols, s.rows, s.maxH, r)
+    if (fairPicture(hm) && countSolutions(views(hm), s.cols, s.rows, s.maxH) === 1) return { hm, ramps: [] }
+  }
 }
 
 /** Cells whose stack height or ramp part differ (shapes of other sizes count as far apart). */
