@@ -1,5 +1,5 @@
 import { proj, segEnds, toUV, triAt, triEdges, type Pt, type SegKey } from '../../core/geometry'
-import { arcMid, arcPieces, arcPolyline, arcSnapPoints, arcsThrough, circlesOf, extrude, isArcKey, NORMAL, type Arc, type ArcKey, type Circle } from '../../core/arcs'
+import { arcMid, arcPieces, arcPolyline, arcSnapPoints, arcsThrough, circlesOf, extrude, isArcKey, NORMAL, type Arc, type ArcKey, type Circle, type Radius } from '../../core/arcs'
 import { lineMidpoints, snapDragIso, snapFree, snapFreehandIso, snapPoint, type SnapOpts } from '../../core/snap'
 import type { Bounds, DrawingEditor } from '../../core/drawing'
 import type { CheckResult } from '../../core/checker'
@@ -12,7 +12,7 @@ export type Overlay = { kind: 'answer'; edges: Set<SegKey> } | { kind: 'check'; 
 export type IsoGridOpts = {
   /** Free line tool (any snap point to any snap point) and the arc tool; `half` adds edge midpoints as snap points,
    *  `mids` the middles of drawn lines (Draw only: in Views a half point is always a mistake). Unset: 3-direction lines (Shadows). */
-  free?: { half: boolean; mids?: boolean }
+  free?: { half: boolean; mids?: boolean; radii?: readonly Radius[] }
   bounds: Bounds
   guide?: { cols: number; rows: number; maxH: number }
   arrows: boolean
@@ -134,7 +134,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   /** The arc through the last arc's ends whose middle is nearest the finger. */
   const arcNear = (p: UV) => {
     const best = (a: Arc) => { const [u, v] = arcMid(a); return Math.hypot(u - p.u, v - p.v) }
-    return arcsThrough(lastArc!.p, lastArc!.q).reduce((a, b) => (best(b) < best(a) ? b : a))
+    return arcsThrough(lastArc!.p, lastArc!.q, o.free?.radii).reduce((a, b) => (best(b) < best(a) ? b : a))
   }
 
   function preview(s: NonNullable<typeof stroke>, p: UV) {
@@ -162,7 +162,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   function tapArc(p: UV) {
     const q = snapPoint(p, snapOpts())
     if (!arcFirst) { arcFirst = q; return }
-    const cands = arcsThrough(arcFirst, q)
+    const cands = arcsThrough(arcFirst, q, o.free?.radii)
     if (!cands.length) { arcFirst = q; return } // no valid arc: start again from here
     lastArc = { p: arcFirst, q, arc: cands[0], added: editor.addArc(cands[0]) }
     arcFirst = null

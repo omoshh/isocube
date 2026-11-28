@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gridSegKey, segKey, toUV, type Pt } from '../../src/core/geometry'
-import { eighthPoint } from '../../src/core/arcs'
+import { eighthPoint, type Radius } from '../../src/core/arcs'
 import { DrawingEditor } from '../../src/core/drawing'
 import { fitView, guideBounds, zoomAt, type View } from '../../src/ui/grid/transform'
 import { createIsoGrid, type Tool } from '../../src/ui/grid/IsoGrid'
@@ -42,7 +42,7 @@ beforeEach(() => {
 afterEach(() => { el.remove() })
 
 const bounds = { t0: -6, t1: 6, v0: -2.6, v1: 6.5 }
-function mount(o: { tool?: Tool; pen?: boolean; free?: { half: boolean; mids?: boolean }; lines?: string[]; arcs?: string[] } = {}) {
+function mount(o: { tool?: Tool; pen?: boolean; free?: { half: boolean; mids?: boolean; radii?: readonly Radius[] }; lines?: string[]; arcs?: string[] } = {}) {
   const editor = new DrawingEditor({ lines: o.lines ?? [], arcs: o.arcs ?? [], fills: {} }, bounds, () => {})
   const state = { tool: o.tool ?? 'line' as Tool, pen: o.pen ?? false }
   const grid = createIsoGrid(el, {
@@ -264,6 +264,16 @@ describe('iso grid', () => {
       expect(m.editor.drawing.arcs).toEqual([])
       drag(el, [toPx(v, { t: 3, m: 1 })]) // same offset as 1:0 → -1:1, moved by t 4
       expect(m.editor.drawing.arcs).toEqual(['Az|4:1|1|4', 'Az|4:1|1|5'])
+    })
+    it('arc: 6 steps apart makes a radius-3 half circle in Draw, nothing in Views', () => {
+      const draw = mount({ free: { half: false, radii: [3, 2.5, 2, 1.5, 1, 0.5] }, tool: 'arc' }), v = draw.grid.getView()
+      drag(el, [toPx(v, { t: 0, m: 0 })]); drag(el, [toPx(v, { t: 6, m: 0 })])
+      expect(draw.editor.drawing.arcs).toHaveLength(4)
+      expect(draw.editor.drawing.arcs!.every(k => k.split('|')[2] === '3')).toBe(true)
+      document.body.innerHTML = ''; el.innerHTML = ''; document.body.appendChild(el)
+      const views = mount({ free: { half: false }, tool: 'arc' }), w = views.grid.getView()
+      drag(el, [toPx(w, { t: 0, m: 0 })]); drag(el, [toPx(w, { t: 6, m: 0 })])
+      expect(views.editor.drawing.arcs).toEqual([])
     })
     it('a second finger drops the first arc point', () => {
       const m = mount({ free: { half: true }, tool: 'arc' }), v = m.grid.getView()

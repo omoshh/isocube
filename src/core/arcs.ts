@@ -1,10 +1,11 @@
-// Arcs of circles (radius ½ or 1) in the 3 face planes, kept exact: every end is an eighth point (k·45°).
+// Arcs of circles (radius ½ to 3) in the 3 face planes, kept exact: every end is an eighth point (k·45°).
 import { parsePt, ptKey, samePt, toUV, type Line, type Pt } from './geometry'
 
 /** The plane's normal: z = top, y = front (xz), x = side (yz). */
 export type Plane = 'x' | 'y' | 'z'
+export type Radius = 0.5 | 1 | 1.5 | 2 | 2.5 | 3
 /** Starts at eighth k0 (0–7) and runs n eighths (1–8) counter-clockwise in the plane basis. */
-export type Arc = { plane: Plane; c: Pt; r: 0.5 | 1; k0: number; n: number }
+export type Arc = { plane: Plane; c: Pt; r: Radius; k0: number; n: number }
 /** One eighth of a circle: `A<plane>|<centre>|<r>|<k>`. */
 export type ArcKey = string
 
@@ -18,7 +19,7 @@ const mod8 = (k: number) => ((k % 8) + 8) % 8
 
 export const isArcKey = (k: string) => k.startsWith('A')
 
-export function eighthPoint(plane: Plane, c: Pt, r: 0.5 | 1, k: number): Pt {
+export function eighthPoint(plane: Plane, c: Pt, r: Radius, k: number): Pt {
   const [e1, e2] = BASIS[plane], [ca, cb] = C8[mod8(k)], [sa, sb] = S8[mod8(k)]
   return {
     t: c.t + r * (ca * e1.t + sa * e2.t) + 0, m: c.m + r * (ca * e1.m + sa * e2.m) + 0,
@@ -31,7 +32,7 @@ export const arcPieces = (a: Arc): ArcKey[] =>
 
 function parse(k: ArcKey) {
   const [p, c, r, e] = k.split('|')
-  return { plane: p.slice(1) as Plane, c: parsePt(c), r: Number(r) as 0.5 | 1, k: Number(e) }
+  return { plane: p.slice(1) as Plane, c: parsePt(c), r: Number(r) as Radius, k: Number(e) }
 }
 
 export function pieceEnds(k: ArcKey): [Pt, Pt] {
@@ -55,9 +56,9 @@ export function arcPolyline(k: ArcKey, steps = 6): [number, number][] {
 export const arcMid = (a: Arc): [number, number] => at(a.plane, a.c, a.r, (a.k0 + a.n / 2) * 45)
 
 /** Every valid arc with ends p and q: fewest eighths first, then lower on screen, then plane z, y, x. */
-export function arcsThrough(p: Pt, q: Pt): Arc[] {
+export function arcsThrough(p: Pt, q: Pt, radii: readonly Radius[] = [1, 0.5]): Arc[] {
   const out: Arc[] = []
-  for (const plane of PLANES) for (const r of [1, 0.5] as const) for (let i = 0; i < 8; i++) {
+  for (const plane of PLANES) for (const r of radii) for (let i = 0; i < 8; i++) {
     const o = eighthPoint(plane, { t: 0, m: 0 }, r, i)
     const c = { t: p.t - o.t + 0, m: p.m - o.m + 0 }
     if ((p.rt ?? 0) !== o.rt || (p.rm ?? 0) !== o.rm) continue // the centre must be rational
@@ -76,7 +77,7 @@ export function arcSnapPoints(keys: ArcKey[]): Pt[] {
   return [...m.values()]
 }
 
-export type Circle = { plane: Plane; c: Pt; r: 0.5 | 1 }
+export type Circle = { plane: Plane; c: Pt; r: Radius }
 /** The plane's normal on the lattice: a cylinder grows this way. */
 export const NORMAL: Record<Plane, Pt> = { z: Z, y: Y, x: X }
 

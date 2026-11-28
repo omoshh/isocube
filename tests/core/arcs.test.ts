@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { circlesOf, extrude, arcMid, arcPieces, arcPolyline, arcSnapPoints, arcsThrough, eighthPoint, isArcKey, pieceEnds } from '../../src/core/arcs'
-import { linePieces, ptKey, toUV } from '../../src/core/geometry'
+import { linePieces, parsePt, ptKey, toUV } from '../../src/core/geometry'
+
+describe('bigger arcs', () => {
+  const ALL = [3, 2.5, 2, 1.5, 1, 0.5] as const
+  it('radius 3 half circles join points 6 apart; default radii find none', () => {
+    const arcs = arcsThrough({ t: 0, m: 0 }, { t: 6, m: 0 }, ALL)
+    expect(arcs.length).toBeGreaterThan(0)
+    expect(arcs.every(a => a.r === 3 && a.n === 4 && a.c.t === 3 && a.c.m === 0)).toBe(true)
+    expect(arcsThrough({ t: 0, m: 0 }, { t: 6, m: 0 })).toEqual([])
+  })
+  it('radius 1.5 eighth points are exact and round-trip', () => {
+    const p = eighthPoint('z', { t: 0, m: 0 }, 1.5, 1)
+    expect(p.rt! % 0.25).toBe(0); expect(p.rm! % 0.25).toBe(0)
+    expect(ptKey(parsePt(ptKey(p)))).toBe(ptKey(p))
+  })
+})
 
 describe('arcs', () => {
   it('eighth points are exact', () => {
