@@ -202,3 +202,16 @@ Endless
 
 No puzzle and no save data is removed, so the save-file rule about deleted puzzles no longer applies to phase 4. Mixed sets get new ids
 (builder's call: `M3-NNN` … `M6-NNN`).
+
+## Amendment 2026-11-28 (owner, after trying v4.4)
+
+Endless with slopes repeated the same few shapes (3×3×2 slopes: 11 different shapes in 30 seeds). Owner decisions:
+
+- **Endless is cube-only**, any size 2–6. Sizes that (almost) never find a puzzle with one answer are blocked in the picker;
+  slow sizes show the expected time. Estimates come from a PC timing table × 3 for a phone (assumption).
+- **Slopes are ready-made only**, three sizes of 25 each: Slopes 1 (3×3–3×4, the old set), Slopes 2 (4×4×3), Slopes 3 (4×5×4).
+  A size whose generation takes more than a minute per puzzle is dropped for now.
+- **Curves** (phase 3) follow the same model: ready-made sets in several sizes, no Endless.
+- **Mixed** stays ready-made only (phase 4, levels 3–5; level 6 later). No mixed Endless.
+
+Levels list (Views): L1, L2, Slopes 1–3, Curves…, L3–L6, Endless. Version 4.5.
