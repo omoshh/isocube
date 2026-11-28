@@ -17,6 +17,8 @@ export const S = {
   sizeSub: (cols: number, rows: number, h: number) => `${cols}×${rows}×${h}`, // under the title Endless
   slowHint: 'No puzzle yet. A smaller size is faster.', smaller: 'Pick a smaller size', noPuzzle: 'No puzzle found at this size.',
   width: 'Width', depth: 'Depth', height: 'Height', start: 'Start',
+  takesAbout: (t: string) => `Finding a puzzle with one answer takes about ${t}.`,
+  tooBig: 'This size almost never has a puzzle with one answer. Choose a smaller size.',
   smallerLabel: (n: string) => `${n} smaller`, largerLabel: (n: string) => `${n} larger`,
   generating: 'Generating…', generateFailed: 'Could not generate puzzles.', importFailed: 'Could not read the file.', cancel: 'Cancel',
   puzzle: (n: number, total: number, cols: number, rows: number, h: number) =>

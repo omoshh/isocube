@@ -4,6 +4,9 @@ import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PuzzleFile } from '../../src/core/generator'
 
+// fake times (PC ms, cols ≤ rows) so the picker tests do not depend on measured numbers; phone = × 3
+vi.mock('../../src/core/endlessTimes', () => ({ ENDLESS_MEDIAN_MS: { '3x3x2': 100, '3x4x2': 3000, '3x3x3': 19_000, '2x3x2': 20_001, '3x3x1': null } }))
+
 const file: PuzzleFile = JSON.parse(readFileSync('public/puzzles.json', 'utf8'))
 const load = async () => ({
   home: await import('../../src/ui/screens/home'),
@@ -120,6 +123,7 @@ describe('levels cards', () => {
     expect(css).toMatch(/\.tile\[data-state\] > \.btn \{ color: inherit; \}/)
     expect(css).toMatch(/\.tiles \{ display: flex; flex-direction: column;/)
     expect(css).toMatch(/\.endless-picker \.tile-name::after \{ display: none; \}/) // it does not open or close
+    expect(css).toMatch(/\.btn\[aria-disabled="true"\] \{[^}]*opacity/) // a blocked Endless Start
     expect(css).toMatch(/\.netbar \.btn \{ height: var\(--size-touch\)/)
     expect(css).toMatch(/\.netresult \.btn \{ min-height: var\(--size-touch\)/)
     expect(css).toMatch(/\.tool-bar \.icon-btn \{[^}]*border-radius: 50%/)
@@ -193,6 +197,39 @@ describe('endless picker (round 4)', () => {
     expect(tile(root).querySelector('[role="switch"]')).toBeNull()
     for (let i = 0; i < 4; i++) { btn(root, 'Width larger').click(); btn(root, 'Depth larger').click(); btn(root, 'Height larger').click() }
     expect(start(root)).toBe('#/endless/6x6x6/new')
+    s.destroy()
+  })
+
+  it('aboutTimeRounds', async () => {
+    const { aboutTime } = await load().then(m => m.levels)
+    expect([5000, 12_400, 12_600, 57_400, 58_000, 60_000, 150_000].map(aboutTime)).toEqual(['5 s', '10 s', '15 s', '55 s', '1 min', '1 min', '3 min'])
+  })
+
+  it('pickerWarnsAndBlocks', async () => {
+    const { levels } = await load()
+    const root = sized(), s = await levels.mountLevels(root, file)
+    const note = () => tile(root).querySelector('[aria-live="polite"]')!.textContent
+    const a = () => tile(root).querySelector('a.btn')!
+    expect(note()).toBe('') // 0.3 s on the phone
+    btn(root, 'Depth larger').click() // 3x4x2: 9 s
+    expect(note()).toBe('Finding a puzzle with one answer takes about 10 s.')
+    btn(root, 'Depth smaller').click(); btn(root, 'Width larger').click() // 4x3x2 looks up 3x4x2
+    expect(note()).toBe('Finding a puzzle with one answer takes about 10 s.')
+    btn(root, 'Width smaller').click(); btn(root, 'Height larger').click() // 3x3x3: 57 s
+    expect(note()).toBe('Finding a puzzle with one answer takes about 55 s.')
+    expect(start(root)).toBe('#/endless/3x3x3/new')
+    btn(root, 'Height smaller').click(); btn(root, 'Height smaller').click() // 3x3x1: never
+    const blocked = 'This size almost never has a puzzle with one answer. Choose a smaller size.'
+    expect(note()).toBe(blocked)
+    expect(a().hasAttribute('href')).toBe(false)
+    expect(a().getAttribute('aria-disabled')).toBe('true')
+    btn(root, 'Height larger').click(); btn(root, 'Width smaller').click() // 2x3x2: just over 60 s
+    expect(note()).toBe(blocked)
+    expect(a().hasAttribute('href')).toBe(false)
+    btn(root, 'Width larger').click() // back to 3x3x2
+    expect(note()).toBe('')
+    expect(start(root)).toBe('#/endless/3x3x2/new')
+    expect(a().hasAttribute('aria-disabled')).toBe(false)
     s.destroy()
   })
 

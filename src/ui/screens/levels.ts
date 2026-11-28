@@ -1,6 +1,8 @@
 import { LEVELS, clampSpec, specKey, type EndlessSpec, type PuzzleEntry, type PuzzleFile } from '../../core/generator'
 import { createTopBar } from '../components/topBar'
 import { h } from '../dom'
+import { ENDLESS_MEDIAN_MS } from '../../core/endlessTimes'
+import { GIVE_UP_MS } from '../endless'
 import { loadEndlessSpec, loadLast, loadProgress, saveEndlessSpec } from '../storage'
 import { S } from '../strings'
 
@@ -41,6 +43,19 @@ export async function mountLevels(root: HTMLElement, file: PuzzleFile, mode: 'vi
   return { destroy: () => el.remove() }
 }
 
+/** Phone time = PC time × 3: an assumption, not measured. */
+const PHONE_FACTOR = 3
+/** Phone ms to find a puzzle with one answer: 0 when not measured, Infinity when never (rows × cols times like cols × rows). */
+const phoneMs = (s: EndlessSpec) => {
+  const v = ENDLESS_MEDIAN_MS[`${Math.min(s.cols, s.rows)}x${Math.max(s.cols, s.rows)}x${s.maxH}`]
+  return v === undefined ? 0 : v === null ? Infinity : v * PHONE_FACTOR
+}
+/** "10 s" (to 5 s) under a minute, else "2 min". */
+export function aboutTime(ms: number): string {
+  const s = Math.round(ms / 5000) * 5
+  return s < 60 ? `${s} s` : `${Math.round(ms / 60_000)} min`
+}
+
 /** The Views Endless tile: width, depth and height steppers, and Start (#/endless/<spec>/new). */
 function endlessPicker(start: EndlessSpec): HTMLElement {
   let spec = clampSpec(start)
@@ -52,14 +67,19 @@ function endlessPicker(start: EndlessSpec): HTMLElement {
     const sync = () => { val.textContent = String(spec[k]); less.disabled = spec[k] <= lo; more.disabled = spec[k] >= 6 }
     return { el: h('div', { class: 'stepper' }, h('span', { class: 'stepper-name', text: name }), less, val, more), sync }
   })
+  const note = h('p', { class: 'endless-note', 'aria-live': 'polite' })
   const sync = () => {
     rows.forEach(r => r.sync())
-    go.setAttribute('href', `#/endless/${specKey(spec)}/new`)
+    const ms = phoneMs(spec), blocked = ms > GIVE_UP_MS
+    if (blocked) go.removeAttribute('href'); else go.setAttribute('href', `#/endless/${specKey(spec)}/new`)
+    if (blocked) go.setAttribute('aria-disabled', 'true'); else go.removeAttribute('aria-disabled')
+    note.textContent = blocked ? S.tooBig : ms >= 5000 ? S.takesAbout(aboutTime(ms)) : ''
   }
   const set = (s: EndlessSpec) => { spec = clampSpec(s); sync(); void saveEndlessSpec(spec) }
   sync()
   return h('section', { class: 'tile endless-picker', 'data-set': 'endless' },
     h('span', { class: 'tile-name', text: S.endless }),
     ...rows.map(r => r.el),
+    note,
     h('div', { class: 'endless-start' }, go))
 }
