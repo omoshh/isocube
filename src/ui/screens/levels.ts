@@ -70,7 +70,8 @@ function endlessPicker(start: EndlessSpec): HTMLElement {
   const note = h('p', { class: 'endless-note', 'aria-live': 'polite' })
   const sync = () => {
     rows.forEach(r => r.sync())
-    const ms = phoneMs(spec), blocked = ms > GIVE_UP_MS
+    // block at half the give-up time: a median that high still fails often (6x6x6: 3 of 7 seeds over 60 s on a phone)
+    const ms = phoneMs(spec), blocked = ms > GIVE_UP_MS / 2
     if (blocked) go.removeAttribute('href'); else go.setAttribute('href', `#/endless/${specKey(spec)}/new`)
     if (blocked) go.setAttribute('aria-disabled', 'true'); else go.removeAttribute('aria-disabled')
     note.textContent = blocked ? S.tooBig : ms >= 5000 ? S.takesAbout(aboutTime(ms)) : ''

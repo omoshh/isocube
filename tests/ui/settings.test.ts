@@ -92,7 +92,7 @@ describe('settings and accents', () => {
 
   it('About shows the real version, build date and commit', async () => {
     await mountSettings(root())
-    expect(root().textContent).toMatch(/Isocube, version 4\.4 · \d{1,2} [A-Z][a-z]{2} \d{4} · (\w{7}|dev)/)
+    expect(root().textContent).toMatch(/Isocube, version 4\.5 · \d{1,2} [A-Z][a-z]{2} \d{4} · (\w{7}|dev)/)
   })
 
   it('unlockAllUnlocks', async () => {

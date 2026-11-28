@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PuzzleFile } from '../../src/core/generator'
 
 // fake times (PC ms, cols ≤ rows) so the picker tests do not depend on measured numbers; phone = × 3
-vi.mock('../../src/core/endlessTimes', () => ({ ENDLESS_MEDIAN_MS: { '3x3x2': 100, '3x4x2': 3000, '3x3x3': 19_000, '2x3x2': 20_001, '3x3x1': null } }))
+vi.mock('../../src/core/endlessTimes', () => ({ ENDLESS_MEDIAN_MS: { '3x3x2': 100, '3x4x2': 3000, '3x3x3': 9_000, '2x3x2': 10_001, '3x3x1': null } }))
 
 const file: PuzzleFile = JSON.parse(readFileSync('public/puzzles.json', 'utf8'))
 const load = async () => ({
@@ -215,15 +215,15 @@ describe('endless picker (round 4)', () => {
     expect(note()).toBe('Finding a puzzle with one answer takes about 10 s.')
     btn(root, 'Depth smaller').click(); btn(root, 'Width larger').click() // 4x3x2 looks up 3x4x2
     expect(note()).toBe('Finding a puzzle with one answer takes about 10 s.')
-    btn(root, 'Width smaller').click(); btn(root, 'Height larger').click() // 3x3x3: 57 s
-    expect(note()).toBe('Finding a puzzle with one answer takes about 55 s.')
+    btn(root, 'Width smaller').click(); btn(root, 'Height larger').click() // 3x3x3: 27 s
+    expect(note()).toBe('Finding a puzzle with one answer takes about 25 s.')
     expect(start(root)).toBe('#/endless/3x3x3/new')
     btn(root, 'Height smaller').click(); btn(root, 'Height smaller').click() // 3x3x1: never
     const blocked = 'This size almost never has a puzzle with one answer. Choose a smaller size.'
     expect(note()).toBe(blocked)
     expect(a().hasAttribute('href')).toBe(false)
     expect(a().getAttribute('aria-disabled')).toBe('true')
-    btn(root, 'Height larger').click(); btn(root, 'Width smaller').click() // 2x3x2: just over 60 s
+    btn(root, 'Height larger').click(); btn(root, 'Width smaller').click() // 2x3x2: just over 30 s
     expect(note()).toBe(blocked)
     expect(a().hasAttribute('href')).toBe(false)
     btn(root, 'Width larger').click() // back to 3x3x2
