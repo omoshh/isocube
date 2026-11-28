@@ -279,7 +279,7 @@ describe('endless size specs (round 4)', () => {
     navigate('/endless/9x9x9/new')
     const stop = startRouter(root, { version: 1, puzzles: [] })
     await vi.waitFor(() => expect(root.textContent).toContain('not built yet')) // no route matches
-    navigate('/endless/3x3x3s/new')
+    navigate('/endless/5x3x2s/new')
     await vi.waitFor(() => expect(root.textContent).toContain('Puzzle not found'))
     stop()
   })
