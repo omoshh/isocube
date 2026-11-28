@@ -212,7 +212,7 @@ describe('endless picker (round 4)', () => {
   it('slopesTilesBySizeHiddenWhenEmpty', async () => {
     const { levels, storage } = await load()
     const sl = file.puzzles.find(p => p.id === 'SL-001')!
-    const big = { ...file, puzzles: [...file.puzzles, { ...sl, id: 'SL2-001', level: 2 }, { ...sl, id: 'SL2-002', level: 2 }] }
+    const big = { ...file, puzzles: [...file.puzzles.filter(p => p.set !== 'slopes' || p.level === 0), { ...sl, id: 'SL2-001', level: 2 }, { ...sl, id: 'SL2-002', level: 2 }] }
     await storage.saveLast({ kind: 'views', level: 2, n: 2, route: '#/views/SL2-002' })
     const root = sized(), s = await levels.mountLevels(root, big)
     const tiles = [...root.querySelectorAll('.tile')].map(t => t.getAttribute('data-level') ?? (t.getAttribute('data-slopes') && 's' + t.getAttribute('data-slopes')))

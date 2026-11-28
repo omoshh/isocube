@@ -224,7 +224,7 @@ describe('router', () => {
     const stop = startRouter(root, file)
     await vi.waitFor(() => expect(root.textContent).toContain('not built yet'))
     navigate('/levels/views')
-    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(8)) // 6 levels, Slopes and Endless
+    await vi.waitFor(() => expect(root.querySelectorAll('.tile').length).toBe(10)) // 6 levels, 3 Slopes sizes and Endless
     expect(root.children.length).toBe(1)
     navigate('/views/nope')
     await vi.waitFor(() => expect(root.textContent).toContain('Puzzle not found'))

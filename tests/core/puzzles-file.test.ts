@@ -54,18 +54,23 @@ describe('Slopes set (round 4)', () => {
   it('every older puzzle is unchanged', () => {
     expect(now.puzzles.filter(p => p.set !== 'slopes')).toEqual(before.puzzles)
   })
-  it('25 fair, varied puzzles with ramps', () => {
-    expect(slopes.map(p => p.id)).toEqual(Array.from({ length: 25 }, (_, i) => `SL-${String(i + 1).padStart(3, '0')}`))
-    for (const p of slopes) {
+  // round 4: Slopes 1 (SL, level 0), Slopes 2 (SL2, level 2, 4×4×3), Slopes 3 (SL3, level 3, 4×5×4 either way)
+  const SETS = [{ pre: 'SL', level: 0, sizes: [[3, 3], [3, 4], [4, 3]], maxH: 3 }, { pre: 'SL2', level: 2, sizes: [[4, 4]], maxH: 3 },
+    { pre: 'SL3', level: 3, sizes: [[4, 5], [5, 4]], maxH: 4 }]
+  for (const S of SETS) it(`${S.pre}: 25 fair, varied puzzles with ramps`, () => {
+    const set = slopes.filter(p => p.level === S.level)
+    expect(set.map(p => p.id)).toEqual(Array.from({ length: 25 }, (_, i) => `${S.pre}-${String(i + 1).padStart(3, '0')}`))
+    for (const p of set) {
       const s = entryShape(p)
-      expect([[3, 3], [3, 4], [4, 3]], p.id).toContainEqual([p.cols, p.rows])
-      expect(p.maxH, p.id).toBe(3)
+      expect(S.sizes, p.id).toContainEqual([p.cols, p.rows])
+      expect(p.maxH, p.id).toBe(S.maxH)
       expect(p.ramps!.length, p.id).toBeGreaterThan(0)
-      expect(validShape(s, 3), p.id).toBe(true)
-      expect(fairShape(s, 3), p.id).toBe(true)
+      expect(validShape(s, S.maxH), p.id).toBe(true)
+      expect(fairShape(s, S.maxH), p.id).toBe(true)
     }
-    for (let i = 0; i < slopes.length; i++) for (let j = 0; j < i; j++)
-      expect(shapeDistance(entryShape(slopes[i]), entryShape(slopes[j])), slopes[i].id + ' ' + slopes[j].id).toBeGreaterThanOrEqual(3)
+    for (let i = 0; i < set.length; i++) for (let j = 0; j < i; j++)
+      expect(shapeDistance(entryShape(set[i]), entryShape(set[j])), set[i].id + ' ' + set[j].id).toBeGreaterThanOrEqual(3)
   })
+  it('no other slopes sets', () => expect(slopes.length).toBe(75))
   it('the file stays small', () => expect(readFileSync('public/puzzles.json').length).toBeLessThan(150_000))
 })
