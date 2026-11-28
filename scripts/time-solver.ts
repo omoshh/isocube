@@ -1,4 +1,6 @@
 // Measuring tool: npx tsx scripts/time-solver.ts <cols> <rows> <maxH> <minPieces> <maxPieces> <seconds> [budget]
+// <budget> = maximum solver steps per candidate (not time); omit for none. accepted = fair, not partial, solveShapes
+// count 1, not gave up. Wall time includes the last solve, so it can pass <seconds>.
 // Tries slope candidates (like slopeCandidate, with min..max ramps) for <seconds>, prints counts, solve-time
 // percentiles and the projected hours for 25 (and 50) accepted puzzles on 8 workers.
 import { exactViews } from '../src/core/exactViews'
@@ -7,8 +9,11 @@ import { rng, stairShape } from '../src/core/generator'
 import { validShape, type Dir, type Ramp } from '../src/core/solid'
 import { fairShape } from '../src/core/visibility'
 
+const usage = 'usage: npx tsx scripts/time-solver.ts <cols> <rows> <maxH> <minPieces> <maxPieces> <seconds> [budget]'
 const [cols, rows, maxH, lo, hi, secs] = process.argv.slice(2, 8).map(Number), budget = process.argv[8] ? +process.argv[8] : undefined
-const r = rng(Date.now() % 1e9), pick = (n: number) => Math.floor(r() * n)
+if (![cols, rows, maxH, lo, hi, secs, budget ?? 1].every(n => Number.isInteger(n) && n > 0) || lo > hi) { console.error(usage); process.exit(1) }
+const seed = Date.now() % 1e9, r = rng(seed), pick = (n: number) => Math.floor(r() * n)
+console.log(`seed ${seed}`)
 let tried = 0, fair = 0, partial = 0, unique = 0, gaveUp = 0
 const times: number[] = [], t0 = performance.now()
 while (performance.now() - t0 < secs * 1000) {

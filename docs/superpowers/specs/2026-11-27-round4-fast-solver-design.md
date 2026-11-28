@@ -133,3 +133,10 @@ not bound time: a step is expensive on the big shapes, and one gave-up solve sti
 column-first (approach B) is **not started here**; it needs its own plan. The budget would have to be much smaller
 (and then measured again), but fair candidates are also rare at the big sizes (1 in 43 to 1 in 15 tried), so the
 slow solves, not the budget, are the problem.
+
+**Conclusion (owner decision 2026-11-28).** L3 (4×4×3) fits easily. L4 (4×5×4) and L5 (5×5×4) come out under 2 h on ONE
+accepted puzzle each (at 5×5×4 that one solve took 1029 s of a 1032 s wall), so the rate could be several times worse
+(0.90 h could plausibly be about 5 h); re-measure them in phase 4 before relying on them. L6 (5×6×5) does not fit.
+Phase 4 therefore makes mixed sets for L3–L5 only; L6 stays cube-only until a faster method exists. The candidates
+measured here had ramps only (curves come in phase 3 and may be slower). The step budget does not bound wall time, so
+phase 4 generation needs a wall-clock limit per candidate.
