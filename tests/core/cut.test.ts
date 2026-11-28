@@ -46,3 +46,20 @@ describe('cutErase', () => {
     expect(segEnds(k).every(p => Math.abs(p.t * 1e6 - Math.round(p.t * 1e6)) < 1e-6)).toBe(true)
   })
 })
+
+describe('cuts survive rounding', () => {
+  it('a cut stub still ends on the crossing line, at inexact crossings', () => {
+    for (const m of [1, 2, 3, 5, 7]) {
+      const a = L(0, 0, 3, 0), b = L(1, -1, 2, m), e = ed([a, b])
+      e.cutErase(a, { u: 0.1, v: 0.05 })
+      const stub = e.drawing.lines.find(x => x !== b)!
+      expect(lineCuts(b, e.drawing.lines, [])).toHaveLength(1)
+      expect(stub).not.toBe(a)
+    }
+  })
+  it('collinear overlap: the whole line is erased, no crash', () => {
+    const a = L(0, 0, 4, 0), e = ed([a, L(1, 0, 3, 0)])
+    e.cutErase(a, { u: S, v: 0.5 })
+    expect(e.drawing.lines).toEqual([L(1, 0, 3, 0)])
+  })
+})
