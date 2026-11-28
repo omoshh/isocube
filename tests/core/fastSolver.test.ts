@@ -89,13 +89,12 @@ describe('fast solver', () => {
     const s = fairCandidates(11, () => [3, 4]).next().value!
     const r = solveShapes(exactViews(s, 3), 3, 4, 3, { budget: 10 })
     expect(r.gaveUp).toBe(true)
-    expect(r).not.toEqual({ count: 1, gaveUp: false })
     expect(solveShapes(exactViews(s, 3), 3, 4, 3).gaveUp).toBe(false)
   })
 
-  // the old solver is the slow side (~1.4 s a 3×3, ~9 s a 3×4, up to ~60 s): random candidates get ~6 minutes, so the
-  // SLOW run stays ~10, and only every 8th is a 3×4 so that at least 100 fit
-  it.runIf(process.env.SLOW)('matchesOldSolver: the 25 Slopes puzzles and random fair 3×3/3×4 candidates', { timeout: 600000 }, () => {
+  // the old solver is the slow side (~1.4 s a 3×3, ~9 s a 3×4, up to ~60 s): a fixed 100 candidates, only every 8th
+  // try a 3×4, keep the SLOW run near 10 minutes
+  it.runIf(process.env.SLOW)('matchesOldSolver: the 25 Slopes puzzles and random fair 3×3/3×4 candidates', { timeout: 900000 }, () => {
     const bad: string[] = []
     let tOld = 0, tNew = 0
     const cmp = (s: Shape, name: string) => {
@@ -113,11 +112,9 @@ describe('fast solver', () => {
     console.log(`Slopes puzzles: old ${(tOld / 1000).toFixed(1)} s, new ${(tNew / 1000).toFixed(2)} s`)
     let j = 0
     const gen = fairCandidates(5, () => (j++ % 8 === 7 ? [3, 4] : [3, 3]))
-    const start = Date.now()
-    let n = 0, wide = 0
-    while (n < 300 && Date.now() - start < 380000) { const s = gen.next().value!; cmp(s, JSON.stringify(s)); n++; if (s.hm.rows === 4) wide++ }
-    console.log(`random candidates: ${n} (${wide} 3×4); total old ${(tOld / 1000).toFixed(1)} s, new ${(tNew / 1000).toFixed(2)} s`)
-    expect(n).toBeGreaterThanOrEqual(100)
+    let wide = 0
+    for (let n = 0; n < 100; n++) { const s = gen.next().value!; cmp(s, JSON.stringify(s)); if (s.hm.rows === 4) wide++ }
+    console.log(`random candidates: 100 (${wide} 3×4); total old ${(tOld / 1000).toFixed(1)} s, new ${(tNew / 1000).toFixed(2)} s`)
     expect(bad).toEqual([])
   })
 })
