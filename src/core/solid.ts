@@ -85,6 +85,23 @@ export function rotateShape(s: Shape): Shape {
   }
 }
 
+const TURN: Record<Dir, Dir> = { E: 'S', S: 'W', W: 'N', N: 'E' }
+/** The shape turned a quarter about the vertical axis: cell (x, y) goes to (y, cols − 1 − x); the floor becomes rows × cols. */
+export function turnShape(s: Shape): Shape {
+  const { cols, rows } = s.hm, h = new Array<number>(cols * rows)
+  for (let x = 0; x < cols; x++) for (let y = 0; y < rows; y++) h[x * rows + y] = H(s.hm, x, y) // new row = rows' − 1 − y' = x
+  return { hm: new HeightMap(rows, cols, h), ramps: s.ramps.map(r => ({ x: r.y, y: cols - 1 - r.x, len: r.len, dir: TURN[r.dir] })) }
+}
+
+/** The shape mirrored left to right. */
+export function mirrorShape(s: Shape): Shape {
+  const { cols, rows } = s.hm
+  return {
+    hm: new HeightMap(cols, rows, s.hm.h.map((_, i) => s.hm.h[i - (i % cols) + cols - 1 - (i % cols)])),
+    ramps: s.ramps.map(r => ({ x: cols - 1 - r.x, y: r.y, len: r.len, dir: r.dir === 'E' ? 'W' : r.dir === 'W' ? 'E' : r.dir })),
+  }
+}
+
 export type EntryRamp = [number, number, 1 | 2 | 3, Dir]
 export const toEntryRamps = (rs: Ramp[]): EntryRamp[] => rs.map(r => [r.x, r.y, r.len, r.dir])
 export const fromEntryRamps = (es: EntryRamp[]): Ramp[] => es.map(([x, y, len, dir]) => ({ x, y, len, dir }))

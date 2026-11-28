@@ -225,6 +225,23 @@ describe('endless picker (round 4)', () => {
     expect(await storage.loadEndlessSpec()).toEqual({ cols: 3, rows: 3, maxH: 2, slopes: false })
   })
 
+  it('slopesTilesBySizeHiddenWhenEmpty', async () => {
+    const { levels, storage } = await load()
+    const sl = file.puzzles.find(p => p.id === 'SL-001')!
+    const big = { ...file, puzzles: [...file.puzzles, { ...sl, id: 'SL2-001', level: 2 }, { ...sl, id: 'SL2-002', level: 2 }] }
+    await storage.saveLast({ kind: 'views', level: 2, n: 2, route: '#/views/SL2-002' })
+    const root = sized(), s = await levels.mountLevels(root, big)
+    const tiles = [...root.querySelectorAll('.tile')].map(t => t.getAttribute('data-level') ?? (t.getAttribute('data-slopes') && 's' + t.getAttribute('data-slopes')))
+    expect(tiles.slice(0, 6)).toEqual(['1', '2', 's1', 's2', '3', '4']) // Slopes 3 is empty, so hidden
+    const s2 = root.querySelector('[data-slopes="2"]')!
+    expect([s2.querySelector('.tile-name')!.textContent, s2.querySelector('.tile-size')!.textContent]).toEqual(['Slopes 2', '4×4×3'])
+    expect(root.querySelector('[data-slopes="1"] .tile-name')!.textContent).toBe('Slopes 1')
+    expect(s2.querySelectorAll('a.num')).toHaveLength(2)
+    expect(s2.getAttribute('data-state')).toBe('last') // by the puzzle, not by level 2
+    expect(root.querySelector('[data-level="2"]')!.getAttribute('data-state')).toBeNull()
+    s.destroy()
+  })
+
   it('endlessPlayDoesNotMarkSlopesTile', async () => {
     const { levels, storage } = await load()
     await storage.saveLast({ kind: 'views', level: 0, route: '#/endless/3x3x2s/5' })

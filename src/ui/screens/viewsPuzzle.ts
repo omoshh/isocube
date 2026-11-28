@@ -42,7 +42,7 @@ export function mountViewsPuzzle(root: HTMLElement, file: PuzzleFile, id: string
   void saveLast({ kind: 'views', level: e.level, n: idx + 1, route: '#/views/' + id })
   return mountPuzzle(root, {
     id, key: 'views/' + id, cols: e.cols, rows: e.rows, maxH: e.maxH, h: e.h, ramps: e.ramps,
-    title: e.set === 'slopes' ? S.slopes : S.level(e.level),
+    title: e.set === 'slopes' ? S.slopesN(e.level || 1) : S.level(e.level),
     subtitle: S.puzzle(idx + 1, list.length, e.cols, e.rows, e.maxH),
     nextRoute: next ? '#/views/' + next.id : '#/levels/views',
   })

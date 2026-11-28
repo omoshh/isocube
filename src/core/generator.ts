@@ -1,7 +1,7 @@
 import { HeightMap, visibleFaces } from './shape'
 import { exactViews } from './exactViews'
 import { solveShapes } from './fastSolver'
-import { fromEntryRamps, rampCells, validShape, type Dir, type EntryRamp, type Ramp, type Shape } from './solid'
+import { fromEntryRamps, mirrorShape, rampCells, turnShape, validShape, type Dir, type EntryRamp, type Ramp, type Shape } from './solid'
 import { gridSegKey } from './geometry'
 import { sameViews, views, type ViewSet } from './views'
 import { fairPicture, fairShape } from './visibility'
@@ -187,8 +187,8 @@ export function makeSlopeCandidate(seed: number): Shape | null {
   return slopeCandidate(cols, rows, 3, r)
 }
 
-/** A stair shape with 1–3 ramps, or null when it is not fair or has more than one solution. */
-export function slopeCandidate(cols: number, rows: number, maxH: number, r: Rng): Shape | null {
+/** A stair shape with 1–3 ramps, or null when it is not fair, has more than one solution, or the solver hits `budget`. */
+export function slopeCandidate(cols: number, rows: number, maxH: number, r: Rng, budget?: number): Shape | null {
   const hm = stairShape(cols, rows, maxH, r)
   // every ramp that fits, lengths 2 and 3 weighted ×3 (the owner wants bigger pieces; random spots rarely fit them)
   const ramps: Ramp[] = [], want = 1 + pick(r, 3)
@@ -203,7 +203,7 @@ export function slopeCandidate(cols: number, rows: number, maxH: number, r: Rng)
   }
   const s = { hm, ramps }
   if (!ramps.length || !fairShape(s, maxH)) return null
-  const r2 = solveShapes(exactViews(s, maxH), cols, rows, maxH, { limit: 2 })
+  const r2 = solveShapes(exactViews(s, maxH), cols, rows, maxH, { limit: 2, budget })
   return r2.count === 1 && !r2.gaveUp ? s : null
 }
 
@@ -261,4 +261,17 @@ export function shapeDistance(a: Shape, b: Shape): number {
   let d = 0
   for (let x = 0; x < a.hm.cols; x++) for (let y = 0; y < a.hm.rows; y++) if (A(x, y) !== B(x, y)) d++
   return d
+}
+
+/** The first `n` items whose shape is at least 3 cells from every picked shape and from its 8 turned and mirrored
+ *  copies (a copy with the floor turned only meets shapes of that floor size). */
+export function pickVaried<T>(items: T[], shape: (t: T) => Shape, n: number): T[] {
+  const picked: { t: T; copies: Shape[] }[] = []
+  for (const t of items) {
+    if (picked.length >= n) break
+    const s = shape(t), copies: Shape[] = []
+    for (let i = 0, c = s; i < 4; i++, c = turnShape(c)) copies.push(c, mirrorShape(c))
+    if (picked.every(p => p.copies.every(c => shapeDistance(c, s) >= 3))) picked.push({ t, copies })
+  }
+  return picked.map(p => p.t)
 }

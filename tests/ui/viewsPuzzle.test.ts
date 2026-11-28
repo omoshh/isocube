@@ -245,6 +245,18 @@ describe('Slopes set (round 4)', () => {
     expect(tiles[i].textContent).toContain('Slopes')
     expect(tiles[i].querySelector('.btn')).toBeNull() // no Endless on this row yet
   })
+  it('title is Slopes N by set level', async () => {
+    const { puzzle } = await load()
+    const sl = file.puzzles.find(p => p.id === 'SL-001')!
+    const big = { ...file, puzzles: [...file.puzzles, { ...sl, id: 'SL3-001', level: 3 }] }
+    const root = sized(412, 915)
+    const s = await puzzle.mountViewsPuzzle(root, big, 'SL3-001')
+    expect(root.textContent).toContain('Slopes 3')
+    s.destroy()
+    const r1 = sized(412, 915), s1 = await puzzle.mountViewsPuzzle(r1, file, 'SL-001')
+    expect(r1.textContent).toContain('Slopes 1')
+    s1.destroy()
+  })
   it('SL-001: title, a slanted view line, and the drawn answer solves it', async () => {
     const { puzzle, storage } = await load()
     const { entryShape } = await import('../../src/core/generator')

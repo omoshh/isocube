@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HeightMap } from '../../src/core/shape'
-import { ISO, fromEntryRamps, rampCells, rotateShape, shapeFaces, toEntryRamps, validShape, type Shape } from '../../src/core/solid'
+import { ISO, fromEntryRamps, mirrorShape, rampCells, rotateShape, shapeFaces, toEntryRamps, turnShape, validShape, type Shape } from '../../src/core/solid'
 
 // rows run back to front: r = 0 is the back row; cube y = rows - 1 - r
 const row = (h: number[]) => new HeightMap(h.length, 1, h)
@@ -39,6 +39,22 @@ describe('shapes with ramps', () => {
     expect(r.ramps).toEqual([{ x: 2, y: 0, len: 2, dir: 'W' }])
     expect(r.hm.h).toEqual([0, 0, 0, 1, 1, 1])
     expect(rotateShape(r)).toEqual(s)
+  })
+  it('turnShape turns cells and ramp directions a quarter; 4 turns are the same, 2 are rotateShape', () => {
+    const s: Shape = { hm: new HeightMap(3, 2, [1, 1, 1, 0, 0, 2]), ramps: [{ x: 0, y: 1, len: 2, dir: 'E' }] }
+    const t = turnShape(s)
+    expect([t.hm.cols, t.hm.rows]).toEqual([2, 3])
+    expect(t.ramps).toEqual([{ x: 1, y: 2, len: 2, dir: 'S' }])
+    expect(validShape(t, 3)).toBe(true)
+    expect(turnShape(t)).toEqual(rotateShape(s))
+    expect(turnShape(turnShape(turnShape(t)))).toEqual(s)
+  })
+  it('mirrorShape flips left and right; twice is the same', () => {
+    const s: Shape = { hm: new HeightMap(3, 2, [1, 1, 1, 0, 0, 2]), ramps: [{ x: 0, y: 1, len: 2, dir: 'E' }] }
+    const m = mirrorShape(s)
+    expect(m.hm.h).toEqual([1, 1, 1, 2, 0, 0])
+    expect(m.ramps).toEqual([{ x: 2, y: 1, len: 2, dir: 'W' }])
+    expect(mirrorShape(m)).toEqual(s)
   })
   it('entry ramps round-trip', () => {
     const rs: Shape['ramps'] = [{ x: 1, y: 2, len: 3, dir: 'S' }]

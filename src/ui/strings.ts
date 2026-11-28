@@ -12,7 +12,7 @@ export const S = {
   levels: 'Levels',
   level: (n: number) => `Level ${n}`,
   endless: 'Endless',
-  slopes: 'Slopes', slopesSize: '3×3–3×4',
+  slopes: 'Slopes', slopesN: (n: number) => `Slopes ${n}`, slopesSizes: ['3×3–3×4', '4×4×3', '4×5×4'],
   endlessSub: (cols: number, rows: number, h: number) => `Endless, ${cols}×${rows}×${h}`,
   sizeSub: (cols: number, rows: number, h: number, slopes: boolean) => `${cols}×${rows}×${h}${slopes ? ', slopes' : ''}`, // under the title Endless
   slowHint: 'No puzzle yet. A smaller size is faster.', smaller: 'Pick a smaller size', noPuzzle: 'No puzzle found at this size.',

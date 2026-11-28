@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { HeightMap } from '../../src/core/shape'
 import { views } from '../../src/core/views'
-import { LEVELS, clampSpec, countSolutions, makeEndless, makePuzzle, makeSlopeCandidate, parseSpec, rng, sampleShape, specKey } from '../../src/core/generator'
+import { LEVELS, clampSpec, countSolutions, makeEndless, makePuzzle, makeSlopeCandidate, parseSpec, pickVaried, rng, sampleShape, specKey } from '../../src/core/generator'
 import { countShapeSolutions } from '../../src/core/rampSolver'
 import { shapeViews } from '../../src/core/shapeViews'
-import { toEntryRamps } from '../../src/core/solid'
+import { mirrorShape, toEntryRamps, turnShape, type Shape } from '../../src/core/solid'
 import { fairPicture, fairShape } from '../../src/core/visibility'
 import oldCandidates from '../fixtures/slope-candidates.json'
 
@@ -89,6 +89,15 @@ describe('endless spec', () => {
       const s = makeSlopeCandidate(+seed)
       expect(s && { h: s.hm.h, ramps: toEntryRamps(s.ramps) }).toEqual(want)
     }
+  })
+
+  it('pickVariedSkipsTurnedAndMirroredCopies', () => {
+    const a: Shape = { hm: new HeightMap(3, 3, [1, 0, 0, 2, 1, 0, 3, 2, 1]), ramps: [{ x: 1, y: 2, len: 2, dir: 'E' }] }
+    const b: Shape = { hm: new HeightMap(3, 3, [0, 0, 0, 1, 1, 1, 2, 2, 2]), ramps: [] }
+    const wide: Shape = { hm: new HeightMap(3, 4, new Array(12).fill(1)), ramps: [] }
+    const list = [a, turnShape(a), mirrorShape(a), turnShape(mirrorShape(a)), b, turnShape(wide), wide]
+    expect(pickVaried(list, s => s, 25)).toEqual([a, b, turnShape(wide)]) // a 4×3 and its turned 3×4 copy count as one
+    expect(pickVaried(list, s => s, 1)).toEqual([a])
   })
 
   it('makeEndlessCubes', () => {
