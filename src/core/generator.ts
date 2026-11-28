@@ -208,9 +208,9 @@ export function slopeCandidate(cols: number, rows: number, maxH: number, r: Rng)
 }
 
 export type EndlessSpec = { cols: number; rows: number; maxH: number; slopes: boolean }
-/** With slopes: width and depth at most SLOPES_MAX, height always SLOPES_H. Measured 2026-11-27 on a PC: height 3
- *  takes a median 6 s (a phone about 3× that); height 1 never finds one (no ramp fits). Raise with a faster solver. */
-export const SLOPES_MAX = 3, SLOPES_H = 2
+/** With slopes: width and depth at most SLOPES_MAX, height 2..SLOPES_H (height 1 never finds a ramp). Measured
+ *  2026-11-28 with the fast solver, seeds 1-5: every size up to 4x4x3 has a median under 0.4 s (max 15 s at 4x4x3). */
+export const SLOPES_MAX = 4, SLOPES_H = 3
 
 export const specKey = (s: EndlessSpec) => `${s.cols}x${s.rows}x${s.maxH}${s.slopes ? 's' : ''}`
 
@@ -218,12 +218,12 @@ export function parseSpec(key: string): EndlessSpec | null {
   const m = /^([2-6])x([2-6])x([1-6])(s?)$/.exec(key)
   if (!m) return null
   const s = { cols: +m[1], rows: +m[2], maxH: +m[3], slopes: m[4] === 's' }
-  return s.slopes && (Math.max(s.cols, s.rows) > SLOPES_MAX || s.maxH !== SLOPES_H) ? null : s
+  return s.slopes && (Math.max(s.cols, s.rows) > SLOPES_MAX || s.maxH < 2 || s.maxH > SLOPES_H) ? null : s
 }
 
 export function clampSpec(s: EndlessSpec): EndlessSpec {
   const top = s.slopes ? SLOPES_MAX : 6, c = (v: number, lo: number) => Math.max(lo, Math.min(top, Math.round(v)))
-  return { cols: c(s.cols, 2), rows: c(s.rows, 2), maxH: s.slopes ? SLOPES_H : c(s.maxH, 1), slopes: s.slopes }
+  return { cols: c(s.cols, 2), rows: c(s.rows, 2), maxH: s.slopes ? Math.max(2, Math.min(SLOPES_H, Math.round(s.maxH))) : c(s.maxH, 1), slopes: s.slopes }
 }
 
 /** The endless puzzle for a spec and seed (the same every time); loops until it finds one. */
