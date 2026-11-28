@@ -33,6 +33,11 @@ export type PieceType = {
    * corner. Points that another cell of the same piece always hides in front may report any plane of the piece.
    */
   section(p: Placed, i: number, v: AxisView, u: number, w: number, S: number): string | null
+  /**
+   * For solvers: the ways to put the piece on top of the stack at cell (x, y) whose other cells come later in search
+   * order (column by column, front row first), z left 0. None for a cube: stacks are cubes.
+   */
+  starts?(x: number, y: number): Placed[]
 }
 
 const sub = (a: P3, b: P3): P3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
@@ -128,6 +133,11 @@ export const RAMP: PieceType = {
     const a = r.dir === 'E' || r.dir === 'N' ? i * S + u : (i + 1) * S - u
     return w * L <= a ? (v === 'front' ? key('front', r.y) : key('side', r.x)) : null
   },
+  // the cells run from (x, y) along +x (E, W) or +y (N, S); the low end is the first (E, N) or the last (W, S)
+  starts: (x, y) => (['E', 'W', 'N', 'S'] as Dir[]).flatMap(dir => ([1, 2, 3] as const).map((len): Placed => {
+    const k = dir === 'E' || dir === 'N' ? 0 : len - 1
+    return dir === 'E' || dir === 'W' ? { x: x + k, y, z: 0, len, dir } : { x, y: y + k, z: 0, len, dir }
+  })),
 }
 
 export const PIECES: PieceType[] = [CUBE, RAMP]
