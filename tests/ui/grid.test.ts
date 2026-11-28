@@ -42,7 +42,7 @@ beforeEach(() => {
 afterEach(() => { el.remove() })
 
 const bounds = { t0: -6, t1: 6, v0: -2.6, v1: 6.5 }
-function mount(o: { tool?: Tool; pen?: boolean; free?: { half: boolean; mids?: boolean; radii?: readonly Radius[] }; lines?: string[]; arcs?: string[] } = {}) {
+function mount(o: { tool?: Tool; pen?: boolean; free?: { half: boolean; mids?: boolean; radii?: readonly Radius[]; cut?: boolean }; lines?: string[]; arcs?: string[] } = {}) {
   const editor = new DrawingEditor({ lines: o.lines ?? [], arcs: o.arcs ?? [], fills: {} }, bounds, () => {})
   const state = { tool: o.tool ?? 'line' as Tool, pen: o.pen ?? false }
   const grid = createIsoGrid(el, {
@@ -370,6 +370,20 @@ describe('iso grid', () => {
     mount({ lines: ['0:0|1:1'] })
     expect(el.querySelectorAll('.g-lines line')).toHaveLength(1)
   })
+  describe('cut eraser', () => {
+    const X = [segKey({ t: 0, m: -1 }, { t: 0, m: 1 }), segKey({ t: -1, m: 0 }, { t: 1, m: 0 })]
+    it('Draw: a tap on one arm removes only that arm', () => {
+      const m = mount({ free: { half: false, cut: true }, tool: 'erase', lines: X }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0.6, m: 0 })])
+      expect(m.editor.drawing.lines).toEqual([segKey({ t: 0, m: -1 }, { t: 0, m: 1 }), segKey({ t: -1, m: 0 }, { t: 0, m: 0 })].sort())
+    })
+    it('Views: the same tap removes the whole piece', () => {
+      const m = mount({ tool: 'erase', lines: X }), v = m.grid.getView()
+      drag(el, [toPx(v, { t: 0.6, m: 0 })])
+      expect(m.editor.drawing.lines).toEqual([X[0]])
+    })
+  })
+
   describe('eraser takes only the line under the finger', () => {
     const two = (a: [Pt, Pt], b: [Pt, Pt]) => {
       const m = mount(), v = m.grid.getView()

@@ -12,7 +12,7 @@ export type Overlay = { kind: 'answer'; edges: Set<SegKey> } | { kind: 'check'; 
 export type IsoGridOpts = {
   /** Free line tool (any snap point to any snap point) and the arc tool; `half` adds edge midpoints as snap points,
    *  `mids` the middles of drawn lines (Draw only: in Views a half point is always a mistake). Unset: 3-direction lines (Shadows). */
-  free?: { half: boolean; mids?: boolean; radii?: readonly Radius[] }
+  free?: { half: boolean; mids?: boolean; radii?: readonly Radius[]; cut?: boolean }
   bounds: Bounds
   guide?: { cols: number; rows: number; maxH: number }
   arrows: boolean
@@ -50,6 +50,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
   let surf: ReturnType<typeof createSurface> | undefined
   let overlay: Overlay = null
   let stroke: { tool: Tool; start: UV; pts: UV[]; dot?: boolean; ext?: Circle } | null = null
+  const hitAt = new Map<string, UV>() // where the eraser met each pending line (Draw cuts only that part)
   let pending = new Set<string>() // erased during the current stroke; committed on end so a pinch can cancel it
   let arcFirst: Pt | null = null // arc tool: the first tapped point
   let lastArc: { p: Pt; q: Pt; arc: Arc; added: ArcKey[] } | null = null // the arc whose dot shows
@@ -127,7 +128,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
     let best: string | null = null, bd = ERASE_DIST
     for (const k of [...d.lines, ...d.arcs!]) { const x = keyDist(k, p); if (x <= bd) { bd = x; best = k } }
     // the nearest line already taken in this stroke blocks the next one: one tap (start + end) erases one line
-    if (best && !pending.has(best)) { pending.add(best); render() }
+    if (best && !pending.has(best)) { pending.add(best); hitAt.set(best, p); render() }
   }
 
   const lineFor = (start: UV, p: UV) => (o.free ? snapFree(start, p, snapOpts()) : snapDragIso(start, p))
@@ -194,8 +195,8 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
     end(p: UV) {
       const s = stroke
       if (s?.tool === 'erase') eraseAt(p)
-      const erased = pending
-      pending = new Set()
+      const erased = pending, hits = new Map(hitAt)
+      pending = new Set(); hitAt.clear()
       endStroke()
       if (!s) return
       if (s.tool === 'line') { const l = lineFor(s.start, p); if (l) editor.addLines([l]) }
@@ -211,7 +212,7 @@ export function createIsoGrid(el: HTMLElement, o: IsoGridOpts) {
       }
       else if (s.tool === 'freehand') editor.addLines(snapFreehandIso([...s.pts, p]))
       else if (s.tool === 'fill') { if (o.free) editor.fillArea(p, o.colour()); else editor.fill(triAt(p.u, p.v), o.colour()) }
-      else if (erased.size) for (const k of erased) editor.erase(k)
+      else if (erased.size) for (const k of erased) (o.free?.cut && !isArcKey(k) ? editor.cutErase(k, hits.get(k)!) : editor.erase(k))
       else if (!(o.free && editor.unfillArea(p))) editor.unfill(triAt(p.u, p.v)) // no line near: the eraser clears the colour under the finger
       render()
     },

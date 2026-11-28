@@ -1,6 +1,7 @@
 import { arcPieces, arcPolyline, isArcKey, type Arc, type ArcKey } from './arcs'
+import { lineCuts } from './cut'
 import { areaAt, inPoly, polyArea, type P2 } from './areas'
-import { segEnds, toUV, triEdges, triNeighbours, linePieces, type Line, type SegKey, type TriKey } from './geometry'
+import { segEnds, toUV, triEdges, triNeighbours, linePieces, segKey, type Line, type SegKey, type TriKey } from './geometry'
 
 /** A filled closed area (round 4): its outline in screen units, and the colour index. */
 export type Area = { pts: P2[]; c: number }
@@ -85,6 +86,22 @@ export class DrawingEditor {
     const arcs = this.cur.arcs ?? []
     if (isArcKey(s)) { if (arcs.includes(s)) this.commit({ ...copy(this.cur), arcs: arcs.filter(x => x !== s) }) }
     else if (this.cur.lines.includes(s)) this.commit({ ...copy(this.cur), lines: this.cur.lines.filter(x => x !== s) })
+  }
+
+  /** Draw's eraser: removes only the part of line `key` between the crossings nearest `at`; one step. */
+  cutErase(key: SegKey, at: { u: number; v: number }) {
+    if (!this.cur.lines.includes(key)) return
+    const cuts = lineCuts(key, this.cur.lines, this.cur.arcs ?? [])
+    const [a, b] = segEnds(key).map(toUV), dx = b[0] - a[0], dy = b[1] - a[1]
+    const s = Math.min(1, Math.max(0, ((at.u - a[0]) * dx + (at.v - a[1]) * dy) / (dx * dx + dy * dy)))
+    const lo = cuts.findLast(c => c <= s) ?? 0, hi = cuts.find(c => c > s) ?? 1
+    const r6 = (x: number) => Math.round(x * 1e6) / 1e6 + 0
+    const pt = (x: number) => { const u = a[0] + dx * x, t = r6(u / S); return { t, m: r6(a[1] + dy * x - t / 2) } }
+    const parts = [[0, lo], [hi, 1]].filter(([x, y]) => Math.hypot(dx, dy) * (y - x) >= 0.01).map(([x, y]) => {
+      const p = x === 0 ? segEnds(key)[0] : pt(x), q = y === 1 ? segEnds(key)[1] : pt(y)
+      return segKey(p, q)
+    })
+    this.commit({ ...copy(this.cur), lines: [...new Set([...this.cur.lines.filter(x => x !== key), ...parts])].sort() })
   }
 
   // shortcut: fill stops only at grid-edge lines, not at diagonals, free lines or arcs; upgrade if the owner fills such shapes
