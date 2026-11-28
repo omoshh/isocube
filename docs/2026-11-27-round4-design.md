@@ -183,3 +183,22 @@ If usage ends early, the order means the finished phases still work.
 - How the arc tool picks "the most likely plane" and how the drag dot moves between valid arcs.
 - Exact key formats for free lines and arcs.
 - Fill (paint bucket) behaviour with arcs and free lines (round 3 already skips diagonals).
+
+## Amendment 2026-11-28 (owner)
+
+Phase 4 changes. The old cube-only Views levels 3–6 **stay**, with all their save data. The Views levels screen becomes:
+
+```
+Level 1   3×3×2   cubes only (unchanged)
+Level 2   3×4×3   cubes only (unchanged)
+Slopes    25 puzzles
+Curves    25 puzzles
+Level 3   4×4×3   ① cubes: the old 50 puzzles, unchanged   ② mixed: 25 new puzzles (cubes + slopes + curves)
+Level 4   4×5×4   ① cubes   ② mixed (25)
+Level 5   5×5×4   ① cubes   ② mixed (25)
+Level 6   5×6×5   ① cubes   ② mixed (25)
+Endless
+```
+
+No puzzle and no save data is removed, so the save-file rule about deleted puzzles no longer applies to phase 4. Mixed sets get new ids
+(builder's call: `M3-NNN` … `M6-NNN`).
