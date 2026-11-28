@@ -110,11 +110,11 @@ describe('EndlessQueue jobs', () => {
   it('keepsSpecJob', async () => {
     const { endless } = await load()
     const f = fakeWorkers()
-    const q = new endless.EndlessQueue('3x3x2s', f.make)
-    expect(f.all[0].inbox.every(m => m.job === '3x3x2s')).toBe(true)
+    const q = new endless.EndlessQueue('3x3x2', f.make)
+    expect(f.all[0].inbox.every(m => m.job === '3x3x2')).toBe(true)
     f.flush()
-    const r = await q.next(), want = makeJob('3x3x2s', r.seed)
-    expect(r.ramps.length).toBeGreaterThan(0)
+    const r = await q.next(), want = makeJob('3x3x2', r.seed)
+    expect(r.ramps).toEqual([])
     expect([r.hm.cols, r.hm.rows, r.hm.h, r.ramps]).toEqual([3, 3, want.hm.h, toEntryRamps(want.ramps)])
     q.dispose()
   }, 60_000)
@@ -185,17 +185,17 @@ describe('endless size specs (round 4)', () => {
     const { endless, storage } = await load()
     const f = fakeWorkers()
     const root = sized()
-    location.hash = '#/endless/3x3x2s/new'
-    const s = await endless.mountEndless(root, '3x3x2s', 'new', f.make)
-    expect(f.all[0].inbox.every(m => m.job === '3x3x2s')).toBe(true)
+    location.hash = '#/endless/3x3x2/new'
+    const s = await endless.mountEndless(root, '3x3x2', 'new', f.make)
+    expect(f.all[0].inbox.every(m => m.job === '3x3x2')).toBe(true)
     f.flush()
-    await vi.waitFor(() => expect(location.hash).toMatch(/^#\/endless\/3x3x2s\/\d+$/))
+    await vi.waitFor(() => expect(location.hash).toMatch(/^#\/endless\/3x3x2\/\d+$/))
     const seed = +location.hash.split('/')[3]
-    expect((await storage.loadProgress()).endlessSeeds['3x3x2s']).toEqual([seed])
+    expect((await storage.loadProgress()).endlessSeeds['3x3x2']).toEqual([seed])
     s.destroy()
-    const s2 = await endless.mountEndless(root, '3x3x2s', String(seed), f.make)
+    const s2 = await endless.mountEndless(root, '3x3x2', String(seed), f.make)
     await vi.waitFor(() => expect(root.querySelector('.vp')).toBeTruthy())
-    expect(root.textContent).toContain('3×3×2, slopes')
+    expect(root.textContent).toContain('3×3×2')
     expect(root.textContent).not.toContain('Endless, 3×3×2') // the title already says Endless
     location.hash = '#/levels/views'
     s2.destroy()
@@ -279,7 +279,7 @@ describe('endless size specs (round 4)', () => {
     navigate('/endless/9x9x9/new')
     const stop = startRouter(root, { version: 1, puzzles: [] })
     await vi.waitFor(() => expect(root.textContent).toContain('not built yet')) // no route matches
-    navigate('/endless/5x3x2s/new')
+    navigate('/endless/3x3x2s/new') // an old slopes link
     await vi.waitFor(() => expect(root.textContent).toContain('Puzzle not found'))
     stop()
   })

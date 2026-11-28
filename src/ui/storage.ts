@@ -74,8 +74,8 @@ export function updateProgress(fn: (p: Progress) => Progress): Promise<Progress>
 /** The Endless size picker's last choice (not in the backup: a convenience). Anything odd gives the default. */
 export async function loadEndlessSpec(): Promise<EndlessSpec> {
   const v = await rawGet<Partial<EndlessSpec>>('endless')
-  const s = v && typeof v === 'object' ? parseSpec(specKey(clampSpec({ cols: Number(v.cols), rows: Number(v.rows), maxH: Number(v.maxH), slopes: v.slopes === true }))) : null
-  return s ?? { cols: 3, rows: 3, maxH: 2, slopes: false }
+  const s = v && typeof v === 'object' ? parseSpec(specKey(clampSpec({ cols: Number(v.cols), rows: Number(v.rows), maxH: Number(v.maxH) }))) : null
+  return s ?? { cols: 3, rows: 3, maxH: 2 }
 }
 export const saveEndlessSpec = (s: EndlessSpec) => rawSet('endless', s)
 

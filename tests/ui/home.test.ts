@@ -154,7 +154,7 @@ describe('endless picker (round 4)', () => {
   const btn = (root: HTMLElement, label: string) => tile(root).querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
   const value = (root: HTMLElement, name: string) => tile(root).querySelector(`[data-value="${name}"]`)!.textContent
   // idb-keyval keeps its store across vi.resetModules, so a size saved by one test would reach the next
-  beforeEach(async () => { await (await load()).storage.saveEndlessSpec({ cols: 3, rows: 3, maxH: 2, slopes: false }) })
+  beforeEach(async () => { await (await load()).storage.saveEndlessSpec({ cols: 3, rows: 3, maxH: 2 }) })
 
   it('viewsHasOneEndlessTile', async () => {
     const { levels } = await load()
@@ -187,27 +187,12 @@ describe('endless picker (round 4)', () => {
     s.destroy()
   })
 
-  it('slopesClamps', async () => {
+  it('pickerHasNoSlopesSwitch', async () => {
     const { levels } = await load()
     const root = sized(), s = await levels.mountLevels(root, file)
-    for (let i = 0; i < 2; i++) { btn(root, 'Width larger').click(); btn(root, 'Depth larger').click(); btn(root, 'Height larger').click() }
-    expect(start(root)).toBe('#/endless/5x5x4/new')
-    const sw = tile(root).querySelector<HTMLButtonElement>('button[role="switch"]')!
-    sw.click()
-    expect(sw.getAttribute('aria-checked')).toBe('true')
-    expect([value(root, 'cols'), value(root, 'rows'), value(root, 'maxH')]).toEqual(['4', '3', '3']) // 4x4 is over the width x depth limit of 12
-    expect(start(root)).toBe('#/endless/4x3x3s/new')
-    expect(btn(root, 'Width larger').disabled).toBe(true)
-    expect(btn(root, 'Depth larger').disabled).toBe(true)
-    btn(root, 'Width smaller').click(); btn(root, 'Depth larger').click(); btn(root, 'Depth larger').click() // 3x4
-    expect([value(root, 'cols'), value(root, 'rows')]).toEqual(['3', '4'])
-    expect(btn(root, 'Width larger').disabled).toBe(true)
-    btn(root, 'Depth smaller').click(); btn(root, 'Width larger').click() // back to 4x3
-    expect(btn(root, 'Height larger').disabled).toBe(true)
-    expect(btn(root, 'Height smaller').disabled).toBe(false) // 2 still allowed; 1 never finds a ramp
-    for (let i = 0; i < 3; i++) btn(root, 'Height smaller').click()
-    expect(value(root, 'maxH')).toBe('2')
-    expect(btn(root, 'Height smaller').disabled).toBe(true)
+    expect(tile(root).querySelector('[role="switch"]')).toBeNull()
+    for (let i = 0; i < 4; i++) { btn(root, 'Width larger').click(); btn(root, 'Depth larger').click(); btn(root, 'Height larger').click() }
+    expect(start(root)).toBe('#/endless/6x6x6/new')
     s.destroy()
   })
 
@@ -215,14 +200,13 @@ describe('endless picker (round 4)', () => {
     const { levels, storage } = await load()
     let root = sized(), s = await levels.mountLevels(root, file)
     btn(root, 'Depth larger').click()
-    tile(root).querySelector<HTMLButtonElement>('button[role="switch"]')!.click()
-    await vi.waitFor(async () => expect(await storage.loadEndlessSpec()).toEqual({ cols: 3, rows: 4, maxH: 2, slopes: true }))
+    await vi.waitFor(async () => expect(await storage.loadEndlessSpec()).toEqual({ cols: 3, rows: 4, maxH: 2 }))
     s.destroy()
     root = sized(); s = await levels.mountLevels(root, file)
-    expect(start(root)).toBe('#/endless/3x4x2s/new')
+    expect(start(root)).toBe('#/endless/3x4x2/new')
     s.destroy()
     await storage.saveEndlessSpec({ cols: 9, rows: 'x' } as never)
-    expect(await storage.loadEndlessSpec()).toEqual({ cols: 3, rows: 3, maxH: 2, slopes: false })
+    expect(await storage.loadEndlessSpec()).toEqual({ cols: 3, rows: 3, maxH: 2 })
   })
 
   it('slopesTilesBySizeHiddenWhenEmpty', async () => {
@@ -244,7 +228,7 @@ describe('endless picker (round 4)', () => {
 
   it('endlessPlayDoesNotMarkSlopesTile', async () => {
     const { levels, storage } = await load()
-    await storage.saveLast({ kind: 'views', level: 0, route: '#/endless/3x3x2s/5' })
+    await storage.saveLast({ kind: 'views', level: 0, route: '#/endless/3x3x2/5' })
     const root = sized(), s = await levels.mountLevels(root, file)
     expect(root.querySelector('[data-set="slopes"]')!.getAttribute('data-state')).toBeNull()
     s.destroy()

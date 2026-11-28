@@ -71,7 +71,7 @@ button { font: inherit; color: inherit; }
 .tile[data-state] .tile-size, .tile[data-state] .tile-count { color: inherit; }
 .tile[data-state] .num { background: var(--surface); color: var(--ink); }
 .tile[data-state] .num[data-solved] { background: var(--bg); box-shadow: inset 0 0 0 var(--stroke-selected) var(--ink); }
-/* Endless size picker: one row per value (name, −, value, +), the Slopes switch, Start */
+/* Endless size picker: one row per value (name, −, value, +), Start */
 .stepper { display: flex; align-items: center; gap: var(--space-3); min-height: var(--size-touch); }
 .stepper-name { flex: 1; font: 400 var(--size-body) var(--font-ui); }
 .stepper .icon-btn { width: var(--size-touch); height: var(--size-touch); }

@@ -207,35 +207,24 @@ export function slopeCandidate(cols: number, rows: number, maxH: number, r: Rng,
   return r2.count === 1 && !r2.gaveUp ? s : null
 }
 
-export type EndlessSpec = { cols: number; rows: number; maxH: number; slopes: boolean }
-/** With slopes: width and depth 2..SLOPES_MAX with width x depth at most SLOPES_AREA, height 2..SLOPES_H (height 1
- *  never finds a ramp). Measured 2026-11-28 with the fast solver: 5 seeds per size, every size up to 4x4x3 had a median
- *  under 0.4 s; 20 seeds at 3x4x3: median 0.34 s, max 3.4 s; at 4x4x3: median 0.19 s but max 48 s, 2 of 20 over 15 s
- *  (a phone is about 3x slower and gives up at 60 s), hence the area limit. */
-export const SLOPES_MAX = 4, SLOPES_H = 3, SLOPES_AREA = 12
-/** The most one side may grow to, given the other side, while width x depth stays within SLOPES_AREA. */
-export const slopesSideMax = (other: number) => Math.min(SLOPES_MAX, Math.floor(SLOPES_AREA / other))
+export type EndlessSpec = { cols: number; rows: number; maxH: number }
 
-export const specKey = (s: EndlessSpec) => `${s.cols}x${s.rows}x${s.maxH}${s.slopes ? 's' : ''}`
+export const specKey = (s: EndlessSpec) => `${s.cols}x${s.rows}x${s.maxH}`
 
 export function parseSpec(key: string): EndlessSpec | null {
-  const m = /^([2-6])x([2-6])x([1-6])(s?)$/.exec(key)
-  if (!m) return null
-  const s = { cols: +m[1], rows: +m[2], maxH: +m[3], slopes: m[4] === 's' }
-  return s.slopes && (Math.max(s.cols, s.rows) > SLOPES_MAX || s.cols * s.rows > SLOPES_AREA || s.maxH < 2 || s.maxH > SLOPES_H) ? null : s
+  const m = /^([2-6])x([2-6])x([1-6])$/.exec(key)
+  return m ? { cols: +m[1], rows: +m[2], maxH: +m[3] } : null
 }
 
 export function clampSpec(s: EndlessSpec): EndlessSpec {
-  const top = s.slopes ? SLOPES_MAX : 6, c = (v: number, lo: number) => Math.max(lo, Math.min(top, Math.round(v)))
-  const cols = c(s.cols, 2), rows = s.slopes ? Math.min(c(s.rows, 2), slopesSideMax(cols)) : c(s.rows, 2)
-  return { cols, rows, maxH: s.slopes ? Math.max(2, Math.min(SLOPES_H, Math.round(s.maxH))) : c(s.maxH, 1), slopes: s.slopes }
+  const c = (v: number, lo: number) => Math.max(lo, Math.min(6, Math.round(v)))
+  return { cols: c(s.cols, 2), rows: c(s.rows, 2), maxH: c(s.maxH, 1) }
 }
 
 /** The endless puzzle for a spec and seed (the same every time); loops until it finds one. */
 export function makeEndless(s: EndlessSpec, seed: number): Shape {
   const r = rng(seed)
   for (;;) {
-    if (s.slopes) { const c = slopeCandidate(s.cols, s.rows, s.maxH, r); if (c) return c; continue }
     const hm = sampleShape(s.cols, s.rows, s.maxH, r)
     if (fairPicture(hm) && countSolutions(views(hm), s.cols, s.rows, s.maxH) === 1) return { hm, ramps: [] }
   }
