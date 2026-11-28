@@ -96,3 +96,40 @@ The owner handed the how to the builder; A then (if needed) B is the builder's p
 - How partly hidden lines (`#p`) are found exactly (fair targets never have them, but the solver must still reject
   shapes that make them).
 - Whether the fairness check (`fairShape`) also gets the exact code (it is cheap today; only if it shows up in timing).
+
+## Measured at phase 4 sizes (2026-11-28, Ryzen 5 5600H laptop)
+
+`npx tsx scripts/time-solver.ts <cols> <rows> <maxH> <minPieces> <maxPieces> <seconds> [budget]`. All 4 sizes ran **at the
+same time (4 jobs running)**, one process each, nothing else running, so each time is a bit slower than a lone run.
+Owner decision: 25 puzzles per level (the 50 column is for reference).
+Projection: hours for N = (wall seconds ÷ accepted) × N ÷ 8 ÷ 3600; accepted = fair, not partial, solveShapes count 1,
+not gave up. Wall includes the last solve, which can run past the 10 minutes. Samples are tiny (1 accepted) outside 4×4×3.
+
+**No budget, 10 minutes asked:**
+
+| size | pieces | wall s | tried | fair | unique (accepted) | gave up | median solve | p95 solve | h for 25 | h for 50 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 4×4×3 | 1–3 | 600 | 752 | 199 | 127 | 0 | 0.19 s | 11.5 s | 0.00 | 0.01 |
+| 4×5×4 | 2–4 | 647 | 92 | 6 | 1 | 0 | 130 s | 172 s | 0.56 | 1.12 |
+| 5×5×4 | 2–4 | 1032 | 34 | 2 | 1 | 0 | 1029 s | 1029 s | 0.90 | 1.79 |
+| 5×6×5 | 2–5 | not finished | | | 0 | | > 39 min in one solve | | > 2.0 | > 4.0 |
+
+5×6×5: after 39 minutes a single solve was still running (killed), so 0 accepted; the lower bound (39 min × 25 ÷ 8 ÷ 3600)
+is already over 2 hours. Longest single solve at 4×4×3: 256 s.
+
+**Budget rerun (2 000 000 steps, 5 minutes asked, 4 jobs in parallel):**
+
+| size | wall s | tried | fair | accepted | gave up | median | p95 | h for 25 | h for 50 |
+|---|---|---|---|---|---|---|---|---|---|
+| 4×4×3 | 309 | 614 | 179 | 127 | 0 | 0.20 s | 7.7 s | 0.00 | 0.00 |
+| 4×5×4 | 548 | 70 | 3 | 1 | 2 | 261 s | 273 s | 0.48 | 0.95 |
+| 5×5×4 | 469 | 30 | 4 | 1 | 1 | 66 s | 355 s | 0.41 | 0.81 |
+| 5×6×5 | 622 | 43 | 1 | 0 | 1 | 621 s | 621 s | > 0.54 | > 1.08 |
+
+**Finding.** The fast solver is far inside the limit at 4×4×3 only. At 4×5×4 and 5×5×4 the numbers rest on one accepted
+puzzle each and on a handful of slow solves (minutes each; most fair candidates cost minutes), so they are only
+rough. 5×6×5 is over 2 hours without a budget (one solve alone ran more than 39 minutes). The 2 000 000-step budget does
+not bound time: a step is expensive on the big shapes, and one gave-up solve still took 621 s. Per the ruling,
+column-first (approach B) is **not started here**; it needs its own plan. The budget would have to be much smaller
+(and then measured again), but fair candidates are also rare at the big sizes (1 in 43 to 1 in 15 tried), so the
+slow solves, not the budget, are the problem.
