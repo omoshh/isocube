@@ -70,11 +70,16 @@ describe('endless spec', () => {
   })
 
   it('parseSpecRefuses', () => {
-    for (const k of ['9x9x9', '1x3x2', '3x3x0', '5x3x2s', '3x3x4s', '4x4x4s', '3x3x1s', 'abc', '3x3x2S', ' 3x3x2']) expect(parseSpec(k)).toBeNull()
+    for (const k of ['9x9x9', '1x3x2', '3x3x0', '5x3x2s', '3x3x4s', '4x4x4s', '3x3x1s', '4x4x2s', '4x4x3s', 'abc', '3x3x2S', ' 3x3x2']) expect(parseSpec(k)).toBeNull()
+  })
+
+  it('parseSpecAcceptsSlopesInsideTheArea', () => {
+    for (const k of ['4x3x3s', '3x4x2s', '3x3x2s']) expect(parseSpec(k)).not.toBeNull()
   })
 
   it('clampSpec', () => {
-    expect(clampSpec({ cols: 5, rows: 5, maxH: 4, slopes: true })).toEqual({ cols: 4, rows: 4, maxH: 3, slopes: true })
+    expect(clampSpec({ cols: 4, rows: 4, maxH: 3, slopes: true })).toEqual({ cols: 4, rows: 3, maxH: 3, slopes: true }) // width x depth <= 12
+    expect(clampSpec({ cols: 5, rows: 5, maxH: 4, slopes: true })).toEqual({ cols: 4, rows: 3, maxH: 3, slopes: true })
     expect(clampSpec({ cols: 2, rows: 2, maxH: 1, slopes: true })).toEqual({ cols: 2, rows: 2, maxH: 2, slopes: true }) // no ramp fits at height 1
     expect(clampSpec({ cols: 9, rows: 1, maxH: 0, slopes: false })).toEqual({ cols: 6, rows: 2, maxH: 1, slopes: false })
   })

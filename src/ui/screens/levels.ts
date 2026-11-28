@@ -1,4 +1,4 @@
-import { LEVELS, SLOPES_H, SLOPES_MAX, clampSpec, specKey, type EndlessSpec, type PuzzleEntry, type PuzzleFile } from '../../core/generator'
+import { LEVELS, SLOPES_H, clampSpec, slopesSideMax, specKey, type EndlessSpec, type PuzzleEntry, type PuzzleFile } from '../../core/generator'
 import { createTopBar } from '../components/topBar'
 import { h } from '../dom'
 import { loadEndlessSpec, loadLast, loadProgress, saveEndlessSpec } from '../storage'
@@ -46,7 +46,7 @@ function endlessPicker(start: EndlessSpec): HTMLElement {
     const val = h('span', { class: 'stepper-value', 'data-value': k })
     const less = h('button', { class: 'icon-btn', 'aria-label': S.smallerLabel(name), text: '−', onclick: () => set({ ...spec, [k]: spec[k] - 1 }) })
     const more = h('button', { class: 'icon-btn', 'aria-label': S.largerLabel(name), text: '+', onclick: () => set({ ...spec, [k]: spec[k] + 1 }) })
-    const top = () => (spec.slopes ? (k === 'maxH' ? SLOPES_H : SLOPES_MAX) : 6), low = () => (spec.slopes && k === 'maxH' ? 2 : lo)
+    const top = () => (spec.slopes ? (k === 'maxH' ? SLOPES_H : slopesSideMax(spec[k === 'cols' ? 'rows' : 'cols'])) : 6), low = () => (spec.slopes && k === 'maxH' ? 2 : lo)
     const sync = () => { val.textContent = String(spec[k]); less.disabled = spec[k] <= low(); more.disabled = spec[k] >= top() }
     return { el: h('div', { class: 'stepper' }, h('span', { class: 'stepper-name', text: name }), less, val, more), sync }
   })

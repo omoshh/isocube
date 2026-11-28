@@ -195,9 +195,14 @@ describe('endless picker (round 4)', () => {
     const sw = tile(root).querySelector<HTMLButtonElement>('button[role="switch"]')!
     sw.click()
     expect(sw.getAttribute('aria-checked')).toBe('true')
-    expect([value(root, 'cols'), value(root, 'rows'), value(root, 'maxH')]).toEqual(['4', '4', '3'])
-    expect(start(root)).toBe('#/endless/4x4x3s/new')
+    expect([value(root, 'cols'), value(root, 'rows'), value(root, 'maxH')]).toEqual(['4', '3', '3']) // 4x4 is over the width x depth limit of 12
+    expect(start(root)).toBe('#/endless/4x3x3s/new')
     expect(btn(root, 'Width larger').disabled).toBe(true)
+    expect(btn(root, 'Depth larger').disabled).toBe(true)
+    btn(root, 'Width smaller').click(); btn(root, 'Depth larger').click(); btn(root, 'Depth larger').click() // 3x4
+    expect([value(root, 'cols'), value(root, 'rows')]).toEqual(['3', '4'])
+    expect(btn(root, 'Width larger').disabled).toBe(true)
+    btn(root, 'Depth smaller').click(); btn(root, 'Width larger').click() // back to 4x3
     expect(btn(root, 'Height larger').disabled).toBe(true)
     expect(btn(root, 'Height smaller').disabled).toBe(false) // 2 still allowed; 1 never finds a ramp
     for (let i = 0; i < 3; i++) btn(root, 'Height smaller').click()
