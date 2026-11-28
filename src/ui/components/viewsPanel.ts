@@ -1,5 +1,6 @@
 import type { HeightMap } from '../../core/shape'
-import { shapeViews, viewFills } from '../../core/shapeViews'
+import { exactViews } from '../../core/exactViews'
+import { viewFills } from '../../core/shapeViews'
 import type { Ramp } from '../../core/solid'
 import { viewLabels, viewLines, type Labels } from '../../core/views'
 import { mk } from '../grid/gestures'
@@ -46,7 +47,7 @@ function keyView(): HTMLElement {
 export function createViewsPanel(hm: HeightMap, maxH: number, ramps: Ramp[] = []): HTMLElement {
   let views: HTMLElement
   if (ramps.length) {
-    const s = { hm, ramps }, v = shapeViews(s, maxH), f = viewFills(s, maxH)
+    const s = { hm, ramps }, v = exactViews(s, maxH), f = viewFills(s, maxH)
     views = h('div', { class: 'views' }, keyView(), shapeViewSVG(hm.cols, hm.rows, f.top, v.top, S.top),
       shapeViewSVG(hm.rows, maxH, f.side, v.side, S.side), shapeViewSVG(hm.cols, maxH, f.front, v.front, S.front))
   } else {

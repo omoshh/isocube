@@ -1,5 +1,5 @@
 import { HeightMap, visibleFaces } from './shape'
-import { shapeViews } from './shapeViews'
+import { exactViews } from './exactViews'
 import { shapeEdges } from './sketch'
 import { rotateShape, type Shape } from './solid'
 
@@ -30,7 +30,7 @@ export function fairPicture(hm: HeightMap): boolean {
  *  or of a view ends between lattice points. */
 export function fairShape(s: Shape, maxH: number): boolean {
   const { cols, rows } = s.hm, front = shapeEdges(s)
-  if (front.partial || shapeViews(s, maxH).partial) return false
+  if (front.partial || exactViews(s, maxH).partial) return false
   const seen = new Set(front.owners)
   for (const o of shapeEdges(rotateShape(s)).owners) {
     if (o.startsWith('r:')) { seen.add(o); continue }

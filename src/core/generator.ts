@@ -1,6 +1,6 @@
 import { HeightMap, visibleFaces } from './shape'
-import { countShapeSolutions } from './rampSolver'
-import { shapeViews } from './shapeViews'
+import { exactViews } from './exactViews'
+import { solveShapes } from './fastSolver'
 import { fromEntryRamps, rampCells, validShape, type Dir, type EntryRamp, type Ramp, type Shape } from './solid'
 import { gridSegKey } from './geometry'
 import { sameViews, views, type ViewSet } from './views'
@@ -203,7 +203,8 @@ export function slopeCandidate(cols: number, rows: number, maxH: number, r: Rng)
   }
   const s = { hm, ramps }
   if (!ramps.length || !fairShape(s, maxH)) return null
-  return countShapeSolutions(shapeViews(s, maxH), cols, rows, maxH, 2) === 1 ? s : null
+  const r2 = solveShapes(exactViews(s, maxH), cols, rows, maxH, { limit: 2 })
+  return r2.count === 1 && !r2.gaveUp ? s : null
 }
 
 export type EndlessSpec = { cols: number; rows: number; maxH: number; slopes: boolean }
